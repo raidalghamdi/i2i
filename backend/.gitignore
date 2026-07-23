@@ -2,6 +2,7 @@ bin/
 obj/
 *.user
 .vs/
+TestResults/
 
 # Runtime-generated local storage (evidence uploads, generated reports, email attachments) --
 # never committed, and definitely not a public repo's business.
