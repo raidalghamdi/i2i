@@ -2524,42 +2524,56 @@ if (app.Environment.EnvironmentName == "Staging")
     // migration. Set Bootstrap__AdminPassword (Railway/Vercel env var naming) to set/rotate the
     // password on next restart; omit it on later deploys once you've logged in and no longer want
     // the env var able to reset it.
-    using var bootstrapScope = app.Services.CreateScope();
-    var bootstrapDb = bootstrapScope.ServiceProvider.GetRequiredService<InnovationDbContext>();
-    var adminEmail = app.Configuration["Bootstrap:AdminEmail"] ?? "admin@internal.sa";
-    var adminPassword = app.Configuration["Bootstrap:AdminPassword"];
-
-    var adminUser = await bootstrapDb.Users
-        .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
-        .FirstOrDefaultAsync(u => u.Email == adminEmail);
-    if (adminUser is null)
+    //
+    // Wrapped in try/catch deliberately: this runs before app.Run(), so an unhandled exception here
+    // (e.g. the DB being briefly unreachable -- firewall rule not yet propagated, transient network
+    // blip) would previously crash the entire process before it ever started listening, taking down
+    // an otherwise-healthy deploy. Failing soft here means /api/health/db still correctly reports
+    // unhealthy via CanConnectAsync, but the app itself stays up and serves requests once the DB
+    // becomes reachable, instead of crash-looping.
+    try
     {
-        adminUser = new User
+        using var bootstrapScope = app.Services.CreateScope();
+        var bootstrapDb = bootstrapScope.ServiceProvider.GetRequiredService<InnovationDbContext>();
+        var adminEmail = app.Configuration["Bootstrap:AdminEmail"] ?? "admin@internal.sa";
+        var adminPassword = app.Configuration["Bootstrap:AdminPassword"];
+
+        var adminUser = await bootstrapDb.Users
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Email == adminEmail);
+        if (adminUser is null)
         {
-            Id = Guid.NewGuid(),
-            SamAccountName = "admin.bootstrap",
-            Email = adminEmail,
-            FullNameAr = "مدير النظام",
-            FullNameEn = "System Admin",
-        };
-        bootstrapDb.Users.Add(adminUser);
-    }
+            adminUser = new User
+            {
+                Id = Guid.NewGuid(),
+                SamAccountName = "admin.bootstrap",
+                Email = adminEmail,
+                FullNameAr = "مدير النظام",
+                FullNameEn = "System Admin",
+            };
+            bootstrapDb.Users.Add(adminUser);
+        }
 
-    // Only ever set the password when there isn't one yet -- once an admin has logged in and rotated
-    // it (via POST /api/auth/change-password), a later container restart must NOT silently revert it
-    // back to whatever Bootstrap__AdminPassword still happens to be set to.
-    if (adminUser.PasswordHash is null && !string.IsNullOrWhiteSpace(adminPassword))
+        // Only ever set the password when there isn't one yet -- once an admin has logged in and
+        // rotated it (via POST /api/auth/change-password), a later container restart must NOT
+        // silently revert it back to whatever Bootstrap__AdminPassword still happens to be set to.
+        if (adminUser.PasswordHash is null && !string.IsNullOrWhiteSpace(adminPassword))
+        {
+            adminUser.PasswordHash = PasswordHasher.Hash(adminPassword);
+        }
+
+        if (!adminUser.UserRoles.Any(ur => ur.Role.Code == RoleCodes.Admin))
+        {
+            var adminRoleId = await bootstrapDb.Roles.Where(r => r.Code == RoleCodes.Admin).Select(r => r.Id).SingleAsync();
+            adminUser.UserRoles.Add(new UserRole { UserId = adminUser.Id, RoleId = adminRoleId, IsPrimary = true });
+        }
+
+        await bootstrapDb.SaveChangesAsync();
+    }
+    catch (Exception ex)
     {
-        adminUser.PasswordHash = PasswordHasher.Hash(adminPassword);
+        app.Logger.LogWarning(ex, "Staging admin bootstrap failed at startup -- will retry on next restart. App will continue starting.");
     }
-
-    if (!adminUser.UserRoles.Any(ur => ur.Role.Code == RoleCodes.Admin))
-    {
-        var adminRoleId = await bootstrapDb.Roles.Where(r => r.Code == RoleCodes.Admin).Select(r => r.Id).SingleAsync();
-        adminUser.UserRoles.Add(new UserRole { UserId = adminUser.Id, RoleId = adminRoleId, IsPrimary = true });
-    }
-
-    await bootstrapDb.SaveChangesAsync();
 }
 
 app.Run();
