@@ -1,5 +1,4 @@
-@if (identity(); as id) {
-  <!-- Hero -->
+<!-- Hero -->
   <section id="hero" class="relative -mx-4 -mt-6 flex min-h-[70svh] items-center overflow-hidden border-b border-border bg-gradient-to-br from-brand-teal-dark via-brand-teal-dark to-[#0a1e21] px-4 py-16 text-white sm:-mx-6 sm:px-8 sm:py-24">
     <app-hero-network />
     <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-brand-teal-dark/60 via-brand-teal-dark/40 to-brand-teal-dark/70"></div>
@@ -29,7 +28,7 @@
       </p>
 
       <div class="flex flex-wrap justify-center gap-3">
-        @if (id.roles.length > 0) {
+        @if ((identity()?.roles?.length ?? 0) > 0) {
           <a routerLink="/ideas/new" class="btn-gold btn-lg">
             <app-icon name="lightbulb" size="h-4 w-4" />
             <span i18n="@@landingSubmitIdeaCta">Submit your idea</span>
@@ -300,7 +299,7 @@
     <div class="mx-auto max-w-4xl text-center">
       <h2 class="text-2xl font-bold text-brand-teal sm:text-3xl" i18n="@@landingFinalCtaTitle">Ready to take part?</h2>
       <p class="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base" i18n="@@landingFinalCtaSubtitle">Don't overthink it — just tell us what you're thinking.</p>
-      @if (id.roles.length > 0) {
+      @if ((identity()?.roles?.length ?? 0) > 0) {
         <div class="mt-6 flex justify-center">
           <a routerLink="/ideas/new" class="btn-default btn-lg">
             <app-icon name="lightbulb" size="h-4 w-4" />
@@ -315,4 +314,3 @@
   <app-site-footer />
   <app-sticky-cta />
   <app-back-to-top />
-}

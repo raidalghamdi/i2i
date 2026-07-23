@@ -91,4 +91,36 @@ describe('LandingComponent', () => {
     expect(fixture.nativeElement.querySelector('footer')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('General Authority for Competition');
   });
+
+  it('renders the public content for a genuinely anonymous visitor (identity() is null, not just role-less)', async () => {
+    // Regression test: under DevAuth/Negotiate, identity() always resolves to *something* (even with
+    // zero roles), so the component's original template gated its entire content behind
+    // `@if (identity(); as id)`, which nobody noticed because every other test above passes a real
+    // identity object. Under the JWT auth path, an anonymous visitor gets identity() === null, which
+    // made the whole public landing page (hero and all) render as nothing in production.
+    platformStats = jasmine.createSpyObj('PlatformStatsService', ['get']);
+    publicTracksApi = jasmine.createSpyObj('PublicTracksApiService', ['list']);
+    publicTracksApi.list.and.returnValue(Promise.resolve([]));
+
+    TestBed.configureTestingModule({
+      imports: [LandingComponent],
+      providers: [
+        provideRouter([]),
+        { provide: PlatformStatsService, useValue: platformStats },
+        { provide: PublicTracksApiService, useValue: publicTracksApi },
+        { provide: IdentityService, useValue: { identity: signal(null) } },
+      ],
+    });
+    fixture = TestBed.createComponent(LandingComponent);
+    fixture.detectChanges();
+    await fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Objectives');
+    expect(text).toContain('Timeline');
+    expect(fixture.nativeElement.querySelector('footer')).not.toBeNull();
+    const links = Array.from(fixture.nativeElement.querySelectorAll('a')) as HTMLAnchorElement[];
+    expect(links.some((a) => a.getAttribute('href') === '/ideas/new')).toBe(false);
+  });
 });
