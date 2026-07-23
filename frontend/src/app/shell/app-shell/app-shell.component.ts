@@ -3,8 +3,10 @@ import { Component, OnDestroy, computed, effect, inject, signal } from '@angular
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { AuthApiService } from '../../core/auth/auth-api.service';
 import { IdentityService } from '../../core/auth/identity.service';
 import { RoleSwitcherComponent } from '../../core/auth/role-switcher/role-switcher.component';
+import { TokenStorageService } from '../../core/auth/token-storage.service';
 import { LocaleService } from '../../core/locale.service';
 import { NotificationStore } from '../../core/notification-store';
 import { IconComponent } from '../../shared/icon/icon.component';
@@ -54,8 +56,28 @@ export class AppShellComponent implements OnDestroy {
   private readonly router = inject(Router);
   private readonly localeService = inject(LocaleService);
   private readonly notificationStore = inject(NotificationStore);
+  private readonly authApi = inject(AuthApiService);
+  private readonly tokenStorage = inject(TokenStorageService);
   readonly identity = this.identityService.identity;
   readonly loadFailed = this.identityService.loadFailed;
+
+  /** Only a JWT-authenticated session has anything local to sign out of -- Negotiate/DevAuth users
+   * never had a token stored, so the button simply doesn't render for them (see template). */
+  readonly hasLocalSession = computed(() => this.tokenStorage.hasSession());
+
+  async logout(): Promise<void> {
+    const refreshToken = this.tokenStorage.getRefreshToken();
+    if (refreshToken) {
+      try {
+        await this.authApi.logout(refreshToken);
+      } catch {
+        // Best-effort server-side revocation; clearing the local session is what actually matters.
+      }
+    }
+    this.tokenStorage.clear();
+    await this.router.navigateByUrl('/');
+    await this.identityService.load();
+  }
 
   /** Identity resolves asynchronously after the shell is created, so start the
    * notification poller reactively (idempotent) once the user has any role,

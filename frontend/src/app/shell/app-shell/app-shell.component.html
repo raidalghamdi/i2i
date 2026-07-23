@@ -61,6 +61,9 @@
           <span>عربي / English</span>
         </a>
         <span class="hidden truncate text-xs text-muted-foreground md:inline">{{ id.samAccountName }} — {{ id.department }}</span>
+        @if (hasLocalSession()) {
+          <button type="button" class="btn-outline btn-sm" (click)="logout()" i18n="@@logoutButton">Log out</button>
+        }
       </div>
     </header>
 
