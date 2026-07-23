@@ -1,0 +1,32 @@
+<div class="flex flex-wrap items-center gap-2">
+  @if (errorMessage(); as msg) {
+    <p class="field-error">{{ msg }}</p>
+  }
+  <button
+    type="button"
+    class="btn-outline btn-sm"
+    (click)="onExportPdf()"
+    [disabled]="exportingFormat() === 'pdf'"
+    i18n="@@exportBarPdf"
+  >
+    Export PDF
+  </button>
+  <button
+    type="button"
+    class="btn-outline btn-sm"
+    (click)="onExportPptx()"
+    [disabled]="exportingFormat() === 'pptx'"
+    i18n="@@exportBarPptx"
+  >
+    Export PPTX
+  </button>
+  <button
+    type="button"
+    class="btn-outline btn-sm"
+    (click)="onExportXlsx()"
+    [disabled]="exportingFormat() === 'xlsx'"
+    i18n="@@exportBarXlsx"
+  >
+    Export XLSX
+  </button>
+</div>

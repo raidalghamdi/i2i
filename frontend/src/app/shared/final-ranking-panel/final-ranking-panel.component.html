@@ -1,0 +1,46 @@
+<section class="card-surface card-body">
+  <h2 class="section-title" i18n="@@supervisorDashboardRankingTitle">Final Ranking</h2>
+
+  @if (errorMessage(); as msg) {
+    <p class="field-error mt-3">{{ msg }}</p>
+  }
+
+  <div class="mt-4 flex flex-wrap gap-3">
+    <button type="button" class="btn-outline" (click)="onPreview()" i18n="@@supervisorDashboardPreviewButton">Preview</button>
+    <button type="button" class="btn-gold" (click)="onRun()" i18n="@@supervisorDashboardRunButton">Run Final Ranking</button>
+  </div>
+
+  @if (preview(); as preview) {
+    <p class="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+      <span><span i18n="@@supervisorDashboardApprovedCount">Would approve:</span> <span class="font-semibold text-brand-teal">{{ preview.approvedCount }}</span></span>
+      <span><span i18n="@@supervisorDashboardNotSelectedCount">Would not select:</span> <span class="font-semibold text-brand-teal">{{ preview.notSelectedCount }}</span></span>
+    </p>
+    <div class="data-table-wrap mt-4">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th i18n="@@supervisorDashboardColumnIdea">Idea</th>
+            <th i18n="@@supervisorDashboardColumnRank">Rank</th>
+            <th i18n="@@supervisorDashboardColumnOutcome">Outcome</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (entry of preview.entries; track entry.ideaId) {
+            <tr>
+              <td class="font-medium">{{ entry.code }} — {{ entry.titleEn }}</td>
+              <td>{{ entry.rank }}</td>
+              <td><app-status-badge [status]="entry.outcomeStatus">{{ entry.outcomeStatus }}</app-status-badge></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (result(); as result) {
+    <p class="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+      <span><span i18n="@@supervisorDashboardApprovedCount">Would approve:</span> <span class="font-semibold text-brand-teal">{{ result.approvedCount }}</span></span>
+      <span><span i18n="@@supervisorDashboardNotSelectedCount">Would not select:</span> <span class="font-semibold text-brand-teal">{{ result.notSelectedCount }}</span></span>
+    </p>
+  }
+</section>

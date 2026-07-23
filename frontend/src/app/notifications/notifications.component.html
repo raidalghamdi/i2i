@@ -1,0 +1,46 @@
+<app-page-header title="Notifications" i18n-title="@@notificationsPageTitle" />
+
+@if (store.loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" label="Loading notifications…" i18n-label="@@notificationsLoading" />
+} @else if (store.error(); as e) {
+  <app-error-state [message]="e" (retry)="store.refresh()" />
+} @else {
+
+<div class="mb-4 flex items-center justify-between">
+  <div class="flex gap-2" role="tablist">
+    <button
+      role="tab"
+      class="btn-sm"
+      [class.btn-default]="filter() === 'all'"
+      [class.btn-outline]="filter() !== 'all'"
+      (click)="filter.set('all')"
+      i18n="@@notificationsFilterAll"
+    >All</button>
+    <button
+      role="tab"
+      class="btn-sm"
+      [class.btn-default]="filter() === 'unread'"
+      [class.btn-outline]="filter() !== 'unread'"
+      (click)="filter.set('unread')"
+      i18n="@@notificationsFilterUnread"
+    >Unread</button>
+  </div>
+  <button class="btn-outline btn-sm" (click)="markAllRead()" i18n="@@notificationsMarkAllRead">Mark all read</button>
+</div>
+
+@if (filtered().length === 0) {
+  <app-empty-state title="No notifications." i18n-title="@@notificationsEmpty" icon="message-square" />
+} @else {
+  <ul class="flex flex-col gap-2">
+    @for (n of filtered(); track n.id) {
+      <li class="card-surface card-body flex items-start justify-between gap-3" [class.border-brand-teal]="n.readAt === null">
+        <div>
+          <p class="text-sm font-medium text-foreground">{{ n.titleEn }}</p>
+          <p class="mt-1 text-sm text-muted-foreground">{{ n.bodyEn }}</p>
+        </div>
+        <button class="btn-ghost btn-sm" (click)="dismiss(n.id)" i18n="@@notificationsDismiss">Dismiss</button>
+      </li>
+    }
+  </ul>
+}
+}

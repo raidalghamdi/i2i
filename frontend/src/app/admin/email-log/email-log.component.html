@@ -1,0 +1,56 @@
+<app-page-header title="Email log" i18n-title="@@emailLogTitle" />
+
+<section class="card-surface card-body mb-6 flex flex-col gap-4 sm:flex-row sm:items-end">
+  <div class="flex flex-1 flex-col gap-1.5">
+    <label class="field-label" i18n="@@emailLogFilterStatus">Status</label>
+    <select class="field-select" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); onFilterChange()">
+      <option value="" i18n="@@emailLogFilterAll">All</option>
+      <option value="sent" i18n="@@emailLogFilterSent">Sent</option>
+      <option value="failed" i18n="@@emailLogFilterFailed">Failed</option>
+    </select>
+  </div>
+</section>
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="5" label="Loading email log entries…" i18n-label="@@emailLogLoading" />
+} @else if (errorMessage(); as msg) {
+  <app-error-state [message]="msg" (retry)="reload()" />
+} @else if (rows().length === 0) {
+  <app-empty-state title="No email log entries match the current filters." i18n-title="@@emailLogEmpty" icon="document-text" />
+} @else {
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th i18n="@@emailLogColumnWhen">When</th>
+          <th i18n="@@emailLogColumnTo">To</th>
+          <th i18n="@@emailLogColumnProvider">Provider</th>
+          <th i18n="@@emailLogColumnStatus">Status</th>
+          <th i18n="@@emailLogColumnMessageId">Message ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.id) {
+          <tr>
+            <td>{{ row.sentAt | date: 'short' }}</td>
+            <td>
+              {{ row.toEmail }}
+              @if (row.redirectApplied) {
+                <span class="email-log-redirected ms-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700" i18n="@@emailLogRedirected">redirected</span>
+              }
+            </td>
+            <td>{{ row.provider }}</td>
+            <td><app-status-badge [status]="row.statusCode">{{ statusName(row) }}</app-status-badge></td>
+            <td>{{ row.providerMessageId ?? '—' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-4 flex items-center justify-between">
+    <button type="button" class="btn-outline btn-sm" [disabled]="page() <= 1" (click)="onPrev()" i18n="@@emailLogPrev">Previous</button>
+    <span class="text-sm text-muted-foreground" i18n="@@emailLogPageOf">page {{ page() }} of {{ totalPages() }}</span>
+    <button type="button" class="btn-outline btn-sm" [disabled]="page() * pageSize >= total()" (click)="onNext()" i18n="@@emailLogNext">Next</button>
+  </div>
+}

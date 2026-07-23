@@ -1,0 +1,88 @@
+<app-page-header title="Roles" i18n-title="@@rolesCatalogTitle" />
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mb-4" role="alert">{{ msg }}</p>
+}
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="5" label="Loading roles…" i18n-label="@@rolesCatalogLoading" />
+} @else if (loadError(); as lerr) {
+  <app-error-state [message]="lerr" (retry)="reload()" />
+} @else if (editableRows().length === 0) {
+  <app-empty-state title="No roles yet." i18n-title="@@rolesCatalogEmpty" icon="shield-check" />
+} @else {
+  <div class="data-table-wrap mb-4">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th i18n="@@rolesCatalogColumnCode">Code</th>
+          <th i18n="@@rolesCatalogColumnNameAr">Name (Ar)</th>
+          <th i18n="@@rolesCatalogColumnNameEn">Name (En)</th>
+          <th i18n="@@rolesCatalogColumnDescriptionAr">Description (Ar)</th>
+          <th i18n="@@rolesCatalogColumnDescriptionEn">Description (En)</th>
+          <th i18n="@@rolesCatalogColumnSortOrder">Sort order</th>
+          <th i18n="@@rolesCatalogColumnActive">Active</th>
+          <th i18n="@@rolesCatalogColumnActions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of editableRows(); track row.id) {
+          <tr>
+            <td>
+              <span class="font-mono text-sm">{{ row.code }}</span>
+              @if (row.isSystem) {
+                <app-icon
+                  name="shield-check"
+                  size="h-4 w-4"
+                  class="ms-1 inline-block align-text-bottom text-muted-foreground"
+                  data-testid="role-system-lock"
+                  aria-label="System role"
+                  i18n-aria-label="@@rolesCatalogSystemRoleLabel"
+                />
+              }
+            </td>
+            <td>
+              <input class="field-input" [ngModel]="row.nameAr" (ngModelChange)="updateRow(row.id, { nameAr: $event })" />
+            </td>
+            <td>
+              <input class="field-input" [ngModel]="row.nameEn" (ngModelChange)="updateRow(row.id, { nameEn: $event })" />
+            </td>
+            <td>
+              <input
+                class="field-input"
+                [ngModel]="row.descriptionAr"
+                (ngModelChange)="updateRow(row.id, { descriptionAr: $event })"
+              />
+            </td>
+            <td>
+              <input
+                class="field-input"
+                [ngModel]="row.descriptionEn"
+                (ngModelChange)="updateRow(row.id, { descriptionEn: $event })"
+              />
+            </td>
+            <td>
+              <input
+                type="number"
+                class="field-input w-24"
+                [ngModel]="row.sortOrder"
+                (ngModelChange)="updateRow(row.id, { sortOrder: $event })"
+              />
+            </td>
+            <td>
+              <input
+                type="checkbox"
+                class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                [ngModel]="row.isActive"
+                (ngModelChange)="updateRow(row.id, { isActive: $event })"
+              />
+            </td>
+            <td>
+              <button type="button" class="btn-default btn-sm" (click)="onSave(row)" i18n="@@rolesCatalogSave">Save</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

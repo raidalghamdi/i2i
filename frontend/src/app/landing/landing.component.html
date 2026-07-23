@@ -1,0 +1,318 @@
+@if (identity(); as id) {
+  <!-- Hero -->
+  <section id="hero" class="relative -mx-4 -mt-6 flex min-h-[70svh] items-center overflow-hidden border-b border-border bg-gradient-to-br from-brand-teal-dark via-brand-teal-dark to-[#0a1e21] px-4 py-16 text-white sm:-mx-6 sm:px-8 sm:py-24">
+    <app-hero-network />
+    <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-brand-teal-dark/60 via-brand-teal-dark/40 to-brand-teal-dark/70"></div>
+    <div class="pointer-events-none absolute end-0 top-0 h-64 w-64 rounded-full bg-brand-cyan/10 blur-3xl sm:h-80 sm:w-80"></div>
+    <div class="pointer-events-none absolute bottom-0 start-0 h-64 w-64 rounded-full bg-brand-gold/10 blur-3xl sm:h-80 sm:w-80"></div>
+
+    <div class="relative mx-auto max-w-3xl space-y-7 text-center sm:space-y-8">
+      <p class="inline-flex items-center gap-2 rounded-full border border-brand-cyan/50 bg-brand-teal-dark/60 px-6 py-2.5 text-sm font-bold tracking-wider text-brand-cyan-light backdrop-blur-sm sm:text-base md:px-8 md:py-3 md:text-lg">
+        <span class="h-2 w-2 rounded-full bg-brand-gold"></span>
+        <span i18n="@@landingHeroEyebrow">Competition Innovation Program</span>
+      </p>
+
+      <h1 class="hero-headline mx-auto max-w-2xl [text-shadow:0_2px_18px_rgba(0,0,0,0.45)]">
+        <app-hero-rotator [words]="heroWords" />
+      </h1>
+
+      <p class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-base font-semibold text-white sm:text-lg [text-shadow:0_1px_10px_rgba(0,0,0,0.35)]">
+        <span i18n="@@landingSloganInnovate">Innovate</span>
+        <span class="h-1.5 w-1.5 rounded-full bg-brand-cyan"></span>
+        <span class="text-brand-cyan-light" i18n="@@landingSloganCompete">Compete</span>
+        <span class="h-1.5 w-1.5 rounded-full bg-brand-gold"></span>
+        <span class="text-brand-gold" i18n="@@landingSloganImpact">Impact</span>
+      </p>
+
+      <p class="mx-auto max-w-xl text-base leading-relaxed text-white/90 sm:text-lg [text-shadow:0_1px_10px_rgba(0,0,0,0.4)]" i18n="@@landingHeroSubhead">
+        Your idea could change how competition works in Saudi Arabia — present it before experts and specialists, and compete for valuable prizes.
+      </p>
+
+      <div class="flex flex-wrap justify-center gap-3">
+        @if (id.roles.length > 0) {
+          <a routerLink="/ideas/new" class="btn-gold btn-lg">
+            <app-icon name="lightbulb" size="h-4 w-4" />
+            <span i18n="@@landingSubmitIdeaCta">Submit your idea</span>
+          </a>
+        }
+        <a href="#about" class="inline-flex min-h-[44px] items-center gap-2 rounded-md border border-white/40 bg-white/10 px-6 py-3 text-sm font-medium text-white backdrop-blur-sm transition hover:bg-white/20">
+          <span i18n="@@landingCtaLearn">Learn about the program</span>
+          <app-icon name="arrow-right" size="h-4 w-4" class="rtl:rotate-180" />
+        </a>
+      </div>
+
+      <div class="mx-auto max-w-xl pt-2">
+        <div class="rounded-2xl bg-white/10 p-4 backdrop-blur">
+          <p class="text-center text-sm font-medium text-white/90" i18n="@@landingCountdownEnded">The current submission window is closed.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Platform at a glance (this rewrite's own addition, not part of legacy's homepage) -->
+  @if (stats(); as s) {
+    <section class="-mx-4 px-4 py-16 sm:-mx-6 sm:px-8 sm:py-24">
+      <div class="mx-auto max-w-6xl">
+        <h2 class="text-2xl font-bold text-brand-teal sm:text-3xl" i18n="@@landingStatsTitle">Platform at a glance</h2>
+        <div class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          <div class="kpi-card">
+            <div>
+              <p class="text-sm text-muted-foreground" i18n="@@landingStatTotalIdeas">Total ideas</p>
+              <p class="mt-1 text-2xl font-bold text-brand-teal">{{ s.totalIdeas }}</p>
+            </div>
+            <div class="kpi-icon"><app-icon name="lightbulb" size="h-5 w-5" /></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <p class="text-sm text-muted-foreground" i18n="@@landingStatApproved">Approved</p>
+              <p class="mt-1 text-2xl font-bold text-brand-teal">{{ s.totalApproved }}</p>
+            </div>
+            <div class="kpi-icon"><app-icon name="shield-check" size="h-5 w-5" /></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <p class="text-sm text-muted-foreground" i18n="@@landingStatSubmitters">Participants</p>
+              <p class="mt-1 text-2xl font-bold text-brand-teal">{{ s.totalSubmitters }}</p>
+            </div>
+            <div class="kpi-icon"><app-icon name="users" size="h-5 w-5" /></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <p class="text-sm text-muted-foreground" i18n="@@landingStatEvaluations">Evaluations</p>
+              <p class="mt-1 text-2xl font-bold text-brand-teal">{{ s.totalEvaluations }}</p>
+            </div>
+            <div class="kpi-icon"><app-icon name="clipboard-check" size="h-5 w-5" /></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <p class="text-sm text-muted-foreground" i18n="@@landingStatEvaluators">Evaluators</p>
+              <p class="mt-1 text-2xl font-bold text-brand-teal">{{ s.totalEvaluators }}</p>
+            </div>
+            <div class="kpi-icon"><app-icon name="chart-bar" size="h-5 w-5" /></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- About -->
+  <section id="about" class="-mx-4 scroll-mt-20 px-4 py-16 sm:-mx-6 sm:scroll-mt-24 sm:px-8 sm:py-24">
+    <div class="mx-auto grid max-w-6xl grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12">
+      <div>
+        <h2 class="text-2xl font-bold text-brand-teal sm:text-3xl" i18n="@@landingAboutTitle">About the Program</h2>
+        <p class="mt-4 text-base leading-relaxed text-muted-foreground" i18n="@@landingAboutBody">Innovation to Impact brings together employees, entrepreneurs, and government entities to turn innovative ideas into practical solutions with real impact on the sector.</p>
+        <div class="mt-4 rounded-2xl bg-brand-teal-light/40 p-4 text-sm font-medium text-brand-teal" i18n="@@landingAboutMission">Our mission: accelerate the journey from idea to execution through one unified, transparent platform.</div>
+      </div>
+      <div class="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-brand-teal via-brand-teal to-brand-cyan/70">
+        <app-icon name="image" size="h-16 w-16" class="text-white/40" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Objectives -->
+  <section id="objectives" class="-mx-4 border-y border-border bg-brand-teal-light/30 px-4 py-16 sm:-mx-6 sm:px-8 sm:py-24">
+    <div class="mx-auto max-w-5xl">
+      <h2 class="text-2xl font-bold text-brand-teal sm:text-3xl" i18n="@@landingObjectivesTitle">Objectives</h2>
+      <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        @for (item of objectives; track item) {
+          <div class="flex items-start gap-3 rounded-2xl border border-border bg-card p-4">
+            <app-icon name="check-circle" size="mt-0.5 h-5 w-5" class="shrink-0 text-brand-teal" />
+            <span class="text-sm text-foreground">{{ item }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Tracks -->
+  @if (tracks().length > 0) {
+    <section id="tracks" class="-mx-4 scroll-mt-20 px-4 py-16 sm:-mx-6 sm:scroll-mt-24 sm:px-8 sm:py-24">
+      <div class="mx-auto max-w-6xl">
+        <div class="mb-8 flex flex-wrap items-end justify-between gap-3">
+          <h2 class="text-2xl font-bold text-brand-teal sm:text-3xl" i18n="@@landingTracksTitle">Tracks &amp; Challenges</h2>
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          @for (track of tracks(); track track.id) {
+            <div class="group flex h-full flex-col rounded-3xl border border-border bg-card p-6 transition hover:border-brand-teal/40 hover:shadow-md">
+              <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-teal-light text-brand-teal transition group-hover:bg-brand-teal group-hover:text-white">
+                <app-icon name="target" size="h-5 w-5" />
+              </div>
+              <p class="mt-4 text-base font-semibold text-brand-teal">{{ trackName(track) }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- Details -->
+  <section id="details" class="-mx-4 border-y border-border bg-card px-4 py-16 sm:-mx-6 sm:px-8 sm:py-24">
+    <div class="mx-auto max-w-5xl">
+      <h2 class="text-2xl font-bold text-brand-teal sm:text-3xl" i18n="@@landingDetailsTitle">Program Details</h2>
+      <div class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div>
+          <h3 class="flex items-center gap-2 text-sm font-semibold text-brand-teal">
+            <app-icon name="clipboard-list" size="h-4 w-4" />
+            <span i18n="@@landingDetailsRulesTitle">Rules</span>
+          </h3>
+          <ul class="mt-2 flex flex-col gap-1.5 text-sm text-muted-foreground">
+            @for (rule of rules; track rule) {
+              <li>&bull;&nbsp; {{ rule }}</li>
+            }
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-brand-teal" i18n="@@landingDetailsFormatTitle">Format</h3>
+          <p class="mt-2 text-sm text-muted-foreground" i18n="@@landingDetailsFormat">An open competition on a digital platform, spanning submission, evaluation, pitching, and final decision stages.</p>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-brand-teal" i18n="@@landingDetailsEligibilityTitle">Eligibility</h3>
+          <p class="mt-2 text-sm text-muted-foreground" i18n="@@landingDetailsEligibility">Open to Authority employees, entrepreneurs, government entities, and innovation specialists.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Timeline -->
+  <section id="timeline" class="-mx-4 scroll-mt-20 border-y border-border bg-brand-teal-light/30 px-4 py-16 sm:-mx-6 sm:scroll-mt-24 sm:px-8 sm:py-24">
+    <div class="mx-auto max-w-6xl">
+      <h2 class="text-center text-2xl font-bold text-brand-teal sm:text-3xl" i18n="@@landingTimelineTitle">Timeline</h2>
+      <div class="mt-10">
+        <app-timeline-modern [stages]="timelineStages" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Criteria -->
+  <section id="criteria" class="relative -mx-4 scroll-mt-20 overflow-hidden bg-gradient-to-br from-brand-teal-dark via-[#0c3a3f] to-[#0a1e21] px-4 py-20 text-white sm:-mx-6 sm:scroll-mt-24 sm:px-8 sm:py-28">
+    <div class="pointer-events-none absolute -top-24 end-1/4 h-72 w-72 rounded-full bg-brand-cyan/20 blur-3xl"></div>
+    <div class="pointer-events-none absolute -bottom-24 start-1/4 h-72 w-72 rounded-full bg-brand-gold/15 blur-3xl"></div>
+    <div class="relative mx-auto max-w-6xl">
+      <div class="mx-auto max-w-2xl text-center">
+        <p class="inline-flex items-center gap-2 rounded-full border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-brand-cyan-light sm:text-xs">
+          <span class="h-1.5 w-1.5 rounded-full bg-brand-gold"></span>
+          <span i18n="@@landingCriteriaEyebrow">How ideas are scored</span>
+        </p>
+        <h2 class="mt-4 text-3xl font-bold text-white sm:text-4xl" i18n="@@landingCriteriaTitle">Evaluation Criteria</h2>
+        <p class="mt-3 text-sm text-white/70 sm:text-base" i18n="@@landingCriteriaLead">Every submission is measured against five weighted criteria — balancing boldness of the idea with how well it can actually ship and shift the market.</p>
+      </div>
+      <ol class="mt-12 grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+        @for (criterion of criteria; track criterion.label; let i = $index) {
+          <li class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm transition hover:border-white/25 hover:bg-white/[0.08] sm:p-6">
+            <span class="absolute inset-y-0 start-0 w-1" [style.background-color]="criterion.color"></span>
+            <div class="flex items-start gap-4">
+              <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ring-1 ring-white/10" [style.background-color]="criterion.color + '22'" [style.color]="criterion.color">
+                <app-icon [name]="criterion.icon" size="h-6 w-6" />
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-3">
+                  <p class="truncate text-base font-semibold text-white sm:text-lg">
+                    <span class="me-2 text-xs font-medium text-white/40 tabular-nums">{{ (i + 1).toString().padStart(2, '0') }}</span>{{ criterion.label }}
+                  </p>
+                  <span class="shrink-0 rounded-full px-2.5 py-0.5 text-sm font-bold tabular-nums text-white" [style.background-color]="criterion.color">{{ criterion.weight }}%</span>
+                </div>
+                <p class="mt-2 text-sm leading-relaxed text-white/75">{{ criterion.description }}</p>
+              </div>
+            </div>
+          </li>
+        }
+      </ol>
+    </div>
+  </section>
+
+  <!-- Prizes -->
+  <section id="prizes" class="-mx-4 scroll-mt-20 border-y border-border bg-card px-4 py-16 sm:-mx-6 sm:scroll-mt-24 sm:px-8 sm:py-24">
+    <div class="mx-auto max-w-5xl">
+      <h2 class="text-center text-2xl font-bold text-brand-teal sm:text-3xl" i18n="@@landingPrizesTitle">Prizes</h2>
+      <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        @for (prize of prizes; track prize.tier; let i = $index) {
+          <div class="rounded-3xl border p-6 text-center" [class]="i === 0 ? 'border-brand-gold bg-brand-gold-light/30' : 'border-border bg-background'">
+            <span [class]="i === 0 ? 'text-brand-gold' : 'text-brand-teal'"><app-icon name="award" size="h-8 w-8 mx-auto" /></span>
+            <p class="mt-3 text-base font-semibold text-brand-teal">{{ prize.tier }}</p>
+            <p class="mt-1 text-sm text-muted-foreground">{{ prize.value }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Previous edition -->
+  <section id="previous" class="-mx-4 px-4 py-16 sm:-mx-6 sm:px-8 sm:py-24">
+    <div class="mx-auto max-w-6xl">
+      <div class="mx-auto max-w-2xl text-center">
+        <h2 class="text-2xl font-bold text-brand-teal sm:text-3xl" i18n="@@landingPreviousTitle">Previous Edition</h2>
+        <p class="mt-2 text-sm text-muted-foreground sm:text-base" i18n="@@landingPreviousBody">The previous edition saw wide participation, with several ideas adopted and actually implemented.</p>
+      </div>
+
+      <h3 class="mt-10 text-lg font-semibold text-brand-teal" i18n="@@landingPreviousGalleryTitle">From the previous edition</h3>
+      <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (caption of previousGallery; track caption) {
+          <figure class="group flex aspect-[4/3] flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-brand-teal/10 p-4 text-center transition hover:bg-brand-teal/15">
+            <app-icon name="image" size="h-10 w-10" class="text-brand-teal/50" />
+            <figcaption class="text-sm font-medium text-brand-teal">{{ caption }}</figcaption>
+          </figure>
+        }
+      </div>
+
+      <h3 class="mt-10 text-lg font-semibold text-brand-teal" i18n="@@landingPreviousVideoTitle">Previous edition video</h3>
+      <div class="mt-4 flex aspect-video w-full flex-col items-center justify-center gap-3 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-brand-teal via-brand-teal to-brand-teal-dark text-center">
+        <app-icon name="play-circle" size="h-16 w-16" class="text-white/60" />
+        <p class="text-sm font-medium text-white/80" i18n="@@landingPreviousVideoHint">The video will be added soon</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Partners -->
+  <section id="partners" class="-mx-4 border-y border-border bg-card px-4 py-16 sm:-mx-6 sm:px-8 sm:py-24">
+    <div class="mx-auto max-w-6xl">
+      <h2 class="text-center text-xl font-bold text-brand-teal sm:text-2xl" i18n="@@landingPartnersTitle">Success Partners</h2>
+      <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
+        @for (partner of partners; track partner) {
+          <div class="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+            <app-icon name="building" size="h-4 w-4" class="text-brand-teal" />
+            <span>{{ partner }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="-mx-4 scroll-mt-20 px-4 py-16 sm:-mx-6 sm:scroll-mt-24 sm:px-8 sm:py-24">
+    <div class="mx-auto max-w-4xl">
+      <h2 class="text-center text-2xl font-bold text-brand-teal sm:text-3xl" i18n="@@landingFaqTitle">Frequently Asked Questions</h2>
+      <div class="mt-8 divide-y divide-border rounded-xl border border-border bg-card">
+        @for (item of faqItems; track item.q) {
+          <details class="group px-4 py-4">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-2 text-sm font-medium text-foreground">
+              <span>{{ item.q }}</span>
+              <app-icon name="chevron-down" size="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" />
+            </summary>
+            <p class="mt-2 text-sm text-muted-foreground">{{ item.a }}</p>
+          </details>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="-mx-4 border-t border-border bg-gradient-to-br from-brand-teal-light/60 to-brand-cyan-light/40 px-4 py-16 sm:-mx-6 sm:px-8 sm:py-24">
+    <div class="mx-auto max-w-4xl text-center">
+      <h2 class="text-2xl font-bold text-brand-teal sm:text-3xl" i18n="@@landingFinalCtaTitle">Ready to take part?</h2>
+      <p class="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base" i18n="@@landingFinalCtaSubtitle">Don't overthink it — just tell us what you're thinking.</p>
+      @if (id.roles.length > 0) {
+        <div class="mt-6 flex justify-center">
+          <a routerLink="/ideas/new" class="btn-default btn-lg">
+            <app-icon name="lightbulb" size="h-4 w-4" />
+            <span i18n="@@landingSubmitIdeaCta">Submit your idea</span>
+            <app-icon name="arrow-right" size="h-4 w-4" class="rtl:rotate-180" />
+          </a>
+        </div>
+      }
+    </div>
+  </section>
+
+  <app-site-footer />
+  <app-sticky-cta />
+  <app-back-to-top />
+}

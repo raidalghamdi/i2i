@@ -1,0 +1,92 @@
+<app-page-header title="All Ideas" i18n-title="@@allIdeasConsoleTitle" />
+
+<form [formGroup]="filterForm" (ngSubmit)="applyFilters()" class="card-surface card-body mt-4 flex flex-wrap items-end gap-3">
+  <label class="flex flex-col gap-1">
+    <span class="text-sm font-medium" i18n="@@allIdeasFilterSearch">Search</span>
+    <input type="text" formControlName="q" class="form-input" />
+  </label>
+  <label class="flex flex-col gap-1">
+    <span class="text-sm font-medium" i18n="@@allIdeasFilterTheme">Theme</span>
+    <select formControlName="strategicThemeId" class="form-select">
+      <option value="" i18n="@@allIdeasFilterAll">All</option>
+      @for (t of themes(); track t.id) {
+        <option [value]="t.id">{{ themeName(t.id) }}</option>
+      }
+    </select>
+  </label>
+  <label class="flex flex-col gap-1">
+    <span class="text-sm font-medium" i18n="@@allIdeasFilterActivity">Activity</span>
+    <select formControlName="activityId" class="form-select">
+      <option value="" i18n="@@allIdeasFilterAll">All</option>
+      @for (a of activities(); track a.id) {
+        <option [value]="a.id">{{ isArabicName(a) }}</option>
+      }
+    </select>
+  </label>
+  <label class="flex flex-col gap-1">
+    <span class="text-sm font-medium" i18n="@@allIdeasFilterStatus">Status</span>
+    <select formControlName="status" class="form-select">
+      <option value="" i18n="@@allIdeasFilterAll">All</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </label>
+  <button type="submit" class="btn-gold" i18n="@@allIdeasFilterApply">Apply</button>
+</form>
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="6" />
+} @else if (error(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (ideas().length === 0) {
+  <app-empty-state title="No ideas match these filters." i18n-title="@@allIdeasEmpty" icon="search" />
+} @else {
+<div class="data-table-wrap mt-4">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th i18n="@@allIdeasColCode">Code</th>
+        <th i18n="@@allIdeasColTitle">Title</th>
+        <th i18n="@@allIdeasColTheme">Theme</th>
+        <th i18n="@@allIdeasColStatus">Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of ideas(); track item.id) {
+        <tr>
+          <td class="font-medium">{{ item.code }}</td>
+          <td>{{ title(item) }}</td>
+          <td>{{ themeName(item.strategicThemeId) }}</td>
+          <td><app-status-badge [status]="item.status">{{ item.status }}</app-status-badge></td>
+          <td><button type="button" class="btn-link" (click)="toggle(item.id)" i18n="@@allIdeasPreview">Preview</button></td>
+        </tr>
+        @if (expandedId() === item.id) {
+          <tr>
+            <td colspan="5" class="bg-brand-teal-light/40">
+              <p class="whitespace-pre-line text-sm">{{ problem(item) }}</p>
+              @if (isDecidable(item)) {
+                <div class="mt-3 border-t pt-3">
+                  <label class="flex flex-col gap-1">
+                    <span class="text-sm font-medium" i18n="@@allIdeasReasonLabel">Reason (required for return/reject)</span>
+                    <textarea rows="2" class="form-input" [value]="decisionReason()" (input)="decisionReason.set($any($event.target).value)"></textarea>
+                  </label>
+                  @if (decisionError(); as err) {
+                    <p class="field-error mt-2">{{ err }}</p>
+                  }
+                  <div class="mt-2 flex flex-wrap gap-2">
+                    <button type="button" class="btn-gold" [disabled]="deciding() === item.id" (click)="decide(item.id, 'approve')" i18n="@@allIdeasApprove">Approve</button>
+                    <button type="button" class="btn-outline" [disabled]="deciding() === item.id" (click)="decide(item.id, 'return')" i18n="@@allIdeasReturn">Return</button>
+                    <button type="button" class="btn-danger" [disabled]="deciding() === item.id" (click)="decide(item.id, 'reject')" i18n="@@allIdeasReject">Reject</button>
+                  </div>
+                </div>
+              }
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+}

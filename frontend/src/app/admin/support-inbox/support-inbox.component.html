@@ -1,0 +1,69 @@
+<app-page-header title="Support inbox" i18n-title="@@supportInboxTitle" />
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mb-4">{{ msg }}</p>
+}
+
+<section class="card-surface card-body mb-6 flex flex-col gap-4 sm:flex-row sm:items-end">
+  <div class="flex flex-1 flex-col gap-1.5">
+    <label class="field-label" i18n="@@supportFilterStatus">Status</label>
+    <select class="field-select" [ngModel]="handledFilter()" (ngModelChange)="handledFilter.set($event); onFilterChange()">
+      <option value="" i18n="@@supportFilterAll">All</option>
+      <option value="false" i18n="@@supportFilterNew">New</option>
+      <option value="true" i18n="@@supportFilterHandled">Handled</option>
+    </select>
+  </div>
+</section>
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="5" label="Loading support messages…" i18n-label="@@supportLoading" />
+} @else if (loadError(); as lerr) {
+  <app-error-state [message]="lerr" (retry)="reload()" />
+} @else if (rows().length === 0) {
+  <app-empty-state title="No support messages match the current filters." i18n-title="@@supportEmpty" icon="message-square" />
+} @else {
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th i18n="@@supportColumnReceived">Received</th>
+          <th i18n="@@supportColumnSender">Sender</th>
+          <th i18n="@@supportColumnEmail">Email</th>
+          <th i18n="@@supportColumnSubject">Subject</th>
+          <th i18n="@@supportColumnMessage">Message</th>
+          <th i18n="@@supportColumnStatus">Status</th>
+          <th i18n="@@supportColumnAction">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.id) {
+          <tr>
+            <td>{{ row.createdAt | date: 'short' }}</td>
+            <td>{{ row.name }}</td>
+            <td>{{ row.email }}</td>
+            <td>{{ row.subject }}</td>
+            <td class="max-w-xs truncate" [title]="row.body">{{ row.body }}</td>
+            <td>
+              @if (row.handled) {
+                <span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700" i18n="@@supportHandled">Handled</span>
+              } @else {
+                <span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700" i18n="@@supportNew">New</span>
+              }
+            </td>
+            <td>
+              @if (!row.handled) {
+                <button type="button" class="btn-outline btn-sm" (click)="onMarkHandled(row.id)" i18n="@@supportMarkHandled">Mark handled</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-4 flex items-center justify-between">
+    <button type="button" class="btn-outline btn-sm" [disabled]="page() <= 1" (click)="onPrev()" i18n="@@supportPrev">Previous</button>
+    <span class="text-sm text-muted-foreground" i18n="@@supportPageOf">page {{ page() }} of {{ totalPages() }}</span>
+    <button type="button" class="btn-outline btn-sm" [disabled]="page() * pageSize >= total()" (click)="onNext()" i18n="@@supportNext">Next</button>
+  </div>
+}

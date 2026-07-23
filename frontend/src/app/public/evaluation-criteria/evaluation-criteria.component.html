@@ -1,0 +1,24 @@
+<app-public-page-hero slug="evaluation-criteria" [defaultTitle]="pageTitle" [defaultBody]="pageBody" />
+
+<div class="mt-6 data-table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th i18n="@@evaluationCriteriaColumnCriterion">Criterion</th>
+        <th i18n="@@evaluationCriteriaColumnWeight">Weight</th>
+        <th i18n="@@evaluationCriteriaColumnDescription">Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (criterion of criteria; track criterion.name) {
+        <tr>
+          <td class="font-medium text-foreground">{{ criterion.name }}</td>
+          <td>{{ criterion.weight }}</td>
+          <td>{{ criterion.desc }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<p class="mt-4 text-sm text-muted-foreground">{{ footerNote }}</p>

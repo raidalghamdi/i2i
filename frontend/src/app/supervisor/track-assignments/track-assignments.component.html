@@ -1,0 +1,75 @@
+<app-page-header title="Track Assignments" i18n-title="@@trackAssignmentsTitle" />
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mb-4">{{ msg }}</p>
+}
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (assignments().length === 0) {
+  <app-empty-state
+    title="No track assignments yet."
+    i18n-title="@@trackAssignmentsEmpty"
+    description="Assign an evaluator below to get started."
+    i18n-description="@@trackAssignmentsEmptyDesc"
+    icon="target"
+  />
+} @else {
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th i18n="@@trackAssignmentsColumnEvaluator">Evaluator</th>
+          <th i18n="@@trackAssignmentsColumnTrack">Track</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (assignment of assignments(); track assignment.id) {
+          <tr>
+            <td class="font-medium">{{ assignment.evaluatorName }}</td>
+            <td>{{ assignment.trackNameEn }}</td>
+            <td class="text-end">
+              <button type="button" class="btn-ghost btn-sm text-red-700 hover:bg-red-50" (click)="onRemove(assignment.id)" i18n="@@trackAssignmentsRemove">Remove</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<section class="card-surface card-body mt-6 max-w-lg">
+  <h2 class="section-title" i18n="@@trackAssignmentsAddTitle">Assign an Evaluator</h2>
+  <div class="mt-4 flex flex-col gap-4">
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@trackAssignmentsEvaluatorLabel">Evaluator</label>
+      <select class="field-select" [ngModel]="selectedEvaluatorId()" (ngModelChange)="selectedEvaluatorId.set($event)">
+        <option value="" i18n="@@trackAssignmentsSelectEvaluator">Select an evaluator</option>
+        @for (evaluator of evaluators(); track evaluator.id) {
+          <option [value]="evaluator.id">{{ evaluator.fullNameEn }}</option>
+        }
+      </select>
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@trackAssignmentsTrackLabel">Track</label>
+      <select class="field-select" [ngModel]="selectedTrackId()" (ngModelChange)="selectedTrackId.set($event)">
+        <option value="" i18n="@@trackAssignmentsSelectTrack">Select a track</option>
+        @for (theme of themes(); track theme.id) {
+          <option [value]="theme.id">{{ theme.nameEn }}</option>
+        }
+      </select>
+    </div>
+    <div class="flex justify-end">
+      <button
+        type="button"
+        class="btn-default"
+        (click)="onAssign()"
+        [disabled]="!selectedEvaluatorId() || !selectedTrackId()"
+        i18n="@@trackAssignmentsAssignButton"
+      >Assign</button>
+    </div>
+  </div>
+</section>

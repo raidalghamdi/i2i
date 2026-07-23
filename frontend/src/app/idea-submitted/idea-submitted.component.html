@@ -1,0 +1,46 @@
+@if (loading()) {
+  <app-loading-state variant="spinner" />
+} @else if (idea(); as idea) {
+  <div class="mx-auto max-w-2xl">
+    <div class="mb-6 flex flex-col items-center text-center">
+      <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-teal/10 ring-4 ring-brand-teal/20">
+        <span class="text-3xl text-brand-teal">✓</span>
+      </div>
+      <h1 class="text-2xl font-semibold text-brand-teal" i18n="@@ideaSubmittedHeadline">Your idea has been submitted!</h1>
+      <p class="mt-2 max-w-lg text-sm text-muted-foreground" i18n="@@ideaSubmittedSubhead">We'll notify you as your idea moves through review.</p>
+    </div>
+
+    <div class="card-surface card-body mb-6">
+      <div class="text-xs font-medium uppercase tracking-wide text-muted-foreground" i18n="@@ideaSubmittedYourIdea">Your idea</div>
+      <div class="mt-1.5 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+        <p class="text-base font-semibold text-foreground sm:text-lg">{{ idea.titleEn }}</p>
+        <span class="shrink-0 rounded-full bg-brand-teal-light px-2.5 py-0.5 text-xs font-medium text-brand-teal">
+          <span i18n="@@ideaSubmittedReference">Reference</span> · {{ idea.code }}
+        </span>
+      </div>
+    </div>
+
+    <div class="card-surface card-body mb-6">
+      <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-brand-teal" i18n="@@ideaSubmittedWhatsNext">What happens next</h2>
+      <ol class="flex flex-col gap-4">
+        <li>
+          <p class="text-sm font-semibold text-foreground" i18n="@@ideaSubmittedStep1Title">Screening</p>
+          <p class="text-sm text-muted-foreground" i18n="@@ideaSubmittedStep1Body">A supervisor reviews your idea for completeness.</p>
+        </li>
+        <li>
+          <p class="text-sm font-semibold text-foreground" i18n="@@ideaSubmittedStep2Title">Evaluation</p>
+          <p class="text-sm text-muted-foreground" i18n="@@ideaSubmittedStep2Body">Evaluators score your idea against the published criteria.</p>
+        </li>
+        <li>
+          <p class="text-sm font-semibold text-foreground" i18n="@@ideaSubmittedStep3Title">Committee</p>
+          <p class="text-sm text-muted-foreground" i18n="@@ideaSubmittedStep3Body">You'll be notified of the committee's decision by email and in-app.</p>
+        </li>
+      </ol>
+    </div>
+
+    <div class="flex flex-col gap-3 md:flex-row md:justify-center">
+      <a [routerLink]="['/ideas', idea.id]" class="btn-default" i18n="@@ideaSubmittedTrackCta">Track this idea</a>
+      <a routerLink="/dashboard" class="btn-outline" i18n="@@ideaSubmittedDashboardCta">My Dashboard</a>
+    </div>
+  </div>
+}

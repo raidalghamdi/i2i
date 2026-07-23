@@ -1,0 +1,87 @@
+<section class="card-surface card-body mt-8">
+  <h2 class="section-title" i18n="@@tracksManagerTitle">Manage Tracks</h2>
+  <p class="text-xs text-muted-foreground" i18n="@@tracksManagerSubtitle">Tracks appear in the idea submission wizard and can be bound to evaluators.</p>
+
+  @if (errorMessage(); as msg) {
+    <p class="field-error mt-3">{{ msg }}</p>
+  }
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="3" />
+  } @else if (loadError(); as e) {
+    <app-error-state [message]="e" (retry)="reload()" />
+  } @else if (tracks().length === 0) {
+    <app-empty-state title="No tracks yet." i18n-title="@@tracksManagerEmpty" icon="target" />
+  } @else {
+    <ul class="mt-4 flex flex-col gap-3">
+      @for (track of tracks(); track track.id) {
+        <li class="rounded-lg border border-border p-3">
+          @if (editingId() === track.id) {
+            <div class="flex flex-col gap-3">
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div class="flex flex-col gap-1.5">
+                  <label class="field-label" i18n="@@tracksManagerNameAr">Arabic name</label>
+                  <input class="field-input" dir="rtl" [ngModel]="editDraft().nameAr" (ngModelChange)="updateEditDraft({ nameAr: $event })" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="field-label" i18n="@@tracksManagerNameEn">English name</label>
+                  <input class="field-input" dir="ltr" [ngModel]="editDraft().nameEn" (ngModelChange)="updateEditDraft({ nameEn: $event })" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="field-label" i18n="@@tracksManagerDescAr">Arabic description</label>
+                  <input class="field-input" dir="rtl" [ngModel]="editDraft().descriptionAr" (ngModelChange)="updateEditDraft({ descriptionAr: $event })" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="field-label" i18n="@@tracksManagerDescEn">English description</label>
+                  <input class="field-input" dir="ltr" [ngModel]="editDraft().descriptionEn" (ngModelChange)="updateEditDraft({ descriptionEn: $event })" />
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button type="button" class="btn-default btn-sm" (click)="saveEdit(track.id)" i18n="@@tracksManagerSave">Save</button>
+                <button type="button" class="btn-ghost btn-sm" (click)="cancelEdit()" i18n="@@tracksManagerCancel">Cancel</button>
+              </div>
+            </div>
+          } @else {
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <p class="truncate font-medium text-foreground">{{ track.nameEn }}</p>
+                @if (track.descriptionEn) {
+                  <p class="truncate text-xs text-muted-foreground">{{ track.descriptionEn }}</p>
+                }
+              </div>
+              <div class="flex shrink-0 gap-2">
+                <button type="button" class="btn-ghost btn-sm" (click)="startEdit(track)" i18n="@@tracksManagerEdit">Edit</button>
+                <button type="button" class="btn-ghost btn-sm text-red-700 hover:bg-red-50" (click)="onDelete(track.id)" i18n="@@tracksManagerDelete">Delete</button>
+              </div>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  <div class="mt-6 rounded-lg border border-dashed border-border p-4">
+    <p class="mb-3 text-sm font-semibold text-foreground" i18n="@@tracksManagerAddTitle">Add a track</p>
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@tracksManagerNameAr">Arabic name</label>
+        <input class="field-input" dir="rtl" [ngModel]="creating().nameAr" (ngModelChange)="updateCreating({ nameAr: $event })" />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@tracksManagerNameEn">English name</label>
+        <input class="field-input" dir="ltr" [ngModel]="creating().nameEn" (ngModelChange)="updateCreating({ nameEn: $event })" />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@tracksManagerDescAr">Arabic description</label>
+        <input class="field-input" dir="rtl" [ngModel]="creating().descriptionAr" (ngModelChange)="updateCreating({ descriptionAr: $event })" />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@tracksManagerDescEn">English description</label>
+        <input class="field-input" dir="ltr" [ngModel]="creating().descriptionEn" (ngModelChange)="updateCreating({ descriptionEn: $event })" />
+      </div>
+    </div>
+    <div class="mt-3 flex justify-end">
+      <button type="button" class="btn-default" (click)="onCreate()" i18n="@@tracksManagerAddButton">Add track</button>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,26 @@
+<section class="card-surface card-body">
+  <div class="flex items-center justify-between gap-3">
+    <div>
+      <h3 class="section-title" i18n="@@autoSuggestTitle">Suggested evaluators</h3>
+      <p class="text-xs text-muted-foreground" i18n="@@autoSuggestSubtitle">A suggestion only — you choose who to assign.</p>
+    </div>
+    <button type="button" class="btn-default" (click)="onSuggestClick()" [disabled]="loading()" i18n="@@autoSuggestButton">Auto-suggest</button>
+  </div>
+  @if (loading()) {
+    <app-loading-state variant="spinner" label="Suggesting evaluators…" i18n-label="@@autoSuggestLoading" />
+  } @else if (errorMessage(); as msg) {
+    <app-error-state [message]="msg" (retry)="onSuggestClick()" />
+  } @else if (hasSearched() && suggestions().length === 0) {
+    <app-empty-state title="No available evaluators found." i18n-title="@@autoSuggestEmpty" icon="users" />
+  } @else if (suggestions().length > 0) {
+    <div class="mt-4 flex flex-wrap gap-3">
+      @for (s of suggestions(); track s.evaluatorId; let i = $index) {
+        <span class="inline-flex items-center gap-2 rounded-full bg-brand-teal-light px-3 py-1.5 text-sm text-brand-teal">
+          <span class="font-semibold">{{ i + 1 }}.</span>
+          {{ s.evaluatorName }}
+          <span class="text-xs text-muted-foreground">({{ s.openCount }})</span>
+        </span>
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,236 @@
+<app-page-header title="Submit an idea" i18n-title="@@ideaWizardPageTitle" />
+
+@if (errorMessage(); as msg) {
+  <div class="field-error mb-4" role="alert">{{ msg }}</div>
+}
+
+@if (draftAvailable()) {
+  <div class="card-surface card-body mb-4 flex flex-wrap items-center justify-between gap-3">
+    <p class="text-sm text-foreground" i18n="@@ideaWizardDraftPrompt">We found a saved draft. Would you like to restore it?</p>
+    <div class="flex gap-2">
+      <button type="button" class="btn-outline btn-sm" (click)="restoreDraft()" i18n="@@ideaWizardDraftRestore">Restore draft</button>
+      <button type="button" class="btn-ghost btn-sm" (click)="dismissDraft()" i18n="@@ideaWizardDraftDismiss">Discard</button>
+    </div>
+  </div>
+}
+
+@if (loading()) {
+  <app-loading-state />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else {
+<div class="card-surface card-body max-w-3xl">
+  <div class="mb-6 flex items-center justify-between gap-2">
+    @for (label of stepLabels; track label; let i = $index) {
+      <div class="flex flex-1 flex-col items-center gap-1.5">
+        <div
+          class="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition"
+          [class.bg-brand-teal]="i < currentStep()"
+          [class.text-white]="i <= currentStep()"
+          [class.bg-brand-cyan]="i === currentStep()"
+          [class.bg-muted]="i > currentStep()"
+          [class.text-muted-foreground]="i > currentStep()"
+        >
+          @if (i < currentStep()) {
+            <app-icon name="check-circle" size="h-4 w-4" />
+          } @else {
+            {{ i + 1 }}
+          }
+        </div>
+        <span
+          class="hidden text-center text-[11px] sm:block"
+          [class.font-semibold]="i === currentStep()"
+          [class.text-brand-teal]="i === currentStep()"
+          [class.text-muted-foreground]="i !== currentStep()"
+        >{{ label }}</span>
+      </div>
+    }
+  </div>
+  <div class="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+    <div class="h-full rounded-full bg-brand-teal transition-all" [style.width.%]="((currentStep() + 1) / stepLabels.length) * 100"></div>
+  </div>
+  <p class="mb-6 text-xs text-muted-foreground" i18n="@@ideaWizardStepOf">Step {{ currentStep() + 1 }} of {{ stepLabels.length }}</p>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    @if (currentStep() === 0) {
+      <div class="flex flex-col gap-5" formGroupName="basics">
+        <div class="flex flex-col gap-1.5">
+          <label class="field-label" i18n="@@ideaWizardEvent">Event</label>
+          <select class="field-select" formControlName="activityId">
+            <option value="" i18n="@@ideaWizardSelectEvent">Select an event</option>
+            @for (activity of activities(); track activity.id) {
+              <option [value]="activity.id">{{ activity.nameEn }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="field-label" i18n="@@ideaWizardTrack">Track</label>
+          <select class="field-select" formControlName="strategicThemeId">
+            <option value="" i18n="@@ideaWizardSelectTrack">Select a track</option>
+            @for (theme of themes(); track theme.id) {
+              <option [value]="theme.id">{{ theme.nameEn }}</option>
+            }
+          </select>
+        </div>
+
+        @if (challengeOptions().length > 0) {
+          <div class="flex flex-col gap-1.5">
+            <label class="field-label" i18n="@@ideaWizardChallenge">Challenge</label>
+            <select class="field-select" formControlName="challengeId">
+              <option value="" i18n="@@ideaWizardSelectChallenge">Select a challenge</option>
+              @for (challenge of challengeOptions(); track challenge.id) {
+                <option [value]="challenge.id">{{ challenge.textEn }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        <div class="flex flex-col gap-1.5">
+          <label class="field-label" i18n="@@ideaWizardParticipation">Participation type</label>
+          <div class="flex gap-6">
+            <label class="inline-flex items-center gap-2 text-sm">
+              <input type="radio" formControlName="participationType" value="individual" />
+              <span i18n="@@ideaWizardParticipationIndividual">Individual</span>
+            </label>
+            <label class="inline-flex items-center gap-2 text-sm">
+              <input type="radio" formControlName="participationType" value="team" />
+              <span i18n="@@ideaWizardParticipationTeam">Team</span>
+            </label>
+          </div>
+        </div>
+
+        @if (form.controls.basics.controls.participationType.value === 'team') {
+          <div class="flex flex-col gap-1.5">
+            <label class="field-label" i18n="@@ideaWizardTeamName">Team name</label>
+            <input class="field-input" formControlName="teamName" />
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label class="field-label" i18n="@@ideaWizardTeamMembers">Team members</label>
+            <p class="text-xs text-muted-foreground" i18n="@@ideaWizardTeamMembersHint">Add at least 2 members in addition to you as the team leader.</p>
+            @for (member of teamMembers(); track $index; let i = $index) {
+              <div class="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                <input class="field-input" [value]="member.name" (input)="updateTeamMemberName(i, $any($event.target).value)" placeholder="Name" i18n-placeholder="@@ideaWizardMemberNamePlaceholder" />
+                <input class="field-input" dir="ltr" [value]="member.email" (input)="updateTeamMemberEmail(i, $any($event.target).value)" placeholder="Email" i18n-placeholder="@@ideaWizardMemberEmailPlaceholder" />
+                <button type="button" class="btn-outline btn-sm" (click)="removeTeamMember(i)" [disabled]="teamMembers().length <= 2" i18n="@@ideaWizardMemberRemove">Remove</button>
+              </div>
+            }
+            <button type="button" class="btn-outline btn-sm self-start" (click)="addTeamMember()" [disabled]="teamMembers().length >= 4" i18n="@@ideaWizardMemberAdd">Add member</button>
+          </div>
+        }
+      </div>
+    }
+
+    @if (currentStep() === 1) {
+      <div class="flex flex-col gap-5" formGroupName="details">
+        <div class="flex flex-col gap-1.5">
+          <label class="field-label" i18n="@@ideaWizardTitle">Idea title</label>
+          <input class="field-input" formControlName="title" />
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="field-label" i18n="@@ideaWizardDescription">Idea description</label>
+          <textarea class="field-textarea" rows="6" formControlName="description"></textarea>
+          <a href="/templates/idea-description-template.docx" download class="inline-flex w-fit items-center gap-1.5 text-sm text-brand-teal hover:underline">
+            <app-icon name="download" size="h-4 w-4" />
+            <span i18n="@@ideaWizardTemplateLink">Download description template</span>
+          </a>
+        </div>
+      </div>
+    }
+
+    @if (currentStep() === 2) {
+      <div class="flex flex-col gap-3">
+        @if (attachmentError(); as msg) {
+          <p class="field-error">{{ msg }}</p>
+        }
+        <div
+          class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-muted/30 p-8 text-center transition hover:border-brand-teal/40"
+          [class.border-brand-teal]="dragActive()"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+          (click)="fileInput.click()"
+        >
+          <app-icon name="upload" size="h-6 w-6" class="text-brand-teal" />
+          <span class="text-sm text-muted-foreground" i18n="@@ideaWizardDropzoneHint">Drag files here or click to choose</span>
+          <span class="text-xs text-muted-foreground" i18n="@@ideaWizardDropzoneTypes">PDF, images, Office files, or video — up to 10MB each, 5 files max</span>
+          <input #fileInput type="file" multiple class="hidden" (change)="onFilesSelected($event)" />
+        </div>
+        @if (queuedFiles().length > 0) {
+          <ul class="flex flex-col gap-1.5">
+            @for (file of queuedFiles(); track file.name; let i = $index) {
+              <li class="flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
+                <span class="truncate">{{ file.name }}</span>
+                <button type="button" class="btn-ghost btn-sm" (click)="removeQueuedFile(i)">
+                  <app-icon name="x" size="h-4 w-4" />
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    }
+
+    @if (currentStep() === 3) {
+      <div class="flex flex-col gap-5" formGroupName="review">
+        <dl class="flex flex-col gap-3 rounded-lg border border-border p-4 text-sm">
+          <div class="flex justify-between gap-4"><dt class="text-muted-foreground" i18n="@@ideaWizardReviewTitle">Idea title</dt><dd class="text-end font-medium">{{ form.controls.details.controls.title.value }}</dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-muted-foreground" i18n="@@ideaWizardReviewDescription">Idea description</dt><dd class="text-end">{{ form.controls.details.controls.description.value }}</dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-muted-foreground" i18n="@@ideaWizardReviewTrack">Track</dt><dd class="text-end">{{ selectedThemeName() }}</dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-muted-foreground" i18n="@@ideaWizardReviewEvent">Event</dt><dd class="text-end">{{ selectedActivityName() }}</dd></div>
+          @if (form.controls.basics.controls.challengeId.value) {
+            <div class="flex justify-between gap-4"><dt class="text-muted-foreground" i18n="@@ideaWizardReviewChallenge">Challenge</dt><dd class="text-end">{{ selectedChallengeText() }}</dd></div>
+          }
+          <div class="flex justify-between gap-4">
+            <dt class="text-muted-foreground" i18n="@@ideaWizardReviewParticipation">Participation</dt>
+            <dd class="text-end">
+              @if (form.controls.basics.controls.participationType.value === 'team') {
+                <span i18n="@@ideaWizardReviewTeamCount">Team ({{ teamMembers().length + 1 }})</span>
+              } @else {
+                <span i18n="@@ideaWizardReviewIndividual">Individual</span>
+              }
+            </dd>
+          </div>
+        </dl>
+
+        <label class="flex items-start gap-2 text-sm">
+          <input type="checkbox" class="mt-0.5 h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" formControlName="ipAcknowledged" />
+          <span i18n="@@ideaWizardIpDeclaration">I confirm I am the author of this idea and responsible for it.</span>
+        </label>
+        <label class="flex items-start gap-2 text-sm">
+          <input type="checkbox" class="mt-0.5 h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" formControlName="termsAgreed" />
+          <span i18n="@@ideaWizardTermsAgree">I agree to the program's terms and conditions.</span>
+        </label>
+      </div>
+    }
+
+    <div class="mt-8 flex justify-between gap-3 border-t border-border pt-4">
+      @if (currentStep() > 0) {
+        <button type="button" class="btn-outline" (click)="goBack()">
+          <app-icon name="arrow-right" size="h-4 w-4" class="rotate-180 rtl:rotate-0" />
+          <span i18n="@@ideaWizardBack">Back</span>
+        </button>
+      } @else {
+        <span></span>
+      }
+
+      @if (currentStep() < stepLabels.length - 1) {
+        <button type="button" class="btn-default" [disabled]="!stepValid(currentStep())" (click)="goNext()">
+          <span i18n="@@ideaWizardNext">Next</span>
+          <app-icon name="arrow-right" size="h-4 w-4" class="rtl:rotate-180" />
+        </button>
+      } @else {
+        <button type="submit" class="btn-gold" [disabled]="!stepValid(3) || submitting()">
+          @if (submitting()) {
+            <span i18n="@@ideaWizardSubmitting">Submitting…</span>
+          } @else {
+            <span i18n="@@ideaWizardSubmit">Submit idea</span>
+          }
+        </button>
+      }
+    </div>
+  </form>
+</div>
+}

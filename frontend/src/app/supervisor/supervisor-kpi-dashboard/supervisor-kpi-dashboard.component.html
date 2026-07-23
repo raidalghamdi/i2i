@@ -1,0 +1,43 @@
+<h1 class="text-2xl font-bold text-brand-teal" i18n="@@supDashTitle">Supervisor</h1>
+@if (loading()) {
+  <app-loading-state variant="spinner" />
+} @else {
+  <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <app-role-kpi-card [label]="teamLabel" [value]="data()?.teamMembers ?? 0" icon="users" />
+    <app-role-kpi-card [label]="sectorLabel" [value]="data()?.sectorIdeas ?? 0" icon="lightbulb" />
+    <app-role-kpi-card
+      [label]="escalationsLabel"
+      [value]="data()?.escalationsAwaitingMe ?? 0"
+      icon="shield-alert"
+      [link]="['/admin/escalations']"
+    />
+  </div>
+
+  <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+    <a routerLink="/supervisor/screening" class="card-surface card-body">
+      <span class="text-2xl font-bold text-brand-teal">{{ data()?.screening?.total ?? 0 }}</span>
+      <span class="mt-1 block text-xs text-muted-foreground" i18n="@@supDashTotal">Total</span>
+    </a>
+    <div class="card-surface card-body">
+      <span class="text-2xl font-bold text-brand-teal">{{ data()?.screening?.underReview ?? 0 }}</span>
+      <span class="mt-1 block text-xs text-muted-foreground" i18n="@@supDashUnderReview">Under review</span>
+    </div>
+    <div class="card-surface card-body">
+      <span class="text-2xl font-bold text-brand-teal">{{ data()?.screening?.approved ?? 0 }}</span>
+      <span class="mt-1 block text-xs text-muted-foreground" i18n="@@supDashApproved">Approved</span>
+    </div>
+    <div class="card-surface card-body">
+      <span class="text-2xl font-bold text-brand-teal">{{ data()?.screening?.returned ?? 0 }}</span>
+      <span class="mt-1 block text-xs text-muted-foreground" i18n="@@supDashReturned">Returned</span>
+    </div>
+    <div class="card-surface card-body">
+      <span class="text-2xl font-bold text-brand-teal">{{ data()?.screening?.rejected ?? 0 }}</span>
+      <span class="mt-1 block text-xs text-muted-foreground" i18n="@@supDashRejected">Rejected</span>
+    </div>
+  </div>
+}
+
+<div class="mt-6 flex gap-3">
+  <a routerLink="/supervisor/screening" class="btn-gold btn-sm" i18n="@@supDashScreeningCta">Screening queue</a>
+  <a routerLink="/admin/escalations" class="btn-outline btn-sm" i18n="@@supDashEscalationsCta">Escalations</a>
+</div>

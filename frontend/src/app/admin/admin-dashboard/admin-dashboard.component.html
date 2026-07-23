@@ -1,0 +1,120 @@
+<app-page-header title="Admin Dashboard" i18n-title="@@adminDashboardTitle" />
+
+@if (loading()) {
+  <app-loading-state variant="spinner" />
+} @else {
+  <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <app-role-kpi-card [label]="usersLabel" [value]="data()?.totalUsers ?? 0" icon="users" [link]="['/admin/users']" />
+    <app-role-kpi-card [label]="activeLabel" [value]="data()?.activeIdeas ?? 0" icon="lightbulb" />
+    <app-role-kpi-card [label]="pendingLabel" [value]="data()?.pendingEvaluations ?? 0" icon="clipboard-check" />
+    <app-role-kpi-card [label]="healthLabel" [value]="healthText()" icon="heart-pulse" />
+  </div>
+}
+
+<nav class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+  <a routerLink="/admin/users" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="shield-check" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminDashboardUsersLink">User &amp; Role Management</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminDashboardUsersDesc">Manage user accounts, roles, and pending grants.</p>
+  </a>
+  <a routerLink="/admin/cms" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="stack" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminDashboardCmsLink">Content Management</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminDashboardCmsDesc">Edit site content and published pages.</p>
+  </a>
+  <a routerLink="/admin/challenges" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="target" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminDashboardChallengesLink">Challenges</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminDashboardChallengesDesc">Manage track-scoped challenge prompts for idea submission.</p>
+  </a>
+  <a routerLink="/admin/escalations" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="alert-triangle" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminDashboardEscalationsLink">Escalations</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminDashboardEscalationsDesc">Track and resolve open escalations.</p>
+  </a>
+  <a routerLink="/admin/post-program" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="rocket" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminDashboardPostProgramLink">Post-program</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminDashboardPostProgramDesc">Advance approved ideas through pilot, measurement and scaling.</p>
+  </a>
+  <a routerLink="/admin/analytics" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="chart-bar" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminDashboardAnalyticsLink">Analytics</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminDashboardAnalyticsDesc">Platform-wide KPIs and activity trends.</p>
+  </a>
+  <a routerLink="/admin/reports" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="document-text" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminDashboardReportsLink">Reports</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminDashboardReportsDesc">Generate and download platform reports.</p>
+  </a>
+  <a routerLink="/admin/report-titles" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="document-text" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminHubReportTitlesLink">Report titles</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminHubReportTitlesDesc">Edit the bilingual titles shown for generated reports.</p>
+  </a>
+  <a routerLink="/admin/invitation-settings" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="settings" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminDashboardInvitationSettingsLink">Invitation & Reminder Settings</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminDashboardInvitationSettingsDesc">Configure automatic invitation reminders and defaults.</p>
+  </a>
+  <a routerLink="/admin/evaluation-settings" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="settings" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminDashboardEvaluationSettingsLink">Evaluation Settings</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminDashboardEvaluationSettingsDesc">Configure the evaluation passing score.</p>
+  </a>
+  <a routerLink="/admin/audit" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="shield-check" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminHubAuditLink">Audit log</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminHubAuditDesc">Browse the tamper-evident audit trail of platform activity.</p>
+  </a>
+  <a routerLink="/admin/email-log" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="document-text" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminHubEmailLogLink">Email log</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminHubEmailLogDesc">Review outbound email delivery status and history.</p>
+  </a>
+  <a routerLink="/admin/support" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="alert-triangle" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminHubSupportLink">Support</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminHubSupportDesc">Triage and resolve inbound support messages.</p>
+  </a>
+  <a routerLink="/admin/compliance" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="shield-check" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminHubComplianceLink">Compliance</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminHubComplianceDesc">View compliance control mappings and status.</p>
+  </a>
+  <a routerLink="/admin/committee-criteria" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="clipboard-check" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminHubCriteriaLink">Committee criteria</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminHubCriteriaDesc">Manage the weighted criteria committees use to score ideas.</p>
+  </a>
+  <a routerLink="/admin/settings" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="settings" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminHubSettingsLink">Platform settings</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminHubSettingsDesc">Configure platform-wide settings and defaults.</p>
+  </a>
+  <a routerLink="/admin/roles" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="users" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminHubRolesLink">Roles</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminHubRolesDesc">Manage the role catalog used across the platform.</p>
+  </a>
+  <a routerLink="/admin/cms/content" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="document-text" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminHubTermsLink">Terms</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminHubTermsDesc">Edit the terms and conditions content page.</p>
+  </a>
+  <a routerLink="/admin/all-ideas" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="lightbulb" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminHubAllIdeasLink">All ideas</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminHubAllIdeasDesc">Browse every submitted idea, filter by theme and status, and take screening decisions.</p>
+  </a>
+  <a routerLink="/admin/final-ranking" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="target" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminHubFinalRankingLink">Final ranking</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminHubFinalRankingDesc">Preview and run the computed Top-N final ranking.</p>
+  </a>
+  <a routerLink="/admin/backup" class="card-surface card-body flex flex-col gap-2 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="download" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@adminHubBackupLink">Backup</span>
+    <p class="text-sm text-muted-foreground" i18n="@@adminHubBackupDesc">Download a full Excel snapshot of the platform database.</p>
+  </a>
+</nav>

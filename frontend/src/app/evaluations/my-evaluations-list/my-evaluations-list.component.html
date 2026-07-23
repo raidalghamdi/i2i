@@ -1,0 +1,30 @@
+<app-page-header title="My Evaluations" i18n-title="@@myEvaluationsTitle" />
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" />
+} @else if (error(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (evaluations().length === 0) {
+  <app-empty-state title="You haven't submitted any evaluations yet." i18n-title="@@myEvaluationsEmpty" icon="clipboard-list" />
+} @else {
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th i18n="@@myEvaluationsColumnIdea">Idea</th>
+          <th i18n="@@myEvaluationsColumnScore">Score</th>
+          <th i18n="@@myEvaluationsColumnRecommendation">Recommendation</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (evaluation of evaluations(); track evaluation.id) {
+          <tr>
+            <td class="font-medium">{{ evaluation.ideaCode }} — {{ evaluation.ideaTitleEn }}</td>
+            <td>{{ evaluation.totalScore }}</td>
+            <td class="capitalize">{{ evaluation.recommendation }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

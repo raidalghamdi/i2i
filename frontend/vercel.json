@@ -1,0 +1,14 @@
+{
+  "buildCommand": "npm run build -- --configuration=production,ar",
+  "outputDirectory": "dist/frontend/browser/ar",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://REPLACE-WITH-YOUR-RAILWAY-URL.up.railway.app/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

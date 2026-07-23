@@ -1,0 +1,63 @@
+<app-page-header title="Reports" i18n-title="@@reportsDashboardTitle" />
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mb-4">{{ msg }}</p>
+}
+
+<div class="mb-4 flex flex-col gap-1.5 sm:max-w-xs">
+  <label class="field-label" for="reports-format" i18n="@@reportsFormatLabel">Format</label>
+  <select
+    id="reports-format"
+    class="field-select"
+    data-testid="reports-format"
+    [ngModel]="format()"
+    (ngModelChange)="format.set($event)"
+  >
+    <option value="xlsx" i18n="@@reportsFormatXlsx">XLSX</option>
+    <option value="pdf" i18n="@@reportsFormatPdf">PDF</option>
+    <option value="pptx" i18n="@@reportsFormatPptx">PPTX</option>
+  </select>
+</div>
+
+<section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+  @for (r of reports; track r.type) {
+    <div class="card-surface card-body flex flex-col gap-3">
+      <div class="kpi-icon"><app-icon name="document-text" size="h-5 w-5" /></div>
+      <h2 class="section-title flex-1">{{ r.label }}</h2>
+      <button
+        type="button"
+        class="btn-default"
+        data-testid="report-generate"
+        (click)="onGenerate(r.type)"
+        [disabled]="generatingKey() === r.type"
+      >
+        @if (generatingKey() === r.type) {
+          <span i18n="@@reportsGenerating">Generating…</span>
+        } @else {
+          <span i18n="@@reportsGenerateAndDownload">Generate &amp; download</span>
+        }
+      </button>
+    </div>
+  }
+
+  <div class="card-surface card-body flex flex-col gap-3">
+    <div class="kpi-icon"><app-icon name="chart-bar" size="h-5 w-5" /></div>
+    <h2 class="section-title" i18n="@@reportsAnalyticsExport">Analytics Export</h2>
+    <p class="flex-1 text-sm text-muted-foreground" i18n="@@reportsAnalyticsExportDesc">
+      Export the full analytics dataset as a spreadsheet.
+    </p>
+    <button
+      type="button"
+      class="btn-default"
+      data-testid="analytics-export"
+      (click)="onExportAnalytics()"
+      [disabled]="generatingKey() === 'analytics'"
+    >
+      @if (generatingKey() === 'analytics') {
+        <span i18n="@@reportsGenerating">Generating…</span>
+      } @else {
+        <span i18n="@@reportsGenerateAndDownload">Generate &amp; download</span>
+      }
+    </button>
+  </div>
+</section>

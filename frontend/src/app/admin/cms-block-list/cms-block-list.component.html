@@ -1,0 +1,53 @@
+<app-page-header title="Content Blocks" i18n-title="@@cmsBlockListTitle">
+  <a actions routerLink="/admin/cms/blocks/new" class="btn-default btn-sm">
+    <app-icon name="plus" size="h-4 w-4" />
+    <span i18n="@@cmsBlockListNew">New Block</span>
+  </a>
+</app-page-header>
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mb-4">{{ msg }}</p>
+}
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (blocks().length === 0) {
+  <app-empty-state title="No content blocks yet." i18n-title="@@cmsBlockListEmpty" icon="stack">
+    <a routerLink="/admin/cms/blocks/new" class="btn-default btn-sm inline-flex" i18n="@@cmsBlockListEmptyCta">New Block</a>
+  </app-empty-state>
+} @else {
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th i18n="@@cmsBlockListColumnKey">Key</th>
+          <th i18n="@@cmsBlockListColumnContent">Content</th>
+          <th i18n="@@cmsBlockListColumnStatus">Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (block of blocks(); track block.id) {
+          <tr>
+            <td class="font-medium">
+              <a [routerLink]="['/admin/cms/blocks', block.id, 'edit']" class="text-brand-teal hover:underline">{{ block.key }}</a>
+            </td>
+            <td class="max-w-xs truncate text-muted-foreground">{{ block.contentEn }}</td>
+            <td>
+              @if (!block.isPublished) {
+                <span class="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground" i18n="@@cmsBlockListUnpublishedBadge">Unpublished</span>
+              } @else {
+                <span class="inline-flex items-center rounded-full bg-brand-teal-light px-2.5 py-0.5 text-xs font-medium text-brand-teal" i18n="@@cmsBlockListPublishedBadge">Published</span>
+              }
+            </td>
+            <td class="text-end">
+              <button type="button" class="btn-ghost btn-sm" (click)="onDelete(block.id)" i18n="@@cmsBlockListDelete">Delete</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

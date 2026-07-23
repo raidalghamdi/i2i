@@ -1,0 +1,10 @@
+<app-public-page-hero slug="partners" [defaultTitle]="pageTitle" [defaultBody]="pageBody" />
+
+<div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  @for (partner of partners; track partner) {
+    <div class="card-surface card-body flex flex-col items-center gap-3 text-center">
+      <app-icon name="building" size="h-8 w-8" class="text-brand-teal" />
+      <span class="text-sm font-medium text-foreground">{{ partner }}</span>
+    </div>
+  }
+</div>

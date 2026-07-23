@@ -1,0 +1,39 @@
+<app-page-header title="Committee Decision" i18n-title="@@committeeDecisionFormTitle" />
+
+@if (loading()) {
+  <app-loading-state [variant]="'spinner'" />
+} @else if (loadError(); as le) {
+  <app-error-state [message]="le" (retry)="reload()" />
+} @else {
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="card-surface card-body flex max-w-2xl flex-col gap-5">
+  @if (errorMessage(); as msg) {
+    <div class="field-error" role="alert">{{ msg }}</div>
+  }
+
+  @for (criterion of criteria(); track criterion.code) {
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label">{{ criterion.nameEn }} (0-10)</label>
+      <input class="field-input" type="number" min="0" max="10" step="0.5" [formControlName]="criterion.code" />
+    </div>
+  }
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@committeeFormDecisionType">Decision</label>
+    <select class="field-select" formControlName="decisionTypeCode">
+      <option value="" i18n="@@committeeFormSelectDecision">Select a decision</option>
+      <option value="approved" i18n="@@committeeFormApproved">Approved</option>
+      <option value="rejected" i18n="@@committeeFormRejected">Rejected</option>
+      <option value="deferred" i18n="@@committeeFormDeferred">Deferred</option>
+    </select>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@committeeFormComments">Comments</label>
+    <textarea class="field-textarea" formControlName="comments"></textarea>
+  </div>
+
+  <div class="flex justify-end">
+    <button type="submit" class="btn-default" [disabled]="form.invalid" i18n="@@committeeFormSubmit">Submit Decision</button>
+  </div>
+</form>
+}

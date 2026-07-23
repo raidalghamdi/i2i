@@ -1,0 +1,104 @@
+<app-page-header title="Audit log" i18n-title="@@auditBrowseTitle" />
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mb-4">{{ msg }}</p>
+}
+
+<section class="card-surface card-body mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+  <div class="flex flex-1 flex-col gap-1.5">
+    <label class="field-label" i18n="@@auditBrowseFilterEntityType">Entity type</label>
+    <select class="field-select" [ngModel]="entityType()" (ngModelChange)="entityType.set($event); onFilterChange()">
+      <option value="" i18n="@@auditBrowseFilterAll">All</option>
+      <option value="idea" i18n="@@auditBrowseEntityIdea">Idea</option>
+      <option value="api_request" i18n="@@auditBrowseEntityApiRequest">API request</option>
+      <option value="compliance_control" i18n="@@auditBrowseEntityComplianceControl">Compliance control</option>
+      <option value="support_message" i18n="@@auditBrowseEntitySupportMessage">Support message</option>
+      <option value="assignment" i18n="@@auditBrowseEntityAssignment">Assignment</option>
+      <option value="evaluation" i18n="@@auditBrowseEntityEvaluation">Evaluation</option>
+      <option value="committee_decision" i18n="@@auditBrowseEntityCommitteeDecision">Committee decision</option>
+    </select>
+  </div>
+
+  <div class="flex flex-1 flex-col gap-1.5">
+    <label class="field-label" i18n="@@auditBrowseFilterAction">Action</label>
+    <input class="field-input" [ngModel]="action()" (ngModelChange)="action.set($event); onFilterChange()" />
+  </div>
+
+  <div class="flex flex-1 flex-col gap-1.5">
+    <label class="field-label" i18n="@@auditBrowseFilterActor">Actor ID</label>
+    <input class="field-input" [ngModel]="actorId()" (ngModelChange)="actorId.set($event); onFilterChange()" />
+  </div>
+
+  <div class="flex flex-1 flex-col gap-1.5">
+    <label class="field-label" i18n="@@auditBrowseFilterFrom">From</label>
+    <input type="date" class="field-input" [ngModel]="from()" (ngModelChange)="from.set($event); onFilterChange()" />
+  </div>
+
+  <div class="flex flex-1 flex-col gap-1.5">
+    <label class="field-label" i18n="@@auditBrowseFilterTo">To</label>
+    <input type="date" class="field-input" [ngModel]="to()" (ngModelChange)="to.set($event); onFilterChange()" />
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <button type="button" class="btn-outline btn-sm" (click)="onExport()" [disabled]="exporting()">
+      @if (exporting()) {
+        <span i18n="@@auditBrowseExporting">Exporting…</span>
+      } @else {
+        <span i18n="@@auditBrowseExport">Export XLSX</span>
+      }
+    </button>
+  </div>
+</section>
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="5" label="Loading audit entries…" i18n-label="@@auditBrowseLoading" />
+} @else if (loadError(); as lerr) {
+  <app-error-state [message]="lerr" (retry)="reload()" />
+} @else if (rows().length === 0) {
+  <app-empty-state title="No audit entries match the current filters." i18n-title="@@auditBrowseEmpty" icon="clipboard-list" />
+} @else {
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th i18n="@@auditBrowseColumnWhen">When</th>
+          <th i18n="@@auditBrowseColumnActor">Actor</th>
+          <th i18n="@@auditBrowseColumnAction">Action</th>
+          <th i18n="@@auditBrowseColumnEntity">Entity</th>
+          <th i18n="@@auditBrowseColumnEntityId">Entity ID</th>
+          <th i18n="@@auditBrowseColumnSeq">Seq</th>
+          <th i18n="@@auditBrowseColumnVerified">Verified</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.id) {
+          <tr>
+            <td>{{ row.occurredAt | date: 'short' }}</td>
+            <td>{{ row.actorName ?? '—' }}</td>
+            <td>{{ row.action }}</td>
+            <td>{{ row.entityType }}</td>
+            <td class="max-w-[10rem] truncate font-mono text-xs" [title]="row.entityId">{{ row.entityId }}</td>
+            <td>{{ row.chainSeq }}</td>
+            <td>
+              @if (row.verified) {
+                <span class="audit-verified inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                  ✓ <span i18n="@@auditVerified">verified</span>
+                </span>
+              } @else {
+                <span class="audit-unverified inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                  ✕ <span i18n="@@auditUnverified">unverified</span>
+                </span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-4 flex items-center justify-between">
+    <button type="button" class="btn-outline btn-sm" [disabled]="page() <= 1" (click)="onPrev()" i18n="@@auditBrowsePrev">Previous</button>
+    <span class="text-sm text-muted-foreground" i18n="@@auditBrowsePageOf">page {{ page() }} of {{ totalPages() }}</span>
+    <button type="button" class="btn-outline btn-sm" [disabled]="page() * pageSize >= total()" (click)="onNext()" i18n="@@auditBrowseNext">Next</button>
+  </div>
+}

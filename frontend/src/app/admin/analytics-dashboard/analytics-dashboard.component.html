@@ -1,0 +1,170 @@
+<app-page-header title="Analytics" i18n-title="@@analyticsDashboardTitle">
+  <app-export-bar actions />
+</app-page-header>
+
+@if (loading()) {
+  <app-loading-state variant="spinner" label="Loading analytics…" i18n-label="@@analyticsDashboardLoading" />
+} @else if (errorMessage(); as msg) {
+  <app-error-state [message]="msg" (retry)="reload()" />
+} @else {
+
+@if (exec(); as e) {
+  <section class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground" i18n="@@analyticsKpiTotalSubmissions">Total Submissions</p>
+        <p class="mt-1 text-2xl font-bold text-brand-teal">{{ e.kpis.totalSubmissions }}</p>
+      </div>
+      <div class="kpi-icon"><app-icon name="lightbulb" size="h-5 w-5" /></div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground" i18n="@@analyticsKpiTotalApprovedExec">Total Approved</p>
+        <p class="mt-1 text-2xl font-bold text-brand-teal">{{ e.kpis.totalApproved }}</p>
+      </div>
+      <div class="kpi-icon"><app-icon name="shield-check" size="h-5 w-5" /></div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground" i18n="@@analyticsKpiTotalImplemented">Total Implemented</p>
+        <p class="mt-1 text-2xl font-bold text-brand-teal">{{ e.kpis.totalImplemented }}</p>
+      </div>
+      <div class="kpi-icon"><app-icon name="rocket" size="h-5 w-5" /></div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground" i18n="@@analyticsKpiActiveSubmitters">Active Submitters</p>
+        <p class="mt-1 text-2xl font-bold text-brand-teal">{{ e.kpis.activeSubmitters }}</p>
+      </div>
+      <div class="kpi-icon"><app-icon name="users" size="h-5 w-5" /></div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground" i18n="@@analyticsKpiTotalEvaluationsExec">Total Evaluations</p>
+        <p class="mt-1 text-2xl font-bold text-brand-teal">{{ e.kpis.totalEvaluations }}</p>
+      </div>
+      <div class="kpi-icon"><app-icon name="clipboard-check" size="h-5 w-5" /></div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground" i18n="@@analyticsKpiTotalUsers">Total Users</p>
+        <p class="mt-1 text-2xl font-bold text-brand-teal">{{ e.kpis.totalUsers }}</p>
+      </div>
+      <div class="kpi-icon"><app-icon name="stack" size="h-5 w-5" /></div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground" i18n="@@analyticsKpiTotalEvaluatorsExec">Total Evaluators</p>
+        <p class="mt-1 text-2xl font-bold text-brand-teal">{{ e.kpis.totalEvaluators }}</p>
+      </div>
+      <div class="kpi-icon"><app-icon name="chart-bar" size="h-5 w-5" /></div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground" i18n="@@analyticsKpiRealizedImpact">Realized Financial Impact</p>
+        <p class="mt-1 text-2xl font-bold text-brand-teal">{{ e.kpis.realizedFinancialImpact | number: '1.0-0' }}</p>
+      </div>
+      <div class="kpi-icon"><app-icon name="sparkles" size="h-5 w-5" /></div>
+    </div>
+  </section>
+
+  <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <section class="card-surface card-body">
+      <h2 class="section-title" i18n="@@analyticsIdeasByStageTitle">Ideas by Stage</h2>
+      <app-ideas-by-stage-chart [data]="e.ideasByStage" />
+    </section>
+
+    <section class="card-surface card-body">
+      <h2 class="section-title" i18n="@@analyticsSubmissionsChartTitle">Submissions Over Time</h2>
+      <app-submissions-line-chart [data]="e.submissions" />
+    </section>
+
+    <section class="card-surface card-body">
+      <h2 class="section-title" i18n="@@analyticsCohortTitle">Monthly Cohort</h2>
+      <app-cohort-chart [data]="e.cohort" />
+    </section>
+
+    <section class="card-surface card-body">
+      <h2 class="section-title" i18n="@@analyticsFunnelTitle">Conversion Funnel</h2>
+      <app-funnel-chart [data]="funnelRows()" />
+    </section>
+
+    <section class="card-surface card-body">
+      <h2 class="section-title" i18n="@@analyticsAvgTimePerStageTitle">Average Time per Stage</h2>
+      <app-avg-time-per-stage-table [data]="e.avgTimePerStage" />
+    </section>
+
+    <app-conversion-stat-card [rate]="e.conversion.rate" [submitted]="e.conversion.submitted" [pilot]="e.conversion.pilot" />
+  </div>
+}
+
+@if (dashboard(); as d) {
+  <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <section class="card-surface card-body">
+      <h2 class="section-title" i18n="@@analyticsThemeActivityTitle">Theme Activity</h2>
+      @if (d.themeActivity.length === 0) {
+        <p class="mt-4 text-sm text-muted-foreground" i18n="@@analyticsThemeActivityEmpty">No theme activity yet.</p>
+      } @else {
+        <div class="data-table-wrap mt-4">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th i18n="@@analyticsThemeColumnTheme">Theme</th>
+                <th i18n="@@analyticsThemeColumnIdeas">Ideas</th>
+                <th i18n="@@analyticsThemeColumnApproved">Approved</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of d.themeActivity; track entry.themeNameEn) {
+                <tr>
+                  <td class="font-medium">{{ entry.themeNameEn }}</td>
+                  <td>{{ entry.ideaCount }}</td>
+                  <td>{{ entry.approvedCount }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <section class="card-surface card-body">
+      <h2 class="section-title" i18n="@@analyticsTopEvaluatorsTitle">Top Evaluators</h2>
+      @if (d.topEvaluators.length === 0) {
+        <p class="mt-4 text-sm text-muted-foreground" i18n="@@analyticsTopEvaluatorsEmpty">No evaluations yet.</p>
+      } @else {
+        <div class="data-table-wrap mt-4">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th i18n="@@analyticsEvaluatorColumnName">Evaluator</th>
+                <th i18n="@@analyticsEvaluatorColumnCount">Evaluations</th>
+                <th i18n="@@analyticsEvaluatorColumnAvgScore">Average Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of d.topEvaluators; track entry.evaluatorNameEn) {
+                <tr>
+                  <td class="font-medium">{{ entry.evaluatorNameEn }}</td>
+                  <td>{{ entry.evaluationCount }}</td>
+                  <td>{{ entry.averageScore | number: '1.1-1' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <section class="card-surface card-body">
+      <h2 class="section-title" i18n="@@analyticsSlaComplianceTitle">SLA Compliance</h2>
+      @if (d.slaCompliance.compliancePct === null) {
+        <p class="mt-4 text-sm text-muted-foreground" i18n="@@analyticsSlaComplianceNoData">No data yet.</p>
+      } @else {
+        <p class="mt-4 text-3xl font-bold text-brand-teal">{{ d.slaCompliance.compliancePct | number: '1.1-1' }}%</p>
+      }
+    </section>
+  </div>
+}
+
+}

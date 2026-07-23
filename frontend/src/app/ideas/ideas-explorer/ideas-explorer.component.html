@@ -1,0 +1,79 @@
+<app-page-header title="Explore ideas" i18n-title="@@ideasExplorerTitle" />
+
+<section class="card-surface card-body mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+  <div class="flex min-w-[160px] flex-1 flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideasExplorerFilterSearch">Search</label>
+    <input
+      class="field-input"
+      type="text"
+      i18n-placeholder="@@ideasExplorerSearchPlaceholder"
+      placeholder="Search ideas"
+      [ngModel]="q()"
+      (ngModelChange)="onSearchInput($event)"
+    />
+  </div>
+
+  <div class="flex min-w-[160px] flex-1 flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideasExplorerFilterTheme">Theme</label>
+    <select class="field-select" [ngModel]="themeId()" (ngModelChange)="themeId.set($event); onFilterChange()">
+      <option value="" i18n="@@ideasExplorerFilterAll">All</option>
+      @for (theme of themes(); track theme.id) {
+        <option [value]="theme.id">{{ themeName(theme) }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="flex min-w-[160px] flex-1 flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideasExplorerFilterActivity">Activity</label>
+    <select class="field-select" [ngModel]="activityId()" (ngModelChange)="activityId.set($event); onFilterChange()">
+      <option value="" i18n="@@ideasExplorerFilterAll">All</option>
+      @for (activity of activities(); track activity.id) {
+        <option [value]="activity.id">{{ activityName(activity) }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="flex min-w-[160px] flex-1 flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideasExplorerFilterStatus">Status</label>
+    <select class="field-select" [ngModel]="status()" (ngModelChange)="status.set($event); onFilterChange()">
+      <option value="" i18n="@@ideasExplorerFilterAll">All</option>
+      @for (code of statusCodes; track code) {
+        <option [value]="code">{{ code }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="flex min-w-[120px] flex-1 flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideasExplorerFilterStage">Stage</label>
+    <select class="field-select" [ngModel]="stage()" (ngModelChange)="stage.set($event); onFilterChange()">
+      <option value="" i18n="@@ideasExplorerFilterAll">All</option>
+      @for (s of stages; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </div>
+</section>
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" />
+} @else if (error(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (items().length === 0) {
+  <app-empty-state title="No ideas match the current filters." i18n-title="@@ideasExplorerEmpty" icon="search" />
+} @else {
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+    @for (item of items(); track item.id) {
+      <a [routerLink]="['/ideas', item.id]" class="card-surface card-body flex flex-col gap-2">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs font-medium text-brand-gold">{{ item.code }}</span>
+          <app-status-badge [status]="item.status">{{ item.status }}</app-status-badge>
+        </div>
+        <h3 class="line-clamp-2 font-medium">{{ title(item) }}</h3>
+        <p class="line-clamp-2 text-sm text-muted-foreground">{{ problem(item) }}</p>
+        <p class="text-xs text-muted-foreground">
+          <span i18n="@@ideasExplorerStageLabel">Stage</span> {{ item.currentStage }}
+        </p>
+      </a>
+    }
+  </div>
+}

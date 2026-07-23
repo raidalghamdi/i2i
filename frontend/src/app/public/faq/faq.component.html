@@ -1,0 +1,12 @@
+<app-public-page-hero slug="faq" [defaultTitle]="pageTitle" [defaultBody]="pageBody" />
+
+<div class="card-surface card-body mt-6">
+  <div class="flex flex-col gap-3">
+    @for (item of items; track item.q) {
+      <details class="rounded-md border border-border p-4">
+        <summary class="cursor-pointer section-title text-base">{{ item.q }}</summary>
+        <p class="mt-2 text-sm leading-relaxed text-foreground">{{ item.a }}</p>
+      </details>
+    }
+  </div>
+</div>

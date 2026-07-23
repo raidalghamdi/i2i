@@ -1,0 +1,168 @@
+@if (loading()) {
+  <app-loading-state />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (idea(); as idea) {
+  @if (journey(); as journey) {
+    <app-idea-hero
+      [code]="idea.code"
+      [title]="idea.titleEn"
+      [status]="idea.status"
+      [journey]="journey"
+      [trackName]="trackName()"
+      [activityName]="activityName()"
+      [challengeText]="challengeText()"
+    />
+  } @else {
+    <app-page-header [title]="idea.code + ' — ' + idea.titleEn">
+      <app-status-badge actions [status]="idea.status">{{ idea.status }}</app-status-badge>
+    </app-page-header>
+  }
+
+  @if (errorMessage(); as msg) {
+    <div class="field-error my-4" role="alert">{{ msg }}</div>
+  }
+
+  <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <div class="flex flex-col gap-4 lg:col-span-2">
+      <section class="card-surface card-body flex flex-col gap-4">
+        <div>
+          <h2 class="section-title" i18n="@@ideaDetailProblem">Problem Statement</h2>
+          <p class="mt-1 text-sm text-foreground">{{ idea.problemStatementEn }}</p>
+        </div>
+
+        <div>
+          <h2 class="section-title" i18n="@@ideaDetailSolution">Proposed Solution</h2>
+          <p class="mt-1 text-sm text-foreground">{{ idea.proposedSolutionEn }}</p>
+        </div>
+
+        <div>
+          <h2 class="section-title" i18n="@@ideaDetailBenefits">Expected Benefits</h2>
+          <p class="mt-1 text-sm text-foreground">{{ idea.expectedBenefitsEn }}</p>
+        </div>
+      </section>
+
+      <section class="card-surface card-body">
+        <h2 class="section-title" i18n="@@ideaDetailAttachments">Attachments</h2>
+        @if (idea.attachments.length === 0) {
+          <p class="mt-2 text-sm text-muted-foreground" i18n="@@ideaDetailNoAttachments">No attachments yet.</p>
+        } @else {
+          <ul class="mt-2 flex flex-col gap-1.5">
+            @for (attachment of idea.attachments; track attachment.id) {
+              <li class="rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">{{ attachment.fileName }}</li>
+            }
+          </ul>
+        }
+      </section>
+
+      @if (showPostProgram()) {
+        <app-post-program-stepper [status]="idea.status" />
+      }
+    </div>
+
+    <aside class="flex flex-col gap-4">
+      <section class="card-surface card-body">
+        <h2 class="section-title" i18n="@@ideaDetailParticipation">Participation</h2>
+        <p class="mt-1 text-sm text-foreground">
+          @if (idea.participationType === 'team') {
+            <span i18n="@@ideaDetailTeam">Team</span>: {{ idea.teamName }}
+          } @else {
+            <span i18n="@@ideaDetailIndividual">Individual</span>
+          }
+        </p>
+        @if (idea.participationType === 'team' && idea.teamMembers.length > 0) {
+          <ul class="mt-2 flex flex-col gap-1 text-sm text-muted-foreground">
+            @for (member of idea.teamMembers; track member.email) {
+              <li>{{ member.name }} — {{ member.email }}</li>
+            }
+          </ul>
+        }
+      </section>
+
+      @if (idea.status === 'draft' || idea.status === 'returned') {
+        <section class="card-surface card-body flex flex-wrap items-center gap-3">
+          <a [routerLink]="['/ideas', idea.id, 'edit']" class="btn-outline btn-sm" i18n="@@ideaDetailEditLink">Edit</a>
+          <button
+            class="btn-default btn-sm"
+            (click)="onSubmit()"
+            [disabled]="idea.attachments.length === 0"
+            i18n="@@ideaDetailSubmitButton"
+          >Submit</button>
+          @if (idea.attachments.length === 0) {
+            <p class="text-sm text-muted-foreground" i18n="@@ideaDetailSubmitBlocked">Add at least one attachment before submitting.</p>
+          }
+        </section>
+      }
+
+      @if (idea.screeningReason) {
+        <section class="card-surface card-body">
+          <h2 class="section-title" i18n="@@ideaDetailScreeningReasonTitle">Supervisor Feedback</h2>
+          <p class="mt-2 text-sm text-foreground">{{ idea.screeningReason }}</p>
+        </section>
+      }
+
+      @if (evaluationSummary(); as summary) {
+        <section class="card-surface card-body flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="section-title" i18n="@@ideaDetailEvaluationSummary">Evaluation Summary</h2>
+            @if (summary.averageScore !== null) {
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-teal/10 px-3 py-1 text-sm font-semibold text-brand-teal">
+                <span i18n="@@ideaDetailAverageScore">Average score</span>: {{ summary.averageScore.toFixed(1) }}
+              </span>
+            }
+          </div>
+          @if (summary.evaluations.length === 0) {
+            <p class="text-sm text-muted-foreground" i18n="@@ideaDetailNoEvaluationsYet">No evaluations submitted yet.</p>
+          } @else {
+            <ul class="flex flex-col gap-3">
+              @for (e of summary.evaluations; track e.reviewerLabel) {
+                <li class="rounded-lg border border-border p-4">
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="text-sm font-medium text-foreground">{{ e.reviewerLabel }}</span>
+                    @if (e.score !== null) {
+                      <span class="text-sm font-semibold text-brand-teal">{{ e.score.toFixed(1) }}</span>
+                    }
+                  </div>
+                  @if (e.comment) {
+                    <p class="mt-2 text-sm text-muted-foreground">{{ e.comment }}</p>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      }
+
+      @if (idea.status === 'pass_awaiting_attachments') {
+        <section class="card-surface card-body flex flex-col gap-3">
+          <h2 class="section-title" i18n="@@ideaDetailFinalizeTitle">Finalize for Committee Review</h2>
+          <input
+            class="field-input file:me-3 file:rounded file:border-0 file:bg-brand-teal-light file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-teal"
+            type="file"
+            (change)="onFileSelected($event)"
+          />
+          @if (queuedFiles().length > 0) {
+            <ul class="flex flex-col gap-1.5">
+              @for (file of queuedFiles(); track file.name; let i = $index) {
+                <li class="flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
+                  {{ file.name }}
+                  <button type="button" class="btn-ghost btn-sm" (click)="removeQueuedFile(i)" i18n="@@ideaDetailRemoveFile">Remove</button>
+                </li>
+              }
+            </ul>
+            <button class="btn-outline btn-sm self-start" (click)="onUploadQueuedFiles()" i18n="@@ideaDetailUploadFiles">Upload Files</button>
+          }
+          <button
+            class="btn-gold btn-sm self-start"
+            (click)="onSubmitToCommittee()"
+            [disabled]="idea.attachments.length === 0"
+            i18n="@@ideaDetailSubmitToCommitteeButton"
+          >Submit to Committee</button>
+          @if (idea.attachments.length === 0) {
+            <p class="text-sm text-muted-foreground" i18n="@@ideaDetailSubmitToCommitteeBlocked">Add at least one attachment before submitting to committee.</p>
+          }
+        </section>
+      }
+    </aside>
+  </div>
+}

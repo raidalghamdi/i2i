@@ -1,0 +1,47 @@
+<app-page-header title="Challenge" i18n-title="@@challengeFormPageTitle" />
+
+@if (loading()) {
+  <app-loading-state variant="spinner" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else {
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="card-surface card-body flex max-w-2xl flex-col gap-5">
+  @if (errorMessage(); as msg) {
+    <div class="field-error" role="alert">{{ msg }}</div>
+  }
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@challengeFormTheme">Track</label>
+    <select class="field-select" formControlName="strategicThemeId">
+      <option value="" i18n="@@challengeFormSelectTheme">Select a track</option>
+      @for (theme of themes(); track theme.id) {
+        <option [value]="theme.id">{{ theme.nameEn }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@challengeFormTextAr">Text (Arabic)</label>
+    <textarea class="field-textarea" formControlName="textAr"></textarea>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@challengeFormTextEn">Text (English)</label>
+    <textarea class="field-textarea" formControlName="textEn"></textarea>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@challengeFormSortOrder">Sort order</label>
+    <input class="field-input" type="number" formControlName="sortOrder" />
+  </div>
+
+  <label class="flex items-center gap-2">
+    <input type="checkbox" class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" formControlName="isActive" />
+    <span class="field-label" i18n="@@challengeFormActive">Active</span>
+  </label>
+
+  <div class="flex justify-end">
+    <button type="submit" class="btn-default" [disabled]="form.invalid" i18n="@@challengeFormSave">Save</button>
+  </div>
+</form>
+}

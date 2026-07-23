@@ -1,0 +1,26 @@
+<app-page-header title="Committee Review Queue" i18n-title="@@committeeQueueTitle" />
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" />
+} @else if (error(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (queue().length === 0) {
+  <app-empty-state title="There are no ideas awaiting committee review." i18n-title="@@committeeQueueEmpty" icon="gavel" />
+} @else {
+  <ul class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+    @for (item of queue(); track item.id) {
+      <li class="card-surface card-body flex flex-col gap-3">
+        <a [routerLink]="['/committee', item.id]" class="flex flex-col gap-2">
+          <span class="text-xs font-medium text-brand-gold">{{ item.code }} — {{ item.titleEn }}</span>
+          <span class="text-sm text-muted-foreground">{{ item.submitterName }}</span>
+        </a>
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-brand-teal">{{ item.decidedCount }}/{{ item.totalJudges }}</span>
+          @if (item.hasDecided) {
+            <span class="inline-flex w-fit items-center rounded-full bg-brand-teal-light px-2 py-0.5 text-xs font-medium text-brand-teal" i18n="@@committeeQueueAlreadyDecided">You have decided</span>
+          }
+        </div>
+      </li>
+    }
+  </ul>
+}

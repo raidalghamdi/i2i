@@ -1,0 +1,65 @@
+@if (loading()) {
+  <app-loading-state variant="spinner" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (user(); as user) {
+  <app-page-header [title]="user.fullNameEn">
+    <button actions type="button" class="btn-outline btn-sm" (click)="onToggleActive()">
+      @if (user.isActive) {
+        <span i18n="@@userDetailDeactivate">Deactivate</span>
+      } @else {
+        <span i18n="@@userDetailActivate">Activate</span>
+      }
+    </button>
+  </app-page-header>
+
+  @if (errorMessage(); as msg) {
+    <p class="field-error mb-4">{{ msg }}</p>
+  }
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <section class="card-surface card-body">
+      <h2 class="section-title" i18n="@@userDetailProfileTitle">Profile</h2>
+      <dl class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <dt class="text-xs font-medium uppercase tracking-wide text-muted-foreground" i18n="@@userDetailSamAccountName">Account</dt>
+          <dd class="mt-0.5 text-sm text-foreground">{{ user.samAccountName }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-medium uppercase tracking-wide text-muted-foreground" i18n="@@userDetailEmail">Email</dt>
+          <dd class="mt-0.5 text-sm text-foreground">{{ user.email }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-medium uppercase tracking-wide text-muted-foreground" i18n="@@userDetailDepartment">Department</dt>
+          <dd class="mt-0.5 text-sm text-foreground">{{ user.department }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-medium uppercase tracking-wide text-muted-foreground" i18n="@@userDetailTitle">Title</dt>
+          <dd class="mt-0.5 text-sm text-foreground">{{ user.title }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="card-surface card-body">
+      <h2 class="section-title" i18n="@@userDetailRolesTitle">Roles</h2>
+      <ul class="mt-4 flex flex-col gap-2">
+        @for (role of user.roles; track role.roleId) {
+          <li class="flex items-center justify-between gap-3">
+            <span class="inline-flex items-center rounded-full bg-brand-teal-light px-2 py-0.5 text-xs font-medium text-brand-teal">{{ role.nameEn }}</span>
+            <button type="button" class="btn-link btn-sm" (click)="onRevokeRole(role.roleId)" i18n="@@userDetailRevokeRole">Revoke</button>
+          </li>
+        }
+      </ul>
+
+      <div class="mt-4 flex items-end gap-3">
+        <select class="field-select flex-1" [ngModel]="selectedRoleCode()" (ngModelChange)="selectedRoleCode.set($event)">
+          <option value="" i18n="@@userDetailSelectRole">Select a role</option>
+          @for (role of roleOptions(); track role.id) {
+            <option [value]="role.code">{{ role.nameEn }}</option>
+          }
+        </select>
+        <button type="button" class="btn-default btn-sm" (click)="onGrantRole()" [disabled]="!selectedRoleCode()" i18n="@@userDetailGrantRole">Grant</button>
+      </div>
+    </section>
+  </div>
+}

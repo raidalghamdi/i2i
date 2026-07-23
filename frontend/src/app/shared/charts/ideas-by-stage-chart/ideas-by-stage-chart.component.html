@@ -1,0 +1,15 @@
+@if (total() === 0) {
+  <p class="text-sm text-muted-foreground" i18n="@@chartsIdeasByStageEmpty">No ideas yet.</p>
+} @else {
+  <div class="overflow-x-auto">
+    <svg [attr.width]="width()" [attr.height]="height" [attr.viewBox]="'0 0 ' + width() + ' ' + height" role="img">
+      <line [attr.x1]="32" [attr.y1]="baselineY" [attr.x2]="width() - 8" [attr.y2]="baselineY" stroke="#94a3b8" stroke-width="1" opacity="0.4" />
+      @for (bar of bars(); track bar.stage) {
+        <rect [attr.x]="bar.x" [attr.y]="bar.y" [attr.width]="bar.width" [attr.height]="bar.height" rx="3" [attr.fill]="teal" />
+        <text [attr.x]="bar.labelX" [attr.y]="bar.countLabelY" text-anchor="middle" class="text-[10px]" [attr.fill]="teal">{{ bar.count }}</text>
+        <text [attr.x]="bar.labelX" [attr.y]="bar.stageLabelY" text-anchor="middle" class="text-[10px]" [attr.fill]="muted">{{ bar.stage }}</text>
+        <text [attr.x]="bar.labelX" [attr.y]="bar.nameLabelY" text-anchor="middle" class="text-[10px]" [attr.fill]="muted">{{ bar.name }}</text>
+      }
+    </svg>
+  </div>
+}

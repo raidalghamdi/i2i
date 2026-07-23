@@ -1,0 +1,78 @@
+<app-page-header title="Analytics" i18n-title="@@analyticsOverviewTitle" />
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="5" />
+} @else if (loadError(); as err) {
+  <app-error-state [message]="err" (retry)="refresh()" />
+} @else if (exec(); as e) {
+  <section class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground" i18n="@@analyticsOverviewKpiParticipation">Participation</p>
+        <p class="mt-1 text-2xl font-bold text-brand-teal">{{ e.kpis.totalSubmissions }}</p>
+      </div>
+      <div class="kpi-icon"><app-icon name="lightbulb" size="h-5 w-5" /></div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground" i18n="@@analyticsOverviewKpiApproved">Approved</p>
+        <p class="mt-1 text-2xl font-bold text-brand-teal">{{ e.kpis.totalApproved }}</p>
+      </div>
+      <div class="kpi-icon"><app-icon name="shield-check" size="h-5 w-5" /></div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground" i18n="@@analyticsOverviewKpiImplemented">Implemented</p>
+        <p class="mt-1 text-2xl font-bold text-brand-teal">{{ e.kpis.totalImplemented }}</p>
+      </div>
+      <div class="kpi-icon"><app-icon name="rocket" size="h-5 w-5" /></div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground" i18n="@@analyticsOverviewKpiConversion">Conversion</p>
+        <p class="mt-1 text-2xl font-bold text-brand-teal">{{ e.conversion.rate | number: '1.0-1' }}%</p>
+      </div>
+      <div class="kpi-icon"><app-icon name="chart-bar" size="h-5 w-5" /></div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground" i18n="@@analyticsOverviewKpiFinancialImpact">Financial Impact</p>
+        <p class="mt-1 text-2xl font-bold text-brand-gold">{{ e.kpis.realizedFinancialImpact | number: '1.0-0' }}</p>
+      </div>
+      <div class="kpi-icon bg-brand-gold-light text-brand-gold"><app-icon name="sparkles" size="h-5 w-5" /></div>
+    </div>
+  </section>
+
+  <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <section class="card-surface card-body">
+      <h2 class="section-title" i18n="@@analyticsOverviewFunnelTitle">Conversion Funnel</h2>
+      <app-funnel-chart [data]="funnelRows()" />
+    </section>
+
+    <section class="card-surface card-body">
+      <h2 class="section-title" i18n="@@analyticsOverviewTopObjectivesTitle">Top Objectives</h2>
+      @if (e.topObjectives.length === 0) {
+        <p class="mt-4 text-sm text-muted-foreground" i18n="@@analyticsOverviewTopObjectivesEmpty">No objectives yet.</p>
+      } @else {
+        <ul class="mt-4 flex flex-col gap-3">
+          @for (obj of e.topObjectives; track obj.themeId) {
+            <li>
+              <a
+                [routerLink]="['/analytics/pillars', obj.themeId]"
+                class="block rounded-lg border border-border p-3 hover:bg-muted/50"
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <span class="font-medium">{{ objectiveName(obj) }}</span>
+                  <span class="text-sm text-muted-foreground">{{ obj.count }}</span>
+                </div>
+                <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div class="h-full bg-brand-teal" [style.width.%]="objectiveWidthPct(obj)"></div>
+                </div>
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+}

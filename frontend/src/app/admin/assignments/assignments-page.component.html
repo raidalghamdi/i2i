@@ -1,0 +1,8 @@
+<app-page-header title="Assignments" i18n-title="@@assignmentsPageTitle" subtitle="Assign evaluators to ideas, monitor workload, and manage reassignment." i18n-subtitle="@@assignmentsPageSubtitle" />
+<app-workload-heatmap (cellClicked)="onHeatmapCellClicked($event)" />
+<div class="mt-6">
+  <app-evaluator-auto-suggest />
+</div>
+<div class="mt-6">
+  <app-assignments-manager />
+</div>

@@ -1,0 +1,76 @@
+<app-page-header title="Approvals" i18n-title="@@approvalsTitle">
+  <button actions type="button" class="btn-outline btn-sm" (click)="toggleBulkMode()">
+    @if (bulkMode()) {
+      <span i18n="@@approvalsBulkModeOff">Exit bulk mode</span>
+    } @else {
+      <span i18n="@@approvalsBulkModeOn">Bulk actions</span>
+    }
+  </button>
+</app-page-header>
+
+@if (errorMessage(); as msg) {
+  <div class="card-surface card-body mb-4 text-red-700" role="alert">{{ msg }}</div>
+}
+
+<section class="card-surface card-body mb-6 flex flex-col gap-1.5">
+  <label class="field-label" i18n="@@approvalsCommentLabel">Comment (optional)</label>
+  <textarea
+    class="field-input"
+    rows="2"
+    [ngModel]="comment()"
+    (ngModelChange)="comment.set($event)"
+  ></textarea>
+</section>
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" />
+} @else if (loadError(); as le) {
+  <app-error-state [message]="le" (retry)="reload()" />
+} @else {
+
+@if (bulkMode() && cards().length > 0) {
+  <div class="mb-4 flex flex-wrap items-center gap-2">
+    <button type="button" class="btn-default btn-sm" [disabled]="selected().size === 0" (click)="onBulkDecide('approve')">
+      <span i18n="@@approvalsBulkApprove">Approve selected</span> ({{ selected().size }})
+    </button>
+    <button type="button" class="btn-outline btn-sm text-red-700" [disabled]="selected().size === 0" (click)="onBulkDecide('reject')">
+      <span i18n="@@approvalsBulkReject">Reject selected</span> ({{ selected().size }})
+    </button>
+  </div>
+}
+
+@if (cards().length === 0) {
+  <app-empty-state title="No approvals are waiting for your decision." i18n-title="@@approvalsEmpty" icon="check-circle" />
+} @else {
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+    @for (c of cards(); track c.instanceId) {
+      <div class="card-surface card-body flex flex-col gap-3">
+        @if (bulkMode()) {
+          <label class="flex items-center gap-2 text-xs text-muted-foreground">
+            <input type="checkbox" [checked]="isSelected(c)" (change)="toggleSelection(c)" />
+            <span i18n="@@approvalsSelectCard">Select</span>
+          </label>
+        }
+
+        <p class="text-xs text-muted-foreground">{{ c.entityType }} · {{ c.entityId }}</p>
+
+        <div class="flex flex-col gap-1">
+          <span class="font-semibold">{{ chainName(c) }} · {{ stepLabel(c) }}</span>
+        </div>
+
+        <p class="text-xs text-muted-foreground">
+          <span i18n="@@approvalsProgressLabel">Approvals</span>
+          {{ c.priorApprovers }}/{{ c.minApprovers }}
+        </p>
+
+        @if (!bulkMode()) {
+          <div class="mt-auto flex flex-wrap items-center gap-2 pt-1">
+            <button type="button" class="btn-default btn-sm" (click)="onDecide(c, 'approve')" i18n="@@approvalsApprove">Approve</button>
+            <button type="button" class="btn-outline btn-sm text-red-700" (click)="onDecide(c, 'reject')" i18n="@@approvalsReject">Reject</button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+}
+}

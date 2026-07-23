@@ -1,0 +1,16 @@
+<app-page-header title="Content Management" i18n-title="@@cmsDashboardTitle" />
+
+<div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+  <a routerLink="/admin/cms/blocks" class="card-surface card-body flex flex-col items-start gap-3 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="stack" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@cmsDashboardBlocksLink">Content Blocks</span>
+  </a>
+  <a routerLink="/admin/cms/content" class="card-surface card-body flex flex-col items-start gap-3 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="document-text" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@cmsDashboardContentLink">Page Content</span>
+  </a>
+  <a routerLink="/admin/cms/strings" class="card-surface card-body flex flex-col items-start gap-3 transition-colors hover:bg-brand-teal-light">
+    <div class="kpi-icon"><app-icon name="globe" size="h-5 w-5" /></div>
+    <span class="section-title" i18n="@@cmsDashboardStringsLink">Content Strings</span>
+  </a>
+</div>

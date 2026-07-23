@@ -1,0 +1,100 @@
+<app-page-header title="Report titles" i18n-title="@@reportTitlesPageTitle" />
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mb-4" role="alert">{{ msg }}</p>
+}
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="5" label="Loading report titles…" i18n-label="@@reportTitlesLoading" />
+} @else if (loadError(); as lerr) {
+  <app-error-state [message]="lerr" (retry)="reload()" />
+} @else if (editableRows().length === 0) {
+  <app-empty-state title="No report titles yet." i18n-title="@@reportTitlesEmpty" icon="document-text" />
+} @else {
+  <div class="data-table-wrap mb-4">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th i18n="@@reportTitlesColKey">Key</th>
+          <th i18n="@@reportTitlesColTitleEn">Title (En)</th>
+          <th i18n="@@reportTitlesColTitleAr">Title (Ar)</th>
+          <th i18n="@@reportTitlesColSort">Sort order</th>
+          <th i18n="@@reportTitlesColActions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of editableRows(); track row.id) {
+          <tr>
+            <td>
+              <span class="font-mono text-sm">{{ row.key }}</span>
+            </td>
+            <td>
+              <input class="field-input" [ngModel]="row.titleEn" (ngModelChange)="updateRow(row.id, { titleEn: $event })" />
+            </td>
+            <td>
+              <input class="field-input" [ngModel]="row.titleAr" (ngModelChange)="updateRow(row.id, { titleAr: $event })" />
+            </td>
+            <td>
+              <input
+                type="number"
+                class="field-input w-24"
+                [ngModel]="row.sortOrder"
+                (ngModelChange)="updateRow(row.id, { sortOrder: $event })"
+              />
+            </td>
+            <td>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" class="btn-default btn-sm" (click)="onSave(row)" i18n="@@reportTitlesSave">Save</button>
+                <button type="button" class="btn-ghost btn-sm" (click)="onDelete(row.id)" i18n="@@reportTitlesDelete">Delete</button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<div class="card-surface card-body">
+  <h2 class="text-sm font-semibold mb-3" i18n="@@reportTitlesAddHeading">Add report title</h2>
+  <div class="flex flex-wrap items-end gap-3">
+    <div>
+      <label class="field-label" for="report-title-new-key" i18n="@@reportTitlesColKey">Key</label>
+      <input
+        id="report-title-new-key"
+        class="field-input"
+        [ngModel]="newKey()"
+        (ngModelChange)="newKey.set($event)"
+      />
+    </div>
+    <div>
+      <label class="field-label" for="report-title-new-title-en" i18n="@@reportTitlesColTitleEn">Title (En)</label>
+      <input
+        id="report-title-new-title-en"
+        class="field-input"
+        [ngModel]="newTitleEn()"
+        (ngModelChange)="newTitleEn.set($event)"
+      />
+    </div>
+    <div>
+      <label class="field-label" for="report-title-new-title-ar" i18n="@@reportTitlesColTitleAr">Title (Ar)</label>
+      <input
+        id="report-title-new-title-ar"
+        class="field-input"
+        [ngModel]="newTitleAr()"
+        (ngModelChange)="newTitleAr.set($event)"
+      />
+    </div>
+    <div>
+      <label class="field-label" for="report-title-new-sort" i18n="@@reportTitlesColSort">Sort order</label>
+      <input
+        id="report-title-new-sort"
+        type="number"
+        class="field-input w-24"
+        [ngModel]="newSortOrder()"
+        (ngModelChange)="newSortOrder.set($event)"
+      />
+    </div>
+    <button type="button" class="btn-outline btn-sm" (click)="onAdd()" i18n="@@reportTitlesAdd">Add</button>
+  </div>
+</div>

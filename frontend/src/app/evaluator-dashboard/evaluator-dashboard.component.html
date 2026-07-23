@@ -1,0 +1,56 @@
+<!-- frontend/src/app/evaluator-dashboard/evaluator-dashboard.component.html -->
+<app-page-header title="Evaluator Dashboard" i18n-title="@@evaluatorDashboardPageTitle" />
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="4" />
+} @else if (error(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else {
+
+<div class="rounded-2xl border border-brand-teal/20 bg-card p-6">
+  <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground" i18n="@@evaluatorDashboardWelcome">Welcome back</p>
+  <p class="mt-2 max-w-xl text-sm text-muted-foreground" i18n="@@evaluatorDashboardCtaBody">Review ideas assigned to your tracks and submit your evaluations.</p>
+  <a routerLink="/evaluations/queue" class="btn-gold mt-4 inline-block" i18n="@@evaluatorDashboardStartEvaluating">Start evaluating</a>
+</div>
+
+<div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+  <div class="card-surface card-body">
+    <p class="text-2xl font-bold text-brand-teal">{{ awaitingCount() }}</p>
+    <p class="text-sm text-muted-foreground" i18n="@@evaluatorDashboardKpiAwaiting">Awaiting</p>
+  </div>
+  <div class="card-surface card-body">
+    <p class="text-2xl font-bold text-brand-teal">{{ evaluatedThisMonthCount() }}</p>
+    <p class="text-sm text-muted-foreground" i18n="@@evaluatorDashboardKpiEvaluatedMonth">Evaluated this month</p>
+  </div>
+  <div class="card-surface card-body">
+    <p class="text-2xl font-bold text-brand-teal">
+      @if (avgDays(); as days) { {{ days }} <span i18n="@@evaluatorDashboardKpiAvgDaysUnit">days</span> } @else { — }
+    </p>
+    <p class="text-sm text-muted-foreground" i18n="@@evaluatorDashboardKpiAvgDays">Avg. time to complete</p>
+  </div>
+  <a routerLink="/evaluator/level" class="card-surface card-body">
+    <p class="text-2xl font-bold text-brand-teal">L{{ level() }}</p>
+    <p class="text-sm text-muted-foreground" i18n="@@evaluatorDashboardKpiLevel">My Level</p>
+  </a>
+</div>
+
+<div class="mt-6 rounded-2xl border border-border bg-card p-5">
+  <div class="mb-3 flex items-center justify-between">
+    <h3 class="section-title" i18n="@@evaluatorDashboardQueuePreviewTitle">Latest incoming ideas</h3>
+    <a routerLink="/evaluations/queue" class="text-xs font-medium text-brand-teal hover:underline" i18n="@@evaluatorDashboardViewAll">View all</a>
+  </div>
+  @if (queuePreview().length === 0) {
+    <app-empty-state title="No ideas awaiting your evaluation." i18n-title="@@evaluatorDashboardQueueEmpty" icon="clipboard-check" />
+  } @else {
+    <ul class="divide-y divide-border">
+      @for (item of queuePreview(); track item.id) {
+        <li>
+          <a [routerLink]="['/evaluations', item.id]" class="flex items-center justify-between gap-3 py-3 hover:bg-muted/40">
+            <span class="text-sm font-medium text-foreground">{{ item.code }} — {{ item.titleEn }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</div>
+}

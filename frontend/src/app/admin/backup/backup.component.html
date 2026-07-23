@@ -1,0 +1,19 @@
+<app-page-header title="Backup" i18n-title="@@backupPageTitle" />
+
+<section class="card-surface card-body mt-4 flex flex-col gap-3">
+  <p class="text-sm text-muted-foreground" i18n="@@backupDescription">Download a full snapshot of the platform database as an Excel workbook — one sheet per table. This is an export only; it does not modify any data.</p>
+
+  @if (errorMessage(); as msg) {
+    <p class="field-error">{{ msg }}</p>
+  }
+
+  <div>
+    <button type="button" class="btn-gold" [disabled]="downloading()" (click)="onDownload()">
+      @if (downloading()) {
+        <span i18n="@@backupDownloading">Preparing…</span>
+      } @else {
+        <span i18n="@@backupDownloadButton">Download backup (Excel)</span>
+      }
+    </button>
+  </div>
+</section>

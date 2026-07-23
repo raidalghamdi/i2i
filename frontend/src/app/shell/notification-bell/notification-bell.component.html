@@ -1,0 +1,12 @@
+<a
+  routerLink="/notifications"
+  class="btn-ghost !h-10 !w-10 relative !p-0"
+  [attr.aria-label]="ariaLabel"
+>
+  <app-icon name="bell" size="h-5 w-5" />
+  @if (store.unreadCount() > 0) {
+    <span
+      class="absolute -top-1 -end-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-destructive-foreground"
+    >{{ store.unreadCount() > 9 ? '9+' : store.unreadCount() }}</span>
+  }
+</a>

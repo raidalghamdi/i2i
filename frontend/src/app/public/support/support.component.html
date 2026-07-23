@@ -1,0 +1,73 @@
+<app-public-page-hero slug="support" [defaultTitle]="pageTitle" [defaultBody]="pageBody" />
+
+<div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+  <section class="card-surface card-body flex flex-col gap-3 lg:col-span-1" aria-labelledby="support-contact-heading">
+    <h2 id="support-contact-heading" class="section-title" i18n="@@supportContactHeading">Contact us directly</h2>
+    <dl class="flex flex-col gap-3 text-sm text-foreground">
+      <div>
+        <dt class="text-xs font-medium text-muted-foreground" i18n="@@supportEmailLabel">Email</dt>
+        <dd><a class="btn-link" href="mailto:{{ contactEmail }}">{{ contactEmail }}</a></dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium text-muted-foreground" i18n="@@supportHoursLabel">Hours</dt>
+        <dd>{{ contactHours }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium text-muted-foreground" i18n="@@supportAddressLabel">Address</dt>
+        <dd>{{ contactAddress }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="card-surface card-body flex flex-col gap-4 lg:col-span-2">
+    <h2 class="section-title" i18n="@@supportFormHeading">Send us a message</h2>
+
+    @if (sent()) {
+      <div class="rounded-md bg-emerald-50 px-4 py-2 text-sm text-emerald-700" role="status" i18n="@@supportSent">
+        Thank you — your message has been recorded. The team will reach out shortly.
+      </div>
+    }
+    @if (errorMessage(); as msg) {
+      <div class="field-error" role="alert">{{ msg }}</div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" for="support-name" i18n="@@supportNameLabel">Name</label>
+        <input id="support-name" class="field-input" type="text" formControlName="name" />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" for="support-email" i18n="@@supportEmailFieldLabel">Email</label>
+        <input id="support-email" class="field-input" type="email" formControlName="email" />
+        @if (form.controls.email.invalid && form.controls.email.touched) {
+          <span class="field-error" i18n="@@supportEmailError">Enter a valid email address.</span>
+        }
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" for="support-subject" i18n="@@supportSubjectLabel">Subject</label>
+        <input id="support-subject" class="field-input" type="text" formControlName="subject" />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" for="support-message" i18n="@@supportMessageLabel">Message</label>
+        <textarea id="support-message" class="field-input" rows="5" formControlName="message"></textarea>
+        @if (form.controls.message.invalid && form.controls.message.touched) {
+          <span class="field-error" i18n="@@supportMessageError">Message is required.</span>
+        }
+      </div>
+
+      <div class="flex justify-end">
+        <button
+          type="submit"
+          class="btn-default"
+          [disabled]="form.invalid"
+          i18n="@@supportSubmit"
+        >
+          Send message
+        </button>
+      </div>
+    </form>
+  </section>
+</div>

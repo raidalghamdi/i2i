@@ -1,0 +1,68 @@
+<app-page-header title="Employee Import" i18n-title="@@employeeImportTitle" />
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mb-4">{{ msg }}</p>
+}
+
+<section class="card-surface card-body max-w-2xl">
+  <h2 class="section-title" i18n="@@employeeImportUploadTitle">Upload CSV</h2>
+  <p class="mt-1 text-sm text-muted-foreground" i18n="@@employeeImportUploadDesc">
+    Columns: samAccountName, role. The first row may optionally be a header row.
+  </p>
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <input
+      class="field-input file:me-3 file:rounded file:border-0 file:bg-brand-teal-light file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-teal"
+      type="file"
+      accept=".csv"
+      (change)="onFileSelected($event)"
+    />
+    <button type="button" class="btn-ghost btn-sm" (click)="downloadTemplate()" i18n="@@employeeImportDownloadTemplate">Download template</button>
+  </div>
+</section>
+
+@if (result(); as r) {
+  <section class="card-surface card-body mt-6">
+    <h2 class="section-title" i18n="@@employeeImportResultsTitle">Import results</h2>
+    <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div class="kpi-card">
+        <div>
+          <p class="text-sm text-muted-foreground" i18n="@@employeeImportTotalLabel">Total rows</p>
+          <p class="mt-1 text-2xl font-bold text-brand-teal">{{ r.total }}</p>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div>
+          <p class="text-sm text-muted-foreground" i18n="@@employeeImportCreatedLabel">Created</p>
+          <p class="mt-1 text-2xl font-bold text-brand-teal">{{ r.created }}</p>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div>
+          <p class="text-sm text-muted-foreground" i18n="@@employeeImportSkippedLabel">Skipped</p>
+          <p class="mt-1 text-2xl font-bold text-brand-teal">{{ r.skipped }}</p>
+        </div>
+      </div>
+    </div>
+
+    @if (r.errors.length > 0) {
+      <div class="data-table-wrap mt-4">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th i18n="@@employeeImportColumnSamAccountName">Account</th>
+              <th i18n="@@employeeImportColumnError">Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of r.errors; track e.samAccountName) {
+              <tr>
+                <td>{{ e.samAccountName }}</td>
+                <td>{{ translateErrorCode(e.message) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}

@@ -1,0 +1,83 @@
+@if (loading()) {
+  <app-loading-state variant="spinner" />
+} @else {
+  @if (detail(); as d) {
+    <app-page-header [title]="name()" [subtitle]="d.ownerName" />
+
+    <p class="mb-6 max-w-3xl text-sm text-muted-foreground">{{ description() }}</p>
+
+    <section class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div class="kpi-card">
+        <div>
+          <p class="text-sm text-muted-foreground" i18n="@@pillarDetailKpiIdeas">Ideas</p>
+          <p class="mt-1 text-2xl font-bold text-brand-teal">{{ d.kpis.ideas }}</p>
+        </div>
+        <div class="kpi-icon"><app-icon name="lightbulb" size="h-5 w-5" /></div>
+      </div>
+      <div class="kpi-card">
+        <div>
+          <p class="text-sm text-muted-foreground" i18n="@@pillarDetailKpiBudget">Budget</p>
+          <p class="mt-1 text-2xl font-bold text-brand-gold">
+            {{ d.kpis.budgetSpent | number: '1.0-0' }} / {{ d.kpis.budgetAllocated | number: '1.0-0' }}
+          </p>
+        </div>
+        <div class="kpi-icon bg-brand-gold-light text-brand-gold"><app-icon name="sparkles" size="h-5 w-5" /></div>
+      </div>
+      <div class="kpi-card">
+        <div>
+          <p class="text-sm text-muted-foreground" i18n="@@pillarDetailKpiPilotsActive">Pilots Active</p>
+          <p class="mt-1 text-2xl font-bold text-brand-teal">{{ d.kpis.pilotsActive }}</p>
+        </div>
+        <div class="kpi-icon"><app-icon name="rocket" size="h-5 w-5" /></div>
+      </div>
+      <div class="kpi-card">
+        <div>
+          <p class="text-sm text-muted-foreground" i18n="@@pillarDetailKpiImplementations">Implementations</p>
+          <p class="mt-1 text-2xl font-bold text-brand-teal">{{ d.kpis.implementationsDone }}</p>
+        </div>
+        <div class="kpi-icon"><app-icon name="shield-check" size="h-5 w-5" /></div>
+      </div>
+    </section>
+
+    <section class="card-surface card-body mt-6">
+      <h2 class="section-title" i18n="@@pillarDetailTimelineTitle">Submissions Over Time</h2>
+      <app-submissions-line-chart [data]="timelineAsSubmissions()" />
+    </section>
+
+    <section class="card-surface card-body mt-6">
+      <h2 class="section-title" i18n="@@pillarDetailIdeasTitle">Ideas</h2>
+      <div class="data-table-wrap mt-4">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th i18n="@@pillarDetailIdeaColumnCode">Code</th>
+              <th i18n="@@pillarDetailIdeaColumnTitle">Title</th>
+              <th i18n="@@pillarDetailIdeaColumnStatus">Status</th>
+              <th i18n="@@pillarDetailIdeaColumnStage">Stage</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (idea of d.ideas; track idea.id) {
+              <tr>
+                <td class="font-medium text-brand-gold">{{ idea.code }}</td>
+                <td>{{ ideaTitle(idea) }}</td>
+                <td><app-status-badge [status]="idea.status">{{ idea.status }}</app-status-badge></td>
+                <td>{{ idea.currentStage }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="text-center text-sm text-muted-foreground" i18n="@@pillarDetailIdeasEmpty">
+                  No ideas yet.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  } @else {
+    <div class="card-surface card-body text-center">
+      <p class="text-sm text-muted-foreground" i18n="@@pillarDetailNotFound">Pillar not found</p>
+    </div>
+  }
+}

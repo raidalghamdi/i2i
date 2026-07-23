@@ -1,0 +1,52 @@
+<footer class="-mx-4 border-t border-border bg-brand-teal text-white sm:-mx-6">
+  <div class="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-12 sm:px-8 md:grid-cols-4">
+    <div>
+      <h3 class="text-sm font-semibold" i18n="@@footerAppName">Innovation to Impact</h3>
+      <p class="mt-3 text-sm text-white/80" i18n="@@footerTagline">The unified innovation platform of the General Authority for Competition — turning ideas into measurable impact.</p>
+      <div class="mt-4 flex gap-3">
+        @for (social of socialLinks; track social.label) {
+          <a [href]="social.href" target="_blank" rel="noopener noreferrer" class="text-white/80 hover:text-white" [attr.aria-label]="social.label">
+            <app-icon [name]="social.icon" size="h-5 w-5" />
+          </a>
+        }
+      </div>
+    </div>
+
+    <div>
+      <h3 class="text-sm font-semibold" i18n="@@footerQuickLinks">Quick Links</h3>
+      <ul class="mt-3 flex flex-col gap-2 text-sm text-white/80">
+        <li><a routerLink="/about" class="hover:text-white hover:underline" i18n="@@footerAbout">About</a></li>
+        <li><a routerLink="/evaluation-criteria" class="hover:text-white hover:underline" i18n="@@footerEvaluationCriteria">Evaluation Criteria</a></li>
+        <li><a routerLink="/expected-solutions" class="hover:text-white hover:underline" i18n="@@footerExpectedSolutions">Expected Solutions</a></li>
+        <li><a routerLink="/tracks" class="hover:text-white hover:underline" i18n="@@footerTracks">Tracks</a></li>
+        <li><a routerLink="/activities" class="hover:text-white hover:underline" i18n="@@footerActivities">Activities</a></li>
+        <li><a routerLink="/roadmap" class="hover:text-white hover:underline" i18n="@@footerRoadmap">Roadmap</a></li>
+        <li><a routerLink="/events" class="hover:text-white hover:underline" i18n="@@footerEvents">Events</a></li>
+        <li><a routerLink="/search" class="hover:text-white hover:underline" i18n="@@footerSearch">Search</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="text-sm font-semibold" i18n="@@footerSupport">Support</h3>
+      <ul class="mt-3 flex flex-col gap-2 text-sm text-white/80">
+        <li><a routerLink="/faq" class="hover:text-white hover:underline" i18n="@@footerFaq">FAQ</a></li>
+        <li><a routerLink="/support" class="hover:text-white hover:underline" i18n="@@footerSupportLink">Support</a></li>
+        <li><a routerLink="/partners" class="hover:text-white hover:underline" i18n="@@footerPartners">Partners</a></li>
+        <li><a routerLink="/privacy" class="hover:text-white hover:underline" i18n="@@footerPrivacy">Privacy Policy</a></li>
+        <li><a routerLink="/terms" class="hover:text-white hover:underline" i18n="@@footerTerms">Terms &amp; Conditions</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="text-sm font-semibold" i18n="@@footerOwner">General Authority for Competition</h3>
+      <p class="mt-3 text-sm text-white/80" i18n="@@footerAddress">General Authority for Competition, Riyadh, Kingdom of Saudi Arabia</p>
+      <p class="mt-2 text-sm text-white/80" dir="ltr">innovation&#64;gac.gov.sa</p>
+    </div>
+  </div>
+
+  <div class="border-t border-white/15">
+    <div class="mx-auto max-w-6xl px-4 py-4 text-center text-xs text-white/70 sm:px-8">
+      <span i18n="@@footerCopyright">© {{ year }} General Authority for Competition · Innovation to Impact — All rights reserved</span>
+    </div>
+  </div>
+</footer>

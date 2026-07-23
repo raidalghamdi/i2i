@@ -1,0 +1,34 @@
+<div class="overflow-x-auto">
+  <svg [attr.width]="width" [attr.height]="height" [attr.viewBox]="'0 0 ' + width + ' ' + height" role="img">
+    <defs>
+      <linearGradient id="ideas-line-fill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#20808D" stop-opacity="0.28" />
+        <stop offset="1" stop-color="#20808D" stop-opacity="0" />
+      </linearGradient>
+    </defs>
+
+    @for (grid of gridlines(); track grid.y) {
+      <line
+        [attr.x1]="gridX1"
+        [attr.y1]="grid.y"
+        [attr.x2]="gridX2"
+        [attr.y2]="grid.y"
+        stroke="#94a3b8"
+        stroke-width="1"
+        opacity="0.5"
+        [attr.stroke-dasharray]="grid.dashed ? '3 3' : null"
+      />
+    }
+
+    <path [attr.d]="areaPath()" fill="url(#ideas-line-fill)" stroke="none" />
+    <path [attr.d]="linePath()" fill="none" [attr.stroke]="teal" stroke-width="1.75" />
+
+    @for (dot of dots(); track dot.x) {
+      <circle [attr.cx]="dot.x" [attr.cy]="dot.y" r="2" [attr.fill]="teal" />
+    }
+
+    @for (label of xLabels(); track label.x) {
+      <text class="chart-x-label text-[10px]" [attr.x]="label.x" [attr.y]="height - 8" text-anchor="middle" fill="#5C5F66">{{ label.text }}</text>
+    }
+  </svg>
+</div>

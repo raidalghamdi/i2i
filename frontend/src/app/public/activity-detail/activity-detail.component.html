@@ -1,0 +1,67 @@
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="4" label="Loading activity…" i18n-label="@@activityDetailLoading" />
+} @else if (error(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else {
+  @if (detail(); as d) {
+    <a routerLink="/activities" class="btn-link">{{ backToActivitiesLabel }}</a>
+
+    <header class="card-surface card-body mt-4 flex flex-col gap-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h1 class="page-title">{{ activityName(d) }}</h1>
+        <app-status-badge [status]="d.activity.status">{{ d.activity.status }}</app-status-badge>
+      </div>
+      <p class="text-xs font-semibold uppercase tracking-wide text-brand-gold">{{ d.activity.type }}</p>
+      <p class="text-sm text-muted-foreground">{{ d.activity.startDate | date }} – {{ d.activity.endDate | date }}</p>
+    </header>
+
+    <section class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div class="kpi-card">
+        <div>
+          <p class="text-sm text-muted-foreground">{{ totalIdeasLabel }}</p>
+          <p class="mt-1 text-2xl font-bold text-brand-teal">{{ d.activity.ideaCount }}</p>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div>
+          <p class="text-sm text-muted-foreground">{{ approvedLabel }}</p>
+          <p class="mt-1 text-2xl font-bold text-brand-teal">{{ d.approvedCount }}</p>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div>
+          <p class="text-sm text-muted-foreground">{{ pilotingLabel }}</p>
+          <p class="mt-1 text-2xl font-bold text-brand-teal">{{ d.pilotingCount }}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card-surface card-body mt-6">
+      <h2 class="section-title">{{ scoreboardTitle }}</h2>
+      @if (d.ideas.length === 0) {
+        <p class="mt-2 text-sm text-muted-foreground">{{ noIdeasMessage }}</p>
+      } @else {
+        <ol class="mt-3 flex flex-col gap-2">
+          @for (idea of d.ideas; track idea.id; let i = $index) {
+            <li>
+              <a
+                [routerLink]="['/ideas', idea.id]"
+                class="flex flex-wrap items-center gap-3 rounded-md border border-border p-3 hover:bg-muted/50"
+              >
+                <span class="kpi-icon h-8 w-8 shrink-0 text-sm font-semibold">{{ i + 1 }}</span>
+                <span class="flex-1 text-sm font-medium text-foreground">{{ idea.code }} — {{ ideaTitle(idea) }}</span>
+                <app-status-badge [status]="idea.status">{{ idea.status }}</app-status-badge>
+              </a>
+            </li>
+          }
+        </ol>
+      }
+    </section>
+  } @else {
+    <h1 class="page-title" i18n="@@activityDetailNotFoundTitle">Activity not found</h1>
+    <div class="card-surface card-body mt-6">
+      <p class="text-sm text-foreground">{{ notFoundMessage }}</p>
+      <a routerLink="/activities" class="btn-link mt-3">{{ backToActivitiesLabel }}</a>
+    </div>
+  }
+}

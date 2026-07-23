@@ -1,0 +1,7 @@
+<div class="flex flex-col items-center gap-3 p-8 text-center">
+  <span class="text-destructive">
+    <app-icon name="alert-triangle" size="h-10 w-10" />
+  </span>
+  <p class="text-sm text-muted-foreground">{{ message() ?? defaultMessage }}</p>
+  <button type="button" class="btn-outline btn-sm" (click)="retry.emit()" i18n="@@errorStateRetry">Try again</button>
+</div>

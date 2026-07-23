@@ -1,0 +1,9 @@
+<button
+  type="button"
+  (click)="scrollToTop()"
+  class="fixed bottom-6 z-40 flex items-center gap-2 rounded-full bg-brand-teal px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-all hover:bg-brand-teal-dark ltr:right-6 rtl:left-6"
+  [class]="visible() ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'"
+>
+  <app-icon name="arrow-up" size="h-4 w-4" />
+  <span class="hidden sm:inline" i18n="@@backToTop">Back to top</span>
+</button>

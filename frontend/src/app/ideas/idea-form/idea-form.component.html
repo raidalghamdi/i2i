@@ -1,0 +1,82 @@
+<app-page-header title="Idea" i18n-title="@@ideaFormPageTitle" />
+
+@if (loading()) {
+  <app-loading-state />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else {
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="card-surface card-body flex max-w-2xl flex-col gap-5">
+  @if (errorMessage(); as msg) {
+    <div class="field-error" role="alert">{{ msg }}</div>
+  }
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormTitleAr">Title (Arabic)</label>
+    <input class="field-input" formControlName="titleAr" />
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormTitleEn">Title (English)</label>
+    <input class="field-input" formControlName="titleEn" />
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormProblemAr">Problem Statement (Arabic)</label>
+    <textarea class="field-textarea" formControlName="problemStatementAr"></textarea>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormProblemEn">Problem Statement (English)</label>
+    <textarea class="field-textarea" formControlName="problemStatementEn"></textarea>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormSolutionAr">Proposed Solution (Arabic)</label>
+    <textarea class="field-textarea" formControlName="proposedSolutionAr"></textarea>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormSolutionEn">Proposed Solution (English)</label>
+    <textarea class="field-textarea" formControlName="proposedSolutionEn"></textarea>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormBenefitsAr">Expected Benefits (Arabic)</label>
+    <textarea class="field-textarea" formControlName="expectedBenefitsAr"></textarea>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormBenefitsEn">Expected Benefits (English)</label>
+    <textarea class="field-textarea" formControlName="expectedBenefitsEn"></textarea>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormTheme">Strategic Theme</label>
+    <select class="field-select" formControlName="strategicThemeId">
+      <option value="" i18n="@@ideaFormSelectTheme">Select a theme</option>
+      @for (theme of themes(); track theme.id) {
+        <option [value]="theme.id">{{ theme.nameEn }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormAttachments">Attachments</label>
+    <input class="field-input file:me-3 file:rounded file:border-0 file:bg-brand-teal-light file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-teal" type="file" (change)="onFileSelected($event)" />
+    @if (queuedFiles().length > 0) {
+      <ul class="flex flex-col gap-1.5">
+        @for (file of queuedFiles(); track file.name; let i = $index) {
+          <li class="flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
+            <span class="truncate">{{ file.name }}</span>
+            <button type="button" class="btn-ghost btn-sm" (click)="removeQueuedFile(i)" i18n="@@ideaFormRemoveFile">Remove</button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div class="flex justify-end">
+    <button type="submit" class="btn-default" [disabled]="form.invalid" i18n="@@ideaFormSave">Save</button>
+  </div>
+</form>
+}

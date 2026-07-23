@@ -1,0 +1,21 @@
+<div class="ij-track" role="list" [attr.aria-label]="sectionLabel">
+  <div class="ij-group-heads">
+    <div class="ij-group-head" i18n="@@ideaJourneyGroupProgram">Program</div>
+    <div class="ij-group-head" i18n="@@ideaJourneyGroupPostProgram">Post-program</div>
+  </div>
+  <div class="ij-steps" dir="rtl">
+    <div class="ij-track-line"></div>
+    <div class="ij-track-line-fill" [style.width]="fillWidth" [style.background]="fillColor"></div>
+    <div class="ij-divider"></div>
+    @for (stage of stages(); track stage.index) {
+      <div class="ij-step" [class]="'ij-step ' + stage.state" role="listitem"
+           [attr.aria-label]="label(stage) + ' — ' + stateLabel(stage.state)">
+        <div class="ij-circle"><span class="ij-num">{{ stage.index + 1 }}</span></div>
+        <div class="ij-label">{{ label(stage) }}</div>
+        @if (stage.state === 'stopped') {
+          <div class="ij-stop-pill" i18n="@@ideaJourneyStoppedHere">stopped here</div>
+        }
+      </div>
+    }
+  </div>
+</div>

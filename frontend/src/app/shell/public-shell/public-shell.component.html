@@ -1,0 +1,35 @@
+<div class="flex min-h-screen flex-col bg-background">
+  <header class="sticky top-0 z-30 flex h-20 items-center justify-between gap-3 border-b border-border bg-card/95 px-4 backdrop-blur sm:h-24 sm:px-6">
+    <a routerLink="/" class="flex min-w-0 shrink items-center overflow-hidden" aria-label="Innovation to Impact" i18n-aria-label="@@appTitle">
+      <img src="/brand/Competition-Innovation-Program-logo.svg" alt="" class="h-8 w-auto sm:h-10" />
+    </a>
+    <nav class="hidden flex-1 items-center justify-center gap-0.5 lg:flex xl:gap-1" aria-label="Program sections" i18n-aria-label="@@homeSectionsNavAriaLabel">
+      <a routerLink="/about" class="rounded-md px-2 py-2 text-sm font-medium text-foreground/80 transition hover:bg-brand-teal-light hover:text-brand-teal xl:px-3" i18n="@@navAbout">About</a>
+      <a routerLink="/tracks" class="rounded-md px-2 py-2 text-sm font-medium text-foreground/80 transition hover:bg-brand-teal-light hover:text-brand-teal xl:px-3" i18n="@@navTracks">Tracks</a>
+      <a routerLink="/roadmap" class="rounded-md px-2 py-2 text-sm font-medium text-foreground/80 transition hover:bg-brand-teal-light hover:text-brand-teal xl:px-3" i18n="@@navTimeline">Timeline</a>
+      <a routerLink="/evaluation-criteria" class="rounded-md px-2 py-2 text-sm font-medium text-foreground/80 transition hover:bg-brand-teal-light hover:text-brand-teal xl:px-3" i18n="@@navCriteria">Criteria</a>
+      <a routerLink="/faq" class="rounded-md px-2 py-2 text-sm font-medium text-foreground/80 transition hover:bg-brand-teal-light hover:text-brand-teal xl:px-3" i18n="@@navFaq">FAQ</a>
+      <a routerLink="/search" class="rounded-md px-2 py-2 text-sm font-medium text-foreground/80 transition hover:bg-brand-teal-light hover:text-brand-teal xl:px-3" i18n="@@navSearch">Search</a>
+    </nav>
+    <div class="flex shrink-0 items-center gap-2 sm:gap-3">
+      <a [href]="alternateLocaleHref()" class="btn-outline btn-sm">
+        <app-icon name="globe" size="h-4 w-4" />
+        <span>عربي / English</span>
+      </a>
+      @if (isSignedIn()) {
+        <a routerLink="/dashboard" class="btn-default btn-sm" i18n="@@publicNavWorkboard">My workboard</a>
+      } @else {
+        <a routerLink="/dashboard" class="btn-default btn-sm" i18n="@@publicNavLogin">Log in</a>
+      }
+    </div>
+  </header>
+
+  <main id="main-content" class="flex-1">
+    <div class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+      <router-outlet />
+    </div>
+  </main>
+
+  <app-site-footer />
+  <app-back-to-top />
+</div>

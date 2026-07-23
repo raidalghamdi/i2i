@@ -1,0 +1,53 @@
+<app-page-header title="Challenges" i18n-title="@@challengeListTitle">
+  <a actions routerLink="/admin/challenges/new" class="btn-default btn-sm">
+    <app-icon name="plus" size="h-4 w-4" />
+    <span i18n="@@challengeListNew">New Challenge</span>
+  </a>
+</app-page-header>
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mb-4">{{ msg }}</p>
+}
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (challenges().length === 0) {
+  <app-empty-state title="No challenges yet." i18n-title="@@challengeListEmpty" icon="target">
+    <a routerLink="/admin/challenges/new" class="btn-default btn-sm inline-flex" i18n="@@challengeListEmptyCta">New Challenge</a>
+  </app-empty-state>
+} @else {
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th i18n="@@challengeListColumnAr">Arabic</th>
+          <th i18n="@@challengeListColumnEn">English</th>
+          <th i18n="@@challengeListColumnActive">Active</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of challenges(); track item.id) {
+          <tr>
+            <td class="max-w-xs truncate">
+              <a [routerLink]="['/admin/challenges', item.id, 'edit']" class="text-brand-teal hover:underline">{{ item.textAr }}</a>
+            </td>
+            <td class="max-w-xs truncate text-muted-foreground">{{ item.textEn }}</td>
+            <td>
+              @if (item.isActive) {
+                <span i18n="@@challengeListActiveYes">Yes</span>
+              } @else {
+                <span i18n="@@challengeListActiveNo">No</span>
+              }
+            </td>
+            <td class="text-end">
+              <button type="button" class="btn-ghost btn-sm" (click)="onDelete(item.id)" i18n="@@challengeListDelete">Delete</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

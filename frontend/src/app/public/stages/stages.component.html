@@ -1,0 +1,41 @@
+<app-public-page-hero slug="stages" [defaultTitle]="pageTitle" [defaultBody]="pageBody" />
+
+<div class="card-surface card-body mt-6">
+  <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    {{ stageLabel }} 0
+  </p>
+  <h2 class="section-title mt-1">{{ stage0Title }}</h2>
+  <p class="mt-2 text-sm text-muted-foreground">{{ ownerLabel }}: {{ stage0Owner }}</p>
+</div>
+
+<ol class="relative mt-6 flex flex-col gap-6 ps-6">
+  <div class="absolute inset-y-0 start-1.5 w-px bg-border" aria-hidden="true"></div>
+  @for (stage of stages; track stage.index) {
+    <li class="relative">
+      <span
+        class="absolute -start-6 top-1 h-3 w-3 rounded-full border-2 border-brand-teal bg-card"
+        aria-hidden="true"
+      ></span>
+      <div class="card-surface card-body">
+        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {{ stageLabel }} {{ stage.index }}
+        </p>
+        <h2 class="section-title mt-1">{{ stage.name }}</h2>
+        <p class="mt-2 text-sm leading-relaxed text-foreground">
+          <span class="font-medium text-muted-foreground">{{ whatHappensLabel }}</span>
+          {{ stage.whatHappens }}
+        </p>
+        <p class="mt-2 text-sm leading-relaxed text-foreground">
+          <span class="font-medium text-muted-foreground">{{ whatYouNeedLabel }}</span>
+          {{ stage.whatYouNeed }}
+        </p>
+        <p class="mt-2 text-sm text-muted-foreground">{{ ownerLabel }}: {{ stage.owner }}</p>
+        <a
+          routerLink="/ideas"
+          [queryParams]="{ stage: stage.index }"
+          class="btn-link mt-3"
+        >{{ viewIdeasLabel }}</a>
+      </div>
+    </li>
+  }
+</ol>

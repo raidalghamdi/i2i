@@ -1,0 +1,43 @@
+<app-page-header title="Evaluate Idea" i18n-title="@@evalFormPageTitle" />
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="card-surface card-body flex max-w-2xl flex-col gap-5">
+  @if (errorMessage(); as msg) {
+    <div class="field-error" role="alert">{{ msg }}</div>
+  }
+
+  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@evalFormInnovation">Innovation (0-10)</label>
+      <input class="field-input" type="number" min="0" max="10" step="0.5" formControlName="innovation" />
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@evalFormImpact">Impact (0-10)</label>
+      <input class="field-input" type="number" min="0" max="10" step="0.5" formControlName="impact" />
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@evalFormExecution">Execution (0-10)</label>
+      <input class="field-input" type="number" min="0" max="10" step="0.5" formControlName="execution" />
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@evalFormScalability">Scalability (0-10)</label>
+      <input class="field-input" type="number" min="0" max="10" step="0.5" formControlName="scalability" />
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@evalFormPresentation">Presentation (0-10)</label>
+      <input class="field-input" type="number" min="0" max="10" step="0.5" formControlName="presentation" />
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@evalFormComments">Comments</label>
+    <textarea class="field-textarea" formControlName="comments"></textarea>
+  </div>
+
+  <div class="flex justify-end">
+    <button type="submit" class="btn-default" [disabled]="form.invalid" i18n="@@evalFormSubmit">Submit Evaluation</button>
+  </div>
+</form>

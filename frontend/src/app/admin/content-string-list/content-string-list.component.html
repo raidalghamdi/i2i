@@ -1,0 +1,47 @@
+<app-page-header title="Content Strings" i18n-title="@@contentStringListTitle">
+  <a actions routerLink="/admin/cms/strings/new" class="btn-default btn-sm">
+    <app-icon name="plus" size="h-4 w-4" />
+    <span i18n="@@contentStringListNew">New String</span>
+  </a>
+</app-page-header>
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mb-4">{{ msg }}</p>
+}
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (strings().length === 0) {
+  <app-empty-state title="No content strings yet." i18n-title="@@contentStringListEmpty" icon="globe">
+    <a routerLink="/admin/cms/strings/new" class="btn-default btn-sm inline-flex" i18n="@@contentStringListEmptyCta">New String</a>
+  </app-empty-state>
+} @else {
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th i18n="@@contentStringListColumnKey">Key</th>
+          <th i18n="@@contentStringListColumnAr">Arabic</th>
+          <th i18n="@@contentStringListColumnEn">English</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of strings(); track item.id) {
+          <tr>
+            <td class="font-medium">
+              <a [routerLink]="['/admin/cms/strings', item.id, 'edit']" class="text-brand-teal hover:underline">{{ item.key }}</a>
+            </td>
+            <td class="max-w-xs truncate text-muted-foreground">{{ item.valueAr }}</td>
+            <td class="max-w-xs truncate text-muted-foreground">{{ item.valueEn }}</td>
+            <td class="text-end">
+              <button type="button" class="btn-ghost btn-sm" (click)="onDelete(item.id)" i18n="@@contentStringListDelete">Delete</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

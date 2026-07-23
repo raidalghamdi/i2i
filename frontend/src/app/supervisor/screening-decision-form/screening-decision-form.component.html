@@ -1,0 +1,36 @@
+@if (loading()) {
+  <app-loading-state variant="spinner" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (idea(); as idea) {
+  <app-page-header [title]="idea.code + ' — ' + idea.titleEn" />
+
+  <div class="card-surface card-body mb-6 max-w-2xl">
+    <p class="text-sm text-muted-foreground">{{ idea.problemStatementEn }}</p>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="card-surface card-body flex max-w-2xl flex-col gap-5">
+    @if (errorMessage(); as msg) {
+      <div class="field-error" role="alert">{{ msg }}</div>
+    }
+
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@screeningFormDecision">Decision</label>
+      <select class="field-select" formControlName="decisionCode">
+        <option value="" i18n="@@screeningFormSelectDecision">Select a decision</option>
+        <option value="approve" i18n="@@screeningFormApprove">Approve</option>
+        <option value="reject" i18n="@@screeningFormReject">Reject</option>
+        <option value="return" i18n="@@screeningFormReturn">Return to Submitter</option>
+      </select>
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@screeningFormReason">Reason</label>
+      <textarea class="field-textarea" formControlName="reason"></textarea>
+    </div>
+
+    <div class="flex justify-end">
+      <button type="submit" class="btn-default" [disabled]="form.invalid" i18n="@@screeningFormSubmit">Submit Decision</button>
+    </div>
+  </form>
+}

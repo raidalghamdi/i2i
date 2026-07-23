@@ -1,0 +1,12 @@
+<app-public-page-hero slug="privacy" [defaultTitle]="pageTitle" />
+
+<div class="card-surface card-body mt-6">
+  <p class="mb-4 text-sm text-muted-foreground">
+    <span i18n="@@privacyLastUpdatedLabel">Last updated:</span> {{ today }}
+  </p>
+  <div class="flex flex-col gap-4">
+    @for (paragraph of paragraphs; track paragraph) {
+      <p class="text-sm leading-relaxed text-foreground">{{ paragraph }}</p>
+    }
+  </div>
+</div>

@@ -1,0 +1,10 @@
+<h1 class="text-2xl font-bold text-brand-teal" i18n="@@committeeDashTitle">Committee</h1>
+@if (loading()) {
+  <app-loading-state variant="spinner" />
+} @else {
+  <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <app-role-kpi-card [label]="awaitingLabel" [value]="data()?.awaitingDecision ?? 0" icon="gavel" [link]="['/committee/queue']" />
+    <app-role-kpi-card [label]="decisionsLabel" [value]="data()?.decisionsThisWeek ?? 0" icon="calendar" />
+  </div>
+}
+<a routerLink="/committee/queue" class="btn-gold btn-sm mt-6 inline-flex" i18n="@@committeeDashCta">Go to committee queue</a>

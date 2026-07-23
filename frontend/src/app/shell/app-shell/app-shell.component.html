@@ -1,0 +1,120 @@
+@if (loadFailed()) {
+  <div class="flex min-h-screen items-center justify-center bg-background p-6 text-center">
+    <app-error-state [message]="identityUnavailableMessage" (retry)="retryLoad()" />
+  </div>
+} @else if (identity(); as id) {
+  <div class="min-h-screen bg-background">
+    <header class="sticky top-0 z-30 flex h-20 items-center justify-between gap-3 border-b border-border bg-card/95 px-3 pt-safe backdrop-blur sm:h-24 sm:px-6">
+      <div class="flex min-w-0 items-center gap-1 sm:gap-2">
+        <button
+          type="button"
+          class="btn-ghost !h-10 !w-10 !p-0 lg:hidden"
+          (click)="toggleMobileNav()"
+          aria-label="Toggle navigation"
+          i18n-aria-label="@@toggleNavAriaLabel"
+        >
+          <app-icon name="menu" />
+        </button>
+        <button
+          type="button"
+          class="btn-ghost !h-10 !w-10 !p-0 hidden lg:inline-flex"
+          (click)="toggleSidebar()"
+          [attr.aria-pressed]="sidebarCollapsed()"
+          aria-label="Toggle sidebar"
+          i18n-aria-label="@@toggleSidebarAriaLabel"
+        >
+          <app-icon name="panel-left" />
+        </button>
+        <a routerLink="/" class="flex min-w-0 shrink items-center overflow-hidden" aria-label="Innovation to Impact" i18n-aria-label="@@appTitle">
+          <img src="/brand/Competition-Innovation-Program-logo.svg" alt="" class="h-8 w-auto sm:h-10" />
+        </a>
+      </div>
+
+      @if (isHomeRoute()) {
+        <nav class="hidden flex-1 items-center justify-center gap-0.5 lg:flex xl:gap-1" aria-label="Program sections" i18n-aria-label="@@homeSectionsNavAriaLabel">
+          <a href="#about" class="rounded-md px-2 py-2 text-sm font-medium text-foreground/80 transition hover:bg-brand-teal-light hover:text-brand-teal xl:px-3" i18n="@@navAbout">About</a>
+          <a href="#tracks" class="rounded-md px-2 py-2 text-sm font-medium text-foreground/80 transition hover:bg-brand-teal-light hover:text-brand-teal xl:px-3" i18n="@@navTracks">Tracks</a>
+          <a href="#timeline" class="rounded-md px-2 py-2 text-sm font-medium text-foreground/80 transition hover:bg-brand-teal-light hover:text-brand-teal xl:px-3" i18n="@@navTimeline">Timeline</a>
+          <a href="#criteria" class="rounded-md px-2 py-2 text-sm font-medium text-foreground/80 transition hover:bg-brand-teal-light hover:text-brand-teal xl:px-3" i18n="@@navCriteria">Criteria</a>
+          <a href="#prizes" class="rounded-md px-2 py-2 text-sm font-medium text-foreground/80 transition hover:bg-brand-teal-light hover:text-brand-teal xl:px-3" i18n="@@navPrizes">Prizes</a>
+          <a href="#faq" class="rounded-md px-2 py-2 text-sm font-medium text-foreground/80 transition hover:bg-brand-teal-light hover:text-brand-teal xl:px-3" i18n="@@navFaq">FAQ</a>
+        </nav>
+      } @else if (id.roles.length > 0) {
+        <div class="hidden flex-1 justify-center md:flex">
+          <app-header-search />
+        </div>
+      }
+
+      <div class="flex shrink-0 items-center gap-2 sm:gap-3">
+        @if (canSubmitIdea()) {
+          <a routerLink="/ideas/new" class="btn-gold btn-sm hidden sm:inline-flex">
+            <app-icon name="plus" size="h-4 w-4" />
+            <span i18n="@@submitIdeaCta">Submit an idea</span>
+          </a>
+        }
+        @if (id.roles.length > 0) {
+          <app-notification-bell />
+          <app-role-switcher />
+        }
+        <a [href]="alternateLocaleHref()" class="btn-outline btn-sm">
+          <app-icon name="globe" size="h-4 w-4" />
+          <span>عربي / English</span>
+        </a>
+        <span class="hidden truncate text-xs text-muted-foreground md:inline">{{ id.samAccountName }} — {{ id.department }}</span>
+      </div>
+    </header>
+
+    <div class="mx-auto flex max-w-[1600px]">
+      <aside
+        class="sticky top-20 hidden h-[calc(100vh-5rem)] shrink-0 overflow-hidden bg-card transition-[width] duration-200 ease-in-out sm:top-24 sm:h-[calc(100vh-6rem)] lg:block"
+        [class]="sidebarCollapsed() ? 'w-0' : 'w-64 border-e border-border'"
+        [attr.aria-hidden]="sidebarCollapsed() ? 'true' : null"
+      >
+        <div class="h-full w-64 overflow-y-auto">
+          <ng-container *ngTemplateOutlet="navList" />
+        </div>
+      </aside>
+
+      @if (mobileNavOpen()) {
+        <div class="fixed inset-0 z-40 lg:hidden">
+          <div class="absolute inset-0 bg-black/40" (click)="closeMobileNav()"></div>
+          <div class="absolute start-0 top-0 h-full w-64 overflow-y-auto bg-card shadow-xl">
+            <ng-container *ngTemplateOutlet="navList" />
+          </div>
+        </div>
+      }
+
+      <main class="min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8">
+        <router-outlet />
+      </main>
+    </div>
+  </div>
+
+  <ng-template #navList>
+    <nav class="flex flex-col gap-5 px-3 py-4">
+      @for (group of navGroups(); track group.label) {
+        <div>
+          <p class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{{ group.label }}</p>
+          <div class="flex flex-col gap-0.5">
+            @for (item of group.items; track item.href) {
+              <a
+                [routerLink]="item.href"
+                routerLinkActive="bg-brand-teal text-white"
+                [routerLinkActiveOptions]="{ exact: item.href === '/admin' || item.href === '/supervisor' }"
+                class="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-foreground transition-colors hover:bg-brand-teal-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
+                (click)="closeMobileNav()"
+              >
+                <app-icon [name]="item.icon" size="h-4 w-4" />
+                <span class="flex-1 truncate">{{ item.label }}</span>
+              </a>
+            }
+          </div>
+        </div>
+      }
+    </nav>
+  </ng-template>
+} @else {
+  <div class="flex min-h-screen items-center justify-center bg-background">
+    <app-loading-state [label]="identityLoadingLabel" />
+  </div>
+}

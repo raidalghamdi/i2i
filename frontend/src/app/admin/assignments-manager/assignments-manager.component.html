@@ -1,0 +1,120 @@
+<section class="card-surface card-body">
+  <div class="flex flex-wrap items-end gap-3">
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@assignmentsFilterEvaluator">Evaluator</label>
+      <select class="field-select" [ngModel]="filterEvaluatorId()" (ngModelChange)="filterEvaluatorId.set($event)">
+        <option value="" i18n="@@assignmentsFilterAllEvaluators">All evaluators</option>
+        @for (e of evaluators(); track e.id) {
+          <option [value]="e.id">{{ e.fullNameEn }}</option>
+        }
+      </select>
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@assignmentsFilterStatus">Status</label>
+      <select class="field-select" [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)">
+        <option value="" i18n="@@assignmentsFilterAllStatuses">All statuses</option>
+        <option value="pending" i18n="@@assignmentsStatusPending">Pending</option>
+        <option value="completed" i18n="@@assignmentsStatusCompleted">Completed</option>
+        <option value="declined" i18n="@@assignmentsStatusDeclined">Declined</option>
+      </select>
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@assignmentsFilterIdeaSearch">Idea search</label>
+      <input class="field-input" [ngModel]="filterIdeaSearch()" (ngModelChange)="filterIdeaSearch.set($event)" />
+    </div>
+    <button type="button" class="btn-default" (click)="applyFilters()" i18n="@@assignmentsApplyFilters">Apply</button>
+  </div>
+</section>
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mt-3">{{ msg }}</p>
+}
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="6" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="retryLoad()" />
+} @else if (assignments().length === 0) {
+  <app-empty-state title="No assignments match these filters." i18n-title="@@assignmentsEmpty" icon="search" />
+} @else {
+  <div class="data-table-wrap mt-4">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th i18n="@@assignmentsColumnIdea">Idea</th>
+          <th i18n="@@assignmentsColumnEvaluator">Evaluator</th>
+          <th i18n="@@assignmentsColumnAssignedAt">Assigned</th>
+          <th i18n="@@assignmentsColumnDueAt">Due</th>
+          <th i18n="@@assignmentsColumnStatus">Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (a of assignments(); track a.id) {
+          <tr>
+            <td><input type="checkbox" [checked]="selectedIds().has(a.id)" (change)="toggleSelected(a.id)" /></td>
+            <td>{{ a.ideaCode }} — {{ a.ideaTitleEn }}</td>
+            <td>
+              <select class="field-select" [ngModel]="a.evaluatorId" (ngModelChange)="onReassign(a.id, $event)">
+                @for (e of evaluators(); track e.id) {
+                  <option [value]="e.id">{{ e.fullNameEn }}</option>
+                }
+              </select>
+            </td>
+            <td>{{ a.assignedAt | date: 'yyyy-MM-dd' }}</td>
+            <td>{{ a.dueAt ? (a.dueAt | date: 'yyyy-MM-dd') : '—' }}</td>
+            <td>{{ a.statusCode }}</td>
+            <td class="text-end">
+              <button type="button" class="btn-ghost btn-sm text-red-700" [disabled]="a.statusCode === 'declined'" (click)="onUnassign(a.id)" i18n="@@assignmentsUnassign">Unassign</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-3 flex items-center justify-between">
+    <button type="button" class="btn-ghost btn-sm" [disabled]="selectedIds().size === 0" (click)="onBulkUnassign()" i18n="@@assignmentsBulkUnassign">Bulk unassign</button>
+    <div class="flex items-center gap-2">
+      <button type="button" class="btn-ghost btn-sm" [disabled]="page() <= 1" (click)="goToPage(page() - 1)" i18n="@@assignmentsPrevPage">Previous</button>
+      <span class="text-sm text-muted-foreground">{{ page() }}</span>
+      <button type="button" class="btn-ghost btn-sm" [disabled]="page() * pageSize >= total()" (click)="goToPage(page() + 1)" i18n="@@assignmentsNextPage">Next</button>
+    </div>
+  </div>
+}
+
+<section class="card-surface card-body mt-6 max-w-2xl">
+  <h2 class="section-title" i18n="@@assignmentsNewTitle">New assignment</h2>
+  <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@assignmentsNewIdea">Idea</label>
+      <select class="field-select" [ngModel]="createDraft().ideaId" (ngModelChange)="updateCreateDraft({ ideaId: $event })">
+        <option value="" i18n="@@assignmentsSelectIdea">Select an idea</option>
+        @for (i of ideaOptions(); track i.id) {
+          <option [value]="i.id">{{ i.code }} — {{ i.titleEn }}</option>
+        }
+      </select>
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@assignmentsNewEvaluator">Evaluator</label>
+      <select class="field-select" [ngModel]="createDraft().evaluatorId" (ngModelChange)="updateCreateDraft({ evaluatorId: $event })">
+        <option value="" i18n="@@assignmentsSelectEvaluator">Select an evaluator</option>
+        @for (e of evaluators(); track e.id) {
+          <option [value]="e.id">{{ e.fullNameEn }}</option>
+        }
+      </select>
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@assignmentsNewDueDate">Due date (optional)</label>
+      <input type="date" class="field-input" [ngModel]="createDraft().dueAt" (ngModelChange)="updateCreateDraft({ dueAt: $event })" />
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@assignmentsNewNotes">Notes (optional)</label>
+      <input class="field-input" [ngModel]="createDraft().notes" (ngModelChange)="updateCreateDraft({ notes: $event })" />
+    </div>
+  </div>
+  <div class="mt-3 flex justify-end">
+    <button type="button" class="btn-default" (click)="onCreate()" i18n="@@assignmentsCreateButton">Create assignment</button>
+  </div>
+</section>

@@ -1,0 +1,29 @@
+<app-public-page-hero slug="activities" [defaultTitle]="pageTitle" [defaultBody]="pageBody" />
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" label="Loading activities…" i18n-label="@@activitiesLoading" />
+} @else if (error(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (activities().length === 0) {
+  <app-empty-state title="No activities to show yet." i18n-title="@@activitiesEmpty" icon="calendar" />
+} @else {
+  <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    @for (a of activities(); track a.id) {
+      <a
+        [routerLink]="['/activities', a.id]"
+        class="card-surface card-body flex flex-col gap-3 transition-shadow hover:shadow-md"
+      >
+        <div class="flex items-center justify-between gap-2">
+          <div class="kpi-icon">
+            <app-icon name="calendar" size="h-5 w-5" />
+          </div>
+          <app-status-badge [status]="a.status">{{ a.status }}</app-status-badge>
+        </div>
+        <h2 class="section-title">{{ name(a) }}</h2>
+        <p class="text-xs font-semibold uppercase tracking-wide text-brand-gold">{{ a.type }}</p>
+        <p class="text-sm text-muted-foreground">{{ a.ideaCount }} {{ ideasLabel }}</p>
+        <p class="text-sm text-muted-foreground">{{ a.startDate | date }} – {{ a.endDate | date }}</p>
+      </a>
+    }
+  </div>
+}

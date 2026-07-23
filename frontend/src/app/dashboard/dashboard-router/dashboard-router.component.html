@@ -1,0 +1,7 @@
+@switch (role()) {
+  @case ('admin') { <app-admin-dashboard /> }
+  @case ('judge') { <app-committee-dashboard /> }
+  @case ('supervisor') { <app-supervisor-kpi-dashboard /> }
+  @case ('evaluator') { <p class="text-sm text-muted-foreground" i18n="@@dashRedirecting">Redirecting…</p> }
+  @default { <app-dashboard /> }
+}

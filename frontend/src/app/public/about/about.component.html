@@ -1,0 +1,42 @@
+<app-public-page-hero slug="about" [defaultTitle]="pageTitle" [defaultBody]="pageBody" />
+
+<section class="card-surface card-body mt-6">
+  <h2 class="section-title">{{ visionTitle }}</h2>
+  <p class="mt-2 text-sm leading-relaxed text-foreground">{{ visionBody }}</p>
+</section>
+
+<section class="card-surface card-body mt-6">
+  <h2 class="section-title">{{ missionTitle }}</h2>
+  <p class="mt-2 text-sm leading-relaxed text-foreground">{{ missionBody }}</p>
+</section>
+
+<section class="card-surface card-body mt-6">
+  <h2 class="section-title">{{ pipelineTitle }}</h2>
+  <p class="mt-2 text-sm leading-relaxed text-foreground">{{ pipelineBody }}</p>
+  <a routerLink="/stages" class="btn-link mt-3">{{ pipelineLinkText }}</a>
+</section>
+
+<section class="card-surface card-body mt-6">
+  <h2 class="section-title">{{ participateTitle }}</h2>
+  <p class="mt-2 text-sm text-muted-foreground">{{ participateSubtitle }}</p>
+  <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    @for (card of participateCards; track card.title) {
+      <div class="rounded-2xl border border-border bg-card p-4">
+        <p class="text-sm font-semibold text-brand-teal">{{ card.title }}</p>
+        <p class="mt-2 text-sm text-muted-foreground">{{ card.body }}</p>
+      </div>
+    }
+  </div>
+</section>
+
+<section class="card-surface card-body mt-6">
+  <h2 class="section-title">{{ partnersTitle }}</h2>
+  <p class="mt-2 text-sm leading-relaxed text-foreground">{{ partnersBody }}</p>
+</section>
+
+<section class="card-surface card-body mt-6">
+  <h2 class="section-title">{{ contactTitle }}</h2>
+  <p class="mt-2 text-sm leading-relaxed text-foreground">{{ contactBody }}</p>
+  <p class="mt-2 text-sm font-medium text-brand-teal">{{ contactEmail }}</p>
+  <a routerLink="/support" class="btn-default mt-3">{{ contactCtaText }}</a>
+</section>

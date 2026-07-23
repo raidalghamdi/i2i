@@ -1,0 +1,96 @@
+<app-page-header title="Escalations" i18n-title="@@escalationBoardTitle" />
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mb-4">{{ msg }}</p>
+}
+
+<section class="card-surface card-body mb-6 flex flex-col gap-4 sm:flex-row sm:items-end">
+  <div class="flex flex-1 flex-col gap-1.5">
+    <label class="field-label" i18n="@@escalationBoardFilterStatus">Status</label>
+    <select class="field-select" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); onFilterChange()">
+      <option value="" i18n="@@escalationBoardFilterAll">All</option>
+      <option value="open" i18n="@@escalationBoardFilterOpen">Open</option>
+      <option value="acknowledged" i18n="@@escalationBoardFilterAcknowledged">Acknowledged</option>
+      <option value="resolved" i18n="@@escalationBoardFilterResolved">Resolved</option>
+    </select>
+  </div>
+
+  <div class="flex flex-1 flex-col gap-1.5">
+    <label class="field-label" i18n="@@escalationBoardFilterTier">Tier</label>
+    <select class="field-select" [ngModel]="tierFilter()" (ngModelChange)="tierFilter.set($event); onFilterChange()">
+      <option value="" i18n="@@escalationBoardFilterAll">All</option>
+      <option value="manager" i18n="@@escalationBoardTierManager">Manager</option>
+      <option value="director" i18n="@@escalationBoardTierDirector">Director</option>
+      <option value="exec" i18n="@@escalationBoardTierExec">Executive</option>
+    </select>
+  </div>
+
+  <div class="flex flex-1 flex-col gap-1.5">
+    <label class="field-label" i18n="@@escalationBoardFilterEntityType">Type</label>
+    <select class="field-select" [ngModel]="entityTypeFilter()" (ngModelChange)="entityTypeFilter.set($event); onFilterChange()">
+      <option value="" i18n="@@escalationBoardFilterAll">All</option>
+      <option value="evaluation" i18n="@@escalationBoardEntityTypeEvaluation">Evaluation</option>
+      <option value="committee" i18n="@@escalationBoardEntityTypeCommittee">Committee</option>
+    </select>
+  </div>
+</section>
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="5" label="Loading escalations…" i18n-label="@@escalationBoardLoading" />
+} @else if (loadError(); as lerr) {
+  <app-error-state [message]="lerr" (retry)="onFilterChange()" />
+} @else if (escalations().length === 0) {
+  <app-empty-state title="No escalations match the current filters." i18n-title="@@escalationBoardEmpty" icon="alert-triangle" />
+} @else {
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th i18n="@@escalationBoardColumnEntity">Entity</th>
+          <th i18n="@@escalationBoardColumnTier">Tier</th>
+          <th i18n="@@escalationBoardColumnOwner">Owner</th>
+          <th i18n="@@escalationBoardColumnStatus">Status</th>
+          <th i18n="@@escalationBoardColumnActions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (escalation of escalations(); track escalation.id) {
+          <tr>
+            <td>
+              <a [routerLink]="['/ideas', escalation.entityId]" class="font-medium text-brand-teal hover:underline">{{ escalation.reasonEn }}</a>
+            </td>
+            <td>{{ escalation.tierNameEn }}</td>
+            <td>{{ escalation.ownerName }}</td>
+            <td><app-status-badge [status]="escalation.statusCode">{{ escalation.statusNameEn }}</app-status-badge></td>
+            <td>
+              <div class="flex flex-wrap items-center gap-2">
+                @if (escalation.statusCode === 'open') {
+                  <button type="button" class="btn-outline btn-sm" (click)="onAcknowledge(escalation.id)" i18n="@@escalationBoardAcknowledge">Acknowledge</button>
+                }
+                @if (escalation.tierCode !== 'exec') {
+                  <button type="button" class="btn-secondary btn-sm" (click)="onBump(escalation.id)" i18n="@@escalationBoardBump">Bump</button>
+                }
+                @if (escalation.statusCode !== 'resolved') {
+                  <details class="relative">
+                    <summary class="btn-default btn-sm inline-flex cursor-pointer" i18n="@@escalationBoardResolve">Resolve</summary>
+                    <div class="absolute end-0 z-10 mt-2 w-64 flex-col gap-2 rounded-md border border-border bg-card p-3 shadow-lg flex">
+                      <div class="flex flex-col gap-1">
+                        <label class="field-label" i18n="@@escalationBoardResolutionAr">Resolution (Arabic)</label>
+                        <input class="field-input" [ngModel]="resolutionAr()" (ngModelChange)="resolutionAr.set($event)" />
+                      </div>
+                      <div class="flex flex-col gap-1">
+                        <label class="field-label" i18n="@@escalationBoardResolutionEn">Resolution (English)</label>
+                        <input class="field-input" [ngModel]="resolutionEn()" (ngModelChange)="resolutionEn.set($event)" />
+                      </div>
+                      <button type="button" class="btn-default btn-sm" (click)="onResolve(escalation.id)" [disabled]="!resolutionAr() || !resolutionEn()" i18n="@@escalationBoardSubmitResolution">Submit</button>
+                    </div>
+                  </details>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

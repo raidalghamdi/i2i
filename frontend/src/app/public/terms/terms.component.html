@@ -1,0 +1,18 @@
+<app-public-page-hero slug="terms" [defaultTitle]="pageTitle" />
+
+<div class="card-surface card-body mt-6">
+  <p class="mb-4 text-sm text-muted-foreground">
+    <span i18n="@@termsLastUpdatedLabel">Last updated:</span> {{ today }}
+  </p>
+  <div class="flex flex-col gap-4">
+    @if (cmsParagraphs(); as cms) {
+      @for (paragraph of cms; track paragraph) {
+        <p class="text-sm leading-relaxed text-foreground">{{ paragraph }}</p>
+      }
+    } @else {
+      @for (paragraph of paragraphs; track paragraph) {
+        <p class="text-sm leading-relaxed text-foreground">{{ paragraph }}</p>
+      }
+    }
+  </div>
+</div>

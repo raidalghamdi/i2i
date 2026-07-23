@@ -1,0 +1,53 @@
+<app-page-header title="Page Content" i18n-title="@@cmsContentListTitle">
+  <a actions routerLink="/admin/cms/content/new" class="btn-default btn-sm">
+    <app-icon name="plus" size="h-4 w-4" />
+    <span i18n="@@cmsContentListNew">New Page</span>
+  </a>
+</app-page-header>
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mb-4">{{ msg }}</p>
+}
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (content().length === 0) {
+  <app-empty-state title="No page content yet." i18n-title="@@cmsContentListEmpty" icon="document-text">
+    <a routerLink="/admin/cms/content/new" class="btn-default btn-sm inline-flex" i18n="@@cmsContentListEmptyCta">New Page</a>
+  </app-empty-state>
+} @else {
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th i18n="@@cmsContentListColumnSlug">Slug</th>
+          <th i18n="@@cmsContentListColumnTitle">Title</th>
+          <th i18n="@@cmsContentListColumnStatus">Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (page of content(); track page.id) {
+          <tr>
+            <td class="font-medium">
+              <a [routerLink]="['/admin/cms/content', page.id, 'edit']" class="text-brand-teal hover:underline">{{ page.slug }}</a>
+            </td>
+            <td class="max-w-xs truncate text-muted-foreground">{{ page.titleEn }}</td>
+            <td>
+              @if (!page.isPublished) {
+                <span class="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground" i18n="@@cmsContentListUnpublishedBadge">Unpublished</span>
+              } @else {
+                <span class="inline-flex items-center rounded-full bg-brand-teal-light px-2.5 py-0.5 text-xs font-medium text-brand-teal" i18n="@@cmsContentListPublishedBadge">Published</span>
+              }
+            </td>
+            <td class="text-end">
+              <button type="button" class="btn-ghost btn-sm" (click)="onDelete(page.id)" i18n="@@cmsContentListDelete">Delete</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

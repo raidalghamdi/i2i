@@ -1,0 +1,4 @@
+# Archived .git databases from the original separate backend/frontend repos -- preserved locally
+# for history, never tracked in the combined repo.
+backend/.git-archive/
+frontend/.git-archive/

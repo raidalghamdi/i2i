@@ -1,0 +1,77 @@
+<app-page-header
+  title="Compliance"
+  i18n-title="@@complianceTitle"
+  subtitle="The Saudi regulatory controls linked to the platform's features."
+  i18n-subtitle="@@complianceSubtitle"
+/>
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="5" label="Loading compliance controls…" i18n-label="@@complianceLoading" />
+} @else if (errorMessage(); as msg) {
+  <app-error-state [message]="msg" (retry)="reload()" />
+} @else if (rows().length === 0) {
+  <app-empty-state title="No compliance controls found." i18n-title="@@complianceEmpty" icon="gavel" />
+} @else {
+  <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground">{{ compliantLabel }}</p>
+        <p class="mt-1 text-2xl font-bold text-brand-teal">{{ compliantCount() }}</p>
+      </div>
+      <div class="kpi-icon"><app-icon name="shield-check" size="h-5 w-5" /></div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground">{{ inProgressLabel }}</p>
+        <p class="mt-1 text-2xl font-bold text-brand-teal">{{ inProgressCount() }}</p>
+      </div>
+      <div class="kpi-icon"><app-icon name="clipboard-check" size="h-5 w-5" /></div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <p class="text-sm text-muted-foreground">{{ nonCompliantLabel }}</p>
+        <p class="mt-1 text-2xl font-bold text-brand-teal">{{ nonCompliantCount() }}</p>
+      </div>
+      <div class="kpi-icon"><app-icon name="alert-triangle" size="h-5 w-5" /></div>
+    </div>
+  </div>
+
+  @for (group of groups(); track group.standardBodyCode) {
+    <div class="mb-6">
+      <div class="rounded-t-xl bg-brand-teal px-4 py-2.5 text-sm font-semibold text-white">{{ group.name }}</div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th i18n="@@complianceColumnRequirement">Requirement</th>
+              <th i18n="@@complianceColumnStatus">Status</th>
+              <th i18n="@@complianceColumnLinkedEntity">Linked entity</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of group.rows; track row.id) {
+              <tr>
+                <td>
+                  <span class="block font-mono text-xs text-muted-foreground">{{ row.controlCode }}</span>
+                  <span class="font-medium">{{ title(row) }}</span>
+                </td>
+                <td><app-status-badge [status]="row.statusCode">{{ statusName(row) }}</app-status-badge></td>
+                <td>
+                  @if (row.mappedFeaturePaths.length) {
+                    <div class="flex flex-wrap gap-1">
+                      @for (p of row.mappedFeaturePaths; track p) {
+                        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{{ p }}</code>
+                      }
+                    </div>
+                  } @else {
+                    <span>—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+}
