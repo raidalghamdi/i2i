@@ -28,7 +28,8 @@
         "sourceLocale": "en",
         "locales": {
           "ar": {
-            "translation": "src/locale/messages.ar.xlf"
+            "translation": "src/locale/messages.ar.xlf",
+            "baseHref": ""
           }
         }
       },
