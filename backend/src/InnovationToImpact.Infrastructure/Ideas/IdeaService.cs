@@ -285,7 +285,7 @@ public class IdeaService : IIdeaService
     private static readonly string[] WithdrawableStatuses =
         { IdeaStatusCodes.Draft, IdeaStatusCodes.Submitted, IdeaStatusCodes.Returned };
 
-    public async Task<IdeaQueryResult> WithdrawAsync(Guid ideaId, Guid submitterId, CancellationToken cancellationToken = default)
+    public async Task<IdeaQueryResult> WithdrawAsync(Guid ideaId, Guid submitterId, string? reason = null, CancellationToken cancellationToken = default) // Change 20260726
     {
         var idea = await _db.Ideas.Include(i => i.IdeaStatus).SingleOrDefaultAsync(i => i.Id == ideaId, cancellationToken);
         if (idea is null) return new IdeaQueryResult(IdeaCommandStatus.NotFound);
@@ -301,7 +301,7 @@ public class IdeaService : IIdeaService
         await _db.SaveChangesAsync(cancellationToken);
 
         await _auditLogWriter.AppendAsync("idea", idea.Id, "idea.withdrawn", submitterId,
-            JsonSerializer.Serialize(new { before = beforeStatus, after = IdeaStatusCodes.Withdrawn }), cancellationToken);
+            JsonSerializer.Serialize(new { before = beforeStatus, after = IdeaStatusCodes.Withdrawn, reason }), cancellationToken); // Change 20260726
 
         var evaluatorIds = await _db.Assignments.Where(a => a.IdeaId == ideaId).Select(a => a.EvaluatorId).Distinct().ToListAsync(cancellationToken);
         foreach (var evaluatorId in evaluatorIds)
@@ -332,7 +332,7 @@ public class IdeaService : IIdeaService
             query = query.Where(i => codes.Contains(i.IdeaStatus.Code));
 
         var ideas = await query.OrderByDescending(i => i.UpdatedAt)
-            .Select(i => new { i.Id, i.Code, i.TitleAr, i.TitleEn, Status = i.IdeaStatus.Code, i.CurrentStage, i.CreatedAt, i.UpdatedAt, i.SubmitterId })
+            .Select(i => new { i.Id, i.Code, i.TitleAr, i.TitleEn, Status = i.IdeaStatus.Code, i.CurrentStage, i.CreatedAt, i.UpdatedAt, i.SubmitterId, i.StrategicThemeId, ThemeNameAr = i.StrategicTheme.NameAr, ThemeNameEn = i.StrategicTheme.NameEn }) // Change 20260726
             .ToListAsync(cancellationToken);
 
         var ideaIds = ideas.Select(x => x.Id).ToList();
@@ -357,7 +357,7 @@ public class IdeaService : IIdeaService
         var feedback = ideaIds.ToDictionary(id => id, id =>
             (evalCounts.TryGetValue(id, out var ec) ? ec : 0) + (decisionCounts.TryGetValue(id, out var dc) ? dc : 0));
 
-        return ideas.Select(i => new MyIdeaItem(i.Id, i.Code, i.TitleAr, i.TitleEn, i.Status, i.CurrentStage, i.CreatedAt, i.UpdatedAt, feedback[i.Id], i.SubmitterId == userId)).ToList();
+        return ideas.Select(i => new MyIdeaItem(i.Id, i.Code, i.TitleAr, i.TitleEn, i.Status, i.CurrentStage, i.CreatedAt, i.UpdatedAt, feedback[i.Id], i.SubmitterId == userId, i.StrategicThemeId, i.ThemeNameAr, i.ThemeNameEn)).ToList(); // Change 20260726
     }
 
     public async Task<IdeaQueryResult> GetByIdAsync(Guid ideaId, Guid submitterId, bool isElevatedReviewer = false, string? callerSam = null, CancellationToken cancellationToken = default)
@@ -426,6 +426,36 @@ public class IdeaService : IIdeaService
 
         return new IdeaAttachmentsResult(IdeaCommandStatus.Success, attachments);
     }
+
+    public async Task<IdeaAttachmentsResult> DeleteAttachmentAsync(Guid ideaId, Guid attachmentId, Guid submitterId, CancellationToken cancellationToken = default) // Change 20260726
+    { // Change 20260726
+        var idea = await _db.Ideas.Include(i => i.IdeaStatus).SingleOrDefaultAsync(i => i.Id == ideaId, cancellationToken); // Change 20260726
+        if (idea is null) return new IdeaAttachmentsResult(IdeaCommandStatus.NotFound, Array.Empty<EvidenceAttachment>()); // Change 20260726
+        if (idea.SubmitterId != submitterId) return new IdeaAttachmentsResult(IdeaCommandStatus.Forbidden, Array.Empty<EvidenceAttachment>()); // Change 20260726
+        if (idea.IdeaStatus.Code != IdeaStatusCodes.Draft // Change 20260726
+            && idea.IdeaStatus.Code != IdeaStatusCodes.PassAwaitingAttachments // Change 20260726
+            && !ReturnedAllowsAttachments(idea)) // Change 20260726
+        { // Change 20260726
+            return new IdeaAttachmentsResult(IdeaCommandStatus.InvalidState, Array.Empty<EvidenceAttachment>()); // Change 20260726
+        } // Change 20260726
+
+        var attachment = await _db.EvidenceAttachments // Change 20260726
+            .SingleOrDefaultAsync(a => a.Id == attachmentId && a.EntityType == EvidenceEntityTypes.Idea && a.EntityId == ideaId && a.DeletedAt == null, cancellationToken); // Change 20260726
+        if (attachment is null) return new IdeaAttachmentsResult(IdeaCommandStatus.NotFound, Array.Empty<EvidenceAttachment>()); // Change 20260726
+
+        attachment.DeletedAt = DateTime.UtcNow; // Change 20260726
+        await _db.SaveChangesAsync(cancellationToken); // Change 20260726
+
+        await _auditLogWriter.AppendAsync("idea", ideaId, "idea.attachment_deleted", submitterId, // Change 20260726
+            JsonSerializer.Serialize(new { attachmentId, fileName = attachment.FileName }), cancellationToken); // Change 20260726
+
+        var remaining = await _db.EvidenceAttachments // Change 20260726
+            .Where(a => a.EntityType == EvidenceEntityTypes.Idea && a.EntityId == ideaId && a.DeletedAt == null) // Change 20260726
+            .OrderBy(a => a.UploadedAt) // Change 20260726
+            .ToListAsync(cancellationToken); // Change 20260726
+
+        return new IdeaAttachmentsResult(IdeaCommandStatus.Success, remaining); // Change 20260726
+    } // Change 20260726
 
     public async Task<IdeaAttachmentFileResult> GetAttachmentFileAsync(Guid ideaId, Guid attachmentId, Guid userId, bool isElevatedReviewer, string? callerSam, CancellationToken ct = default)
     {

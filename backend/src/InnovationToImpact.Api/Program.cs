@@ -1305,25 +1305,56 @@ app.MapGet("/api/directory/search", async (string? q, int? limit, IAdIdentityLoo
     return Results.Ok(results);
 }).RequireAuthorization("AnyAssignedRole");
 
-app.MapGet("/api/ideas/mine", async (string? statusGroup, ClaimsPrincipal user, IIdeaService service) =>
+app.MapGet("/api/ideas/mine", async (string? statusGroup, string? status, string? sort, int? page, int? size, ClaimsPrincipal user, IIdeaService service) => // Change 20260726
 {
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
     var email = user.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
     var callerSam = CallerIdentity.ResolveSam(user);
     var ideas = await service.GetMineDetailedAsync(userId, statusGroup, email, callerSam);
-    return Results.Ok(ideas.Select(i => new
+    if (!string.IsNullOrWhiteSpace(status)) // Change 20260726
+    { // Change 20260726
+        ideas = ideas.Where(i => string.Equals(i.Status, status, StringComparison.OrdinalIgnoreCase)).ToList(); // Change 20260726
+    } // Change 20260726
+
+    ideas = (sort?.Trim().ToLowerInvariant() switch // Change 20260726
+    { // Change 20260726
+        "createdat asc" => ideas.OrderBy(i => i.CreatedAt), // Change 20260726
+        "createdat desc" => ideas.OrderByDescending(i => i.CreatedAt), // Change 20260726
+        "updatedat asc" => ideas.OrderBy(i => i.UpdatedAt), // Change 20260726
+        "updatedat desc" => ideas.OrderByDescending(i => i.UpdatedAt), // Change 20260726
+        _ => ideas.OrderByDescending(i => i.CreatedAt), // Change 20260726
+    }).ToList(); // Change 20260726
+
+    var total = ideas.Count; // Change 20260726
+    // Pagination is opt-in: callers that pass neither page nor size still get the bare array the
+    // existing clients expect, while paginating callers get the {items,total,page,size} envelope.
+    var paginate = page.HasValue || size.HasValue; // Change 20260726
+    var effectivePage = Math.Max(page ?? 1, 1); // Change 20260726
+    var effectiveSize = Math.Clamp(size ?? 20, 1, 200); // Change 20260726
+    var pageItems = paginate // Change 20260726
+        ? ideas.Skip((effectivePage - 1) * effectiveSize).Take(effectiveSize).ToList() // Change 20260726
+        : ideas; // Change 20260726
+
+    var items = pageItems.Select(i => new // Change 20260726
     {
         id = i.Id,
         code = i.Code,
         titleAr = i.TitleAr,
         titleEn = i.TitleEn,
+        themeId = i.StrategicThemeId, // Change 20260726
+        themeNameAr = i.ThemeNameAr, // Change 20260726
+        themeNameEn = i.ThemeNameEn, // Change 20260726
         status = i.Status,
         currentStage = i.CurrentStage,
         createdAt = i.CreatedAt,
         updatedAt = i.UpdatedAt,
         feedbackCount = i.FeedbackCount,
         isOwner = i.IsOwner,
-    }));
+    }).ToList(); // Change 20260726
+
+    return paginate // Change 20260726
+        ? Results.Ok(new { items, total, page = effectivePage, size = effectiveSize }) // Change 20260726
+        : Results.Ok(items); // Change 20260726
 }).RequireAuthorization("AnyAssignedRole");
 
 app.MapGet("/api/ideas/{id:guid}", async (Guid id, ClaimsPrincipal user, IIdeaService service, InnovationDbContext db) =>
@@ -1346,6 +1377,12 @@ app.MapGet("/api/ideas/{id:guid}", async (Guid id, ClaimsPrincipal user, IIdeaSe
 
     var attachmentsResult = await service.GetAttachmentsAsync(id, userId, isElevatedReviewer, callerSam);
     var idea = result.Idea!;
+    // Status history comes from the hash-chained audit log; actions are namespaced "idea.*".
+    var auditTrail = await db.Set<AuditLog>() // Change 20260726
+        .Where(a => a.EntityType == "idea" && a.EntityId == id) // Change 20260726
+        .OrderBy(a => a.OccurredAt) // Change 20260726
+        .Select(a => new { action = a.Action, actorId = a.ActorId, occurredAt = a.OccurredAt, payload = a.Payload }) // Change 20260726
+        .ToListAsync(); // Change 20260726
     return Results.Ok(new
     {
         id = idea.Id,
@@ -1380,6 +1417,7 @@ app.MapGet("/api/ideas/{id:guid}", async (Guid id, ClaimsPrincipal user, IIdeaSe
         updatedAt = idea.UpdatedAt,
         approvedAt = idea.ApprovedAt,
         attachments = attachmentsResult.Attachments.Select(a => new { id = a.Id, fileName = a.FileName, contentType = a.ContentType, fileSizeBytes = a.FileSizeBytes, uploadedAt = a.UploadedAt }),
+        auditTrail, // Change 20260726
     });
 }).RequireAuthorization("AnyAssignedRole");
 
@@ -1417,6 +1455,20 @@ app.MapGet("/api/ideas/{id:guid}/attachments", async (Guid id, ClaimsPrincipal u
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
 }).RequireAuthorization("AnyAssignedRole");
+
+app.MapDelete("/api/ideas/{id:guid}/attachments/{attachmentId:guid}", async (Guid id, Guid attachmentId, ClaimsPrincipal user, IIdeaService service) => // Change 20260726
+{ // Change 20260726
+    var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!); // Change 20260726
+    var result = await service.DeleteAttachmentAsync(id, attachmentId, userId); // Change 20260726
+    return result.Status switch // Change 20260726
+    { // Change 20260726
+        IdeaCommandStatus.Success => Results.Ok(result.Attachments.Select(a => new { id = a.Id, fileName = a.FileName, contentType = a.ContentType, fileSizeBytes = a.FileSizeBytes, uploadedAt = a.UploadedAt })), // Change 20260726
+        IdeaCommandStatus.NotFound => Results.NotFound(), // Change 20260726
+        IdeaCommandStatus.Forbidden => Results.StatusCode(StatusCodes.Status403Forbidden), // Change 20260726
+        IdeaCommandStatus.InvalidState => Results.Conflict(new { error = "Attachments cannot be removed in the idea's current state." }), // Change 20260726
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError), // Change 20260726
+    }; // Change 20260726
+}).RequireAuthorization("IdeaAuthor"); // Change 20260726
 
 app.MapGet("/api/ideas/{id:guid}/attachments/{attachmentId:guid}", async (Guid id, Guid attachmentId, ClaimsPrincipal user, IIdeaService service) =>
 {
@@ -2132,10 +2184,10 @@ app.MapPost("/api/ideas/{id:guid}/submit-to-committee", async (Guid id, SubmitTo
     };
 }).RequireAuthorization("SupervisorOrAdmin");
 
-app.MapPost("/api/ideas/{id:guid}/withdraw", async (Guid id, ClaimsPrincipal user, IIdeaService service) =>
+app.MapPost("/api/ideas/{id:guid}/withdraw", async (Guid id, IdeaWithdrawInput? input, ClaimsPrincipal user, IIdeaService service) => // Change 20260726
 {
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    var result = await service.WithdrawAsync(id, userId);
+    var result = await service.WithdrawAsync(id, userId, input?.Reason); // Change 20260726
     return result.Status switch
     {
         IdeaCommandStatus.Success => Results.Ok(new { id = result.Idea!.Id, status = result.Idea.IdeaStatus.Code }),
