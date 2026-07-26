@@ -154,6 +154,16 @@
         </section>
       }
 
+      <!-- Change 20260726 -->
+      @if (withdrawOpen()) {
+        <app-withdraw-dialog
+          [ideaId]="idea.id"
+          [ideaTitle]="idea.titleAr"
+          (withdrawn)="onWithdrawn()"
+          (cancelled)="closeWithdraw()"
+        />
+      }
+
       @if (idea.screeningReason) {
         <section class="card-surface card-body">
           <h2 class="section-title" i18n="@@ideaDetailScreeningReasonTitle">Supervisor Feedback</h2>

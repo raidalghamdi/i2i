@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router'; // Change 20260726
 import { HttpErrorResponse } from '@angular/common/http'; // Change 20260726
 import { MineIdeasComponent } from './mine-ideas.component'; // Change 20260726
 import { IdeasService, MineIdeaRow, MineIdeasPage } from '../ideas.service'; // Change 20260726
+import { IdeasApiService } from '../ideas-api.service'; // Change 20260726
 
 function row(overrides: Partial<MineIdeaRow> = {}): MineIdeaRow { // Change 20260726
   return { // Change 20260726
@@ -30,12 +31,18 @@ function page(items: MineIdeaRow[], total = items.length): MineIdeasPage { // Ch
 describe('MineIdeasComponent', () => { // Change 20260726
   let fixture: ComponentFixture<MineIdeasComponent>; // Change 20260726
   let ideas: jasmine.SpyObj<IdeasService>; // Change 20260726
+  let ideasApi: jasmine.SpyObj<IdeasApiService>; // Change 20260726
 
   async function setup(): Promise<void> { // Change 20260726
     ideas = jasmine.createSpyObj<IdeasService>('IdeasService', ['getMine', 'getById']); // Change 20260726
+    ideasApi = jasmine.createSpyObj<IdeasApiService>('IdeasApiService', ['withdraw']); // Change 20260726
     TestBed.configureTestingModule({ // Change 20260726
       imports: [MineIdeasComponent], // Change 20260726
-      providers: [provideRouter([]), { provide: IdeasService, useValue: ideas }], // Change 20260726
+      providers: [ // Change 20260726
+        provideRouter([]), // Change 20260726
+        { provide: IdeasService, useValue: ideas }, // Change 20260726
+        { provide: IdeasApiService, useValue: ideasApi }, // Change 20260726
+      ], // Change 20260726
     }); // Change 20260726
   } // Change 20260726
 
@@ -126,5 +133,61 @@ describe('MineIdeasComponent', () => { // Change 20260726
     await fixture.whenStable(); // Change 20260726
 
     expect(fixture.componentInstance.rows().map((r) => r.status)).toEqual(['approved', 'submitted']); // Change 20260726
+  }); // Change 20260726
+
+  /** Clicks the row-level Withdraw button in the desktop table. */ // Change 20260726
+  function clickWithdraw(): void { // Change 20260726
+    const button = (fixture.nativeElement as HTMLElement).querySelector( // Change 20260726
+      '[data-testid="mine-withdraw"]', // Change 20260726
+    ) as HTMLButtonElement; // Change 20260726
+    button.click(); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
+  } // Change 20260726
+
+  it('opens the withdraw dialog, withdraws with the reason, and refreshes the list', async () => { // Change 20260726
+    ideas.getMine.and.resolveTo(page([row({ status: 'submitted' })])); // Change 20260726
+    ideasApi.withdraw.and.resolveTo(undefined); // Change 20260726
+    await render(); // Change 20260726
+
+    clickWithdraw(); // Change 20260726
+    const dialog = (fixture.nativeElement as HTMLElement).querySelector('app-withdraw-dialog'); // Change 20260726
+    expect(dialog).toBeTruthy(); // Change 20260726
+
+    const textarea = dialog!.querySelector('textarea') as HTMLTextAreaElement; // Change 20260726
+    textarea.value = 'Superseded'; // Change 20260726
+    textarea.dispatchEvent(new Event('input')); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
+
+    const confirm = Array.from(dialog!.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find( // Change 20260726
+      (b) => b.textContent?.includes('Confirm withdrawal'), // Change 20260726
+    ); // Change 20260726
+    confirm!.click(); // Change 20260726
+    await fixture.whenStable(); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
+
+    expect(ideasApi.withdraw).toHaveBeenCalledWith('i1', 'Superseded'); // Change 20260726
+    expect(ideas.getMine).toHaveBeenCalledTimes(2); // Change 20260726
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-withdraw-dialog')).toBeNull(); // Change 20260726
+  }); // Change 20260726
+
+  it('closes the dialog without withdrawing when cancelled', async () => { // Change 20260726
+    ideas.getMine.and.resolveTo(page([row({ status: 'draft' })])); // Change 20260726
+    await render(); // Change 20260726
+
+    clickWithdraw(); // Change 20260726
+    fixture.componentInstance.closeWithdraw(); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
+
+    expect(ideasApi.withdraw).not.toHaveBeenCalled(); // Change 20260726
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-withdraw-dialog')).toBeNull(); // Change 20260726
+  }); // Change 20260726
+
+  it('disables Withdraw for statuses the backend rejects', async () => { // Change 20260726
+    ideas.getMine.and.resolveTo(page([row({ status: 'approved' })])); // Change 20260726
+    await render(); // Change 20260726
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="mine-withdraw"]')).toBeNull(); // Change 20260726
+    expect(fixture.componentInstance.isWithdrawable(row({ status: 'approved' }))).toBeFalse(); // Change 20260726
+    expect(fixture.componentInstance.isWithdrawable(row({ status: 'submitted', isOwner: false }))).toBeFalse(); // Change 20260726
   }); // Change 20260726
 }); // Change 20260726
