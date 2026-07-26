@@ -1,0 +1,47 @@
+<app-page-header title="Page Content" i18n-title="@@cmsContentFormPageTitle" />
+
+@if (loading()) {
+  <app-loading-state variant="spinner" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else {
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="card-surface card-body flex max-w-2xl flex-col gap-5">
+  @if (errorMessage(); as msg) {
+    <div class="field-error" role="alert">{{ msg }}</div>
+  }
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@cmsContentFormSlug">Slug</label>
+    <input class="field-input" formControlName="slug" />
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@cmsContentFormTitleAr">Title (Arabic)</label>
+    <input class="field-input" formControlName="titleAr" />
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@cmsContentFormTitleEn">Title (English)</label>
+    <input class="field-input" formControlName="titleEn" />
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@cmsContentFormBodyAr">Body (Arabic)</label>
+    <textarea class="field-textarea" formControlName="bodyAr"></textarea>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@cmsContentFormBodyEn">Body (English)</label>
+    <textarea class="field-textarea" formControlName="bodyEn"></textarea>
+  </div>
+
+  <label class="flex items-center gap-2">
+    <input type="checkbox" class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" formControlName="isPublished" />
+    <span class="field-label" i18n="@@cmsContentFormPublished">Published</span>
+  </label>
+
+  <div class="flex justify-end">
+    <button type="submit" class="btn-default" [disabled]="form.invalid" i18n="@@cmsContentFormSave">Save</button>
+  </div>
+</form>
+}

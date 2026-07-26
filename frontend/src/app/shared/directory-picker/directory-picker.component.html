@@ -1,0 +1,60 @@
+<div class="w-full">
+  @if (multiple() && selected().length > 0) {
+    <div class="mb-2 flex flex-wrap gap-2">
+      @for (person of selected(); track person.samAccountName) {
+        <span
+          class="inline-flex items-center gap-1.5 rounded-full bg-brand-teal-light px-3 py-1 text-sm text-foreground"
+          [attr.data-chip-id]="person.samAccountName"
+        >
+          {{ person.displayName }}
+          <button
+            type="button"
+            class="text-muted-foreground transition-colors hover:text-foreground"
+            [attr.data-chip-remove]="person.samAccountName"
+            [attr.aria-label]="person.displayName"
+            (click)="remove(person)"
+          >
+            <app-icon name="x" size="h-3 w-3" />
+          </button>
+        </span>
+      }
+    </div>
+  }
+
+  <div class="relative">
+    <span class="pointer-events-none absolute inset-y-0 start-3 flex items-center text-muted-foreground">
+      <app-icon name="search" size="h-4 w-4" />
+    </span>
+    <input
+      type="text"
+      class="w-full rounded-md border border-border bg-card py-2 ps-9 pe-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-teal"
+      [placeholder]="placeholder() ?? defaultPlaceholder"
+      role="combobox"
+      aria-haspopup="listbox"
+      [value]="query()"
+      (input)="onInput($event)"
+    />
+  </div>
+
+  @if (query().trim().length >= 2) {
+    <div class="mt-1 max-h-72 overflow-y-auto rounded-md border border-border bg-card shadow-lg" role="listbox">
+      @if (loading()) {
+        <div class="px-3 py-3 text-sm text-muted-foreground" i18n="@@directoryPickerLoading">Searching…</div>
+      } @else if (results().length === 0) {
+        <div class="px-3 py-3 text-sm text-muted-foreground" i18n="@@directoryPickerNoResults">No matches found</div>
+      } @else {
+        @for (person of results(); track person.samAccountName) {
+          <button
+            type="button"
+            class="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-start text-sm transition-colors hover:bg-brand-teal-light"
+            [attr.data-person-id]="person.samAccountName"
+            (click)="select(person)"
+          >
+            <span class="font-medium text-foreground">{{ person.displayName }}</span>
+            <span class="text-xs text-muted-foreground">{{ person.email }}</span>
+          </button>
+        }
+      }
+    </div>
+  }
+</div>

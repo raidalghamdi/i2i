@@ -1,0 +1,11 @@
+<app-public-page-hero slug="events" [defaultTitle]="pageTitle" [defaultBody]="pageBody" />
+
+<div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+  @for (card of cards; track card.slug) {
+    <div class="card-surface card-body flex flex-col gap-2">
+      <h2 class="section-title">{{ card.title }}</h2>
+      <p class="flex-1 text-sm leading-relaxed text-muted-foreground">{{ card.desc }}</p>
+      <a [routerLink]="['/events', card.slug]" class="btn-link mt-2">{{ viewDetailsLabel }}</a>
+    </div>
+  }
+</div>

@@ -1,0 +1,11 @@
+@if (identity(); as id) {
+  @if (id.roles.length > 0) {
+    <select class="field-select h-9 w-auto" (change)="onChange($event)">
+      @for (role of id.roles; track role) {
+        <option [value]="role" [selected]="role === id.activeRole">{{ role }}</option>
+      }
+    </select>
+  } @else {
+    <span class="text-sm text-muted-foreground" i18n="@@noRolesAssigned">No roles assigned</span>
+  }
+}

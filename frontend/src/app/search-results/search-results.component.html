@@ -1,0 +1,69 @@
+<app-page-header [title]="pageTitle" />
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="4" />
+} @else if (error(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (query() === '') {
+  <app-empty-state icon="search" [title]="promptTitle" />
+} @else if (totalCount === 0) {
+  <app-empty-state icon="search" [title]="noResultsTitle">
+    @if (query(); as q) {
+      <p class="text-sm text-muted-foreground" i18n="@@searchResultsNoResultsForQuery">No results for "{{ q }}".</p>
+    }
+  </app-empty-state>
+} @else {
+  @if (results()!.ideas.length > 0) {
+    <section class="mt-6">
+      <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        {{ ideasLabel }} · {{ results()!.ideas.length }}
+      </h2>
+      <ul class="space-y-3">
+        @for (item of results()!.ideas; track item.id) {
+          <li>
+            <a [routerLink]="item.link" class="card-surface card-body block transition-shadow hover:shadow-md">
+              <p class="font-medium text-brand-teal">{{ itemTitle(item) }}</p>
+              <p class="mt-1 text-sm text-muted-foreground">{{ item.subtitle }}</p>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (results()!.challenges.length > 0) {
+    <section class="mt-6">
+      <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        {{ challengesLabel }} · {{ results()!.challenges.length }}
+      </h2>
+      <ul class="space-y-3">
+        @for (item of results()!.challenges; track item.id) {
+          <li>
+            <a [routerLink]="item.link" class="card-surface card-body block transition-shadow hover:shadow-md">
+              <p class="font-medium text-brand-teal">{{ itemTitle(item) }}</p>
+              <p class="mt-1 text-sm text-muted-foreground">{{ item.subtitle }}</p>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (results()!.users.length > 0) {
+    <section class="mt-6">
+      <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        {{ usersLabel }} · {{ results()!.users.length }}
+      </h2>
+      <ul class="space-y-3">
+        @for (item of results()!.users; track item.id) {
+          <li>
+            <a [routerLink]="item.link" class="card-surface card-body block transition-shadow hover:shadow-md">
+              <p class="font-medium text-brand-teal">{{ itemTitle(item) }}</p>
+              <p class="mt-1 text-sm text-muted-foreground">{{ item.subtitle }}</p>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+}

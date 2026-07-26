@@ -1,0 +1,41 @@
+<app-page-header title="Evaluation Settings" i18n-title="@@evaluationSettingsPageTitle" />
+
+@if (loading()) {
+  <app-loading-state variant="spinner" label="Loading evaluation settings…" i18n-label="@@evaluationSettingsLoading" />
+} @else if (loadError(); as lerr) {
+  <app-error-state [message]="lerr" (retry)="reload()" />
+} @else {
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex max-w-xl flex-col gap-6">
+    @if (errorMessage(); as msg) {
+      <div class="field-error" role="alert">{{ msg }}</div>
+    }
+    @if (saved()) {
+      <div class="rounded-md bg-emerald-50 px-4 py-2 text-sm text-emerald-700" role="status" i18n="@@evaluationSettingsSaved">Settings saved.</div>
+    }
+
+    <section class="card-surface card-body flex flex-col gap-4">
+      <h2 class="section-title" i18n="@@evaluationSettingsHeading">Passing score</h2>
+      <p class="text-sm text-muted-foreground" i18n="@@evaluationSettingsHelp">
+        The minimum average evaluation score (0–10) an idea must reach to pass technical evaluation. Applies to future evaluations.
+      </p>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" for="passThreshold" i18n="@@evaluationSettingsPassThreshold">Passing score (0–10)</label>
+        <input id="passThreshold" class="field-input max-w-40" type="number" min="0" max="10" step="0.1" formControlName="passThreshold" />
+        @if (form.controls.passThreshold.invalid && form.controls.passThreshold.touched) {
+          <span class="field-error" i18n="@@evaluationSettingsPassThresholdError">Enter a number between 0 and 10.</span>
+        }
+      </div>
+
+      @if (updatedAt(); as ts) {
+        <p class="text-xs text-muted-foreground">
+          <span i18n="@@evaluationSettingsUpdatedAt">Last updated</span>: {{ ts | date:'medium' }}
+        </p>
+      }
+    </section>
+
+    <div class="flex justify-end">
+      <button type="submit" class="btn-default" [disabled]="form.invalid" i18n="@@evaluationSettingsSave">Save settings</button>
+    </div>
+  </form>
+}

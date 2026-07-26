@@ -1,0 +1,31 @@
+@if (loading()) {
+  <app-loading-state variant="spinner" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (idea(); as idea) {
+  <app-page-header [title]="idea.code + ' — ' + idea.titleEn" />
+
+  <app-idea-context-panel [idea]="idea" viewMode="supervisor" class="mb-6 block max-w-2xl" />
+
+  <div class="card-surface card-body flex max-w-2xl flex-col gap-5">
+    @if (errorMessage(); as msg) {
+      <div class="field-error" role="alert">{{ msg }}</div>
+    }
+
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@submitToCommitteeFormJudges">Judges</label>
+      <app-role-user-multiselect
+        [users]="judges()"
+        [selectedIds]="selectedJudgeIds()"
+        (selectionChange)="selectedJudgeIds.set($event)"
+      />
+      @if (judgeSelectionError(); as jErr) {
+        <p class="field-error" role="alert">{{ jErr }}</p>
+      }
+    </div>
+
+    <div class="flex justify-end">
+      <button type="button" class="btn-default" (click)="onSubmit()" i18n="@@submitToCommitteeFormSubmit">Refer to Committee</button>
+    </div>
+  </div>
+}

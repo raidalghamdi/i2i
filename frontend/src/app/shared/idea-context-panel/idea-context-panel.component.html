@@ -1,0 +1,115 @@
+<section class="card-surface card-body flex flex-col gap-4">
+  <div class="flex items-start justify-between gap-3">
+    <div class="min-w-0">
+      <p class="font-mono text-xs text-muted-foreground">{{ idea().code }}</p>
+      <h2 class="section-title mt-1">{{ idea().titleAr }}</h2>
+      @if (idea().titleEn) {
+        <p class="mt-0.5 text-sm text-muted-foreground">{{ idea().titleEn }}</p>
+      }
+    </div>
+    <app-status-badge [status]="idea().status">{{ idea().status | statusLabel }}</app-status-badge>
+  </div>
+
+  <div class="flex flex-col gap-3">
+    <div>
+      <h3 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground" i18n="@@ideaContextPanelProblem">Problem Statement</h3>
+      <p class="mt-1 text-sm text-foreground" dir="rtl">{{ idea().problemStatementAr }}</p>
+    </div>
+    <div>
+      <h3 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground" i18n="@@ideaContextPanelSolution">Proposed Solution</h3>
+      <p class="mt-1 text-sm text-foreground" dir="rtl">{{ idea().proposedSolutionAr }}</p>
+    </div>
+    <div>
+      <h3 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground" i18n="@@ideaContextPanelBenefits">Expected Benefits</h3>
+      <p class="mt-1 text-sm text-foreground" dir="rtl">{{ idea().expectedBenefitsAr }}</p>
+    </div>
+  </div>
+
+  @if (themeName() || activityName()) {
+    <dl class="flex flex-col gap-1.5 text-sm">
+      @if (themeName()) {
+        <div class="flex justify-between gap-4">
+          <dt class="text-muted-foreground" i18n="@@ideaContextPanelTheme">Track</dt>
+          <dd class="text-end text-foreground">{{ themeName() }}</dd>
+        </div>
+      }
+      @if (activityName()) {
+        <div class="flex justify-between gap-4">
+          <dt class="text-muted-foreground" i18n="@@ideaContextPanelActivity">Event</dt>
+          <dd class="text-end text-foreground">{{ activityName() }}</dd>
+        </div>
+      }
+    </dl>
+  }
+
+  @if (showTeam()) {
+    <div>
+      <h3 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground" i18n="@@ideaContextPanelTeam">Team</h3>
+      @if (idea().participationType === 'team') {
+        <p class="mt-1 text-sm text-foreground">{{ idea().teamName }}</p>
+        @if (idea().teamMembers.length > 0) {
+          <ul class="mt-1.5 flex flex-col gap-1 text-sm text-muted-foreground">
+            @for (member of idea().teamMembers; track member.email) {
+              <li>{{ member.name }} — {{ member.email }}</li>
+            }
+          </ul>
+        }
+      } @else {
+        <p class="mt-1 text-sm text-foreground" i18n="@@ideaContextPanelIndividual">Individual</p>
+      }
+    </div>
+  }
+
+  <div>
+    <h3 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground" i18n="@@ideaContextPanelAttachments">Attachments</h3>
+    @if (idea().attachments.length === 0) {
+      <p class="mt-1 text-sm text-muted-foreground" i18n="@@ideaContextPanelNoAttachments">No attachments.</p>
+    } @else {
+      <ul class="mt-1.5 flex flex-col gap-1.5">
+        @for (attachment of idea().attachments; track attachment.id) {
+          <li class="rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm text-foreground">{{ attachment.fileName }}</li>
+        }
+      </ul>
+    }
+  </div>
+
+  @if (showEvaluationDetail()) {
+    @if (evaluationDetail(); as detail) {
+      <div class="flex flex-col gap-3 border-t border-border pt-4">
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground" i18n="@@ideaContextPanelEvaluationRating">Evaluator Ratings</h3>
+          @if (detail.aggregateScore !== null) {
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-teal/10 px-3 py-1 text-sm font-semibold text-brand-teal">
+              <span i18n="@@ideaContextPanelAggregateScore">Aggregate score</span>: {{ detail.aggregateScore.toFixed(1) }}
+            </span>
+          }
+        </div>
+        @if (detail.evaluations.length === 0) {
+          <p class="text-sm text-muted-foreground" i18n="@@ideaContextPanelNoEvaluationsYet">No evaluations submitted yet.</p>
+        } @else {
+          <ul class="flex flex-col gap-2">
+            @for (e of detail.evaluations; track e.reviewerLabel) {
+              <li class="rounded-lg border border-border p-3">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-sm font-medium text-foreground">{{ e.reviewerLabel }}</span>
+                  @if (e.score !== null) {
+                    <span class="text-sm font-semibold text-brand-teal">{{ e.score.toFixed(1) }}</span>
+                  }
+                </div>
+                @if (e.comment) {
+                  <p class="mt-1.5 text-sm text-muted-foreground">{{ e.comment }}</p>
+                }
+              </li>
+            }
+          </ul>
+        }
+        @if (detail.supervisorComment) {
+          <div class="rounded-lg border border-border bg-muted/40 p-3">
+            <span class="text-sm font-medium text-foreground" i18n="@@ideaContextPanelSupervisorComment">Supervisor feedback</span>
+            <p class="mt-1 text-sm text-muted-foreground">{{ detail.supervisorComment }}</p>
+          </div>
+        }
+      </div>
+    }
+  }
+</section>

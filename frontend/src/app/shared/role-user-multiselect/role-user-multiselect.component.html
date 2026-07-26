@@ -1,0 +1,17 @@
+<ul class="flex flex-col gap-2">
+  @for (u of users(); track u.id) {
+    <li>
+      <label class="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm" dir="rtl">
+        <input
+          type="checkbox"
+          class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          [checked]="isSelected(u.id)"
+          (change)="toggle(u.id)"
+        />
+        <span>{{ u.fullNameAr }}</span>
+      </label>
+    </li>
+  } @empty {
+    <li class="text-sm text-muted-foreground" i18n="@@roleUserMultiselectEmpty">No users found for this role.</li>
+  }
+</ul>

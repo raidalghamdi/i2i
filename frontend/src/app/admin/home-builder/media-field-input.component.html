@@ -1,0 +1,33 @@
+<div class="flex flex-col gap-1.5">
+  @if (label()) {
+    <label class="field-label">{{ label() }}</label>
+  }
+  @if (value()) {
+    @if (kind() === 'image') {
+      <img [src]="value()" alt="" class="h-32 w-auto rounded-lg object-cover" />
+    } @else {
+      <video controls [src]="value()" class="h-32 w-auto rounded-lg"></video>
+    }
+  }
+  <div class="flex flex-wrap items-center gap-2">
+    <label class="btn-outline btn-sm cursor-pointer">
+      <span>{{ uploadLabel }}</span>
+      <input
+        type="file"
+        class="hidden"
+        [attr.accept]="kind() === 'image' ? 'image/*' : 'video/*'"
+        [disabled]="uploading()"
+        (change)="onFileSelected($any($event.target).files[0]); $any($event.target).value = ''"
+      />
+    </label>
+    @if (value()) {
+      <button type="button" class="btn-ghost btn-sm" (click)="remove()">{{ removeLabel }}</button>
+    }
+    @if (uploading()) {
+      <span class="text-xs text-muted-foreground">{{ uploadingLabel }}</span>
+    }
+  </div>
+  @if (errorMessage(); as msg) {
+    <p class="field-error text-xs">{{ msg }}</p>
+  }
+</div>

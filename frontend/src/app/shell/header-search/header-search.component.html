@@ -1,0 +1,85 @@
+<div class="relative w-full max-w-md" (keydown)="onKeydown($event)">
+  <div class="relative">
+    <span class="pointer-events-none absolute inset-y-0 start-3 flex items-center text-muted-foreground">
+      <app-icon name="search" size="h-4 w-4" />
+    </span>
+    <input
+      type="search"
+      class="w-full rounded-md border border-border bg-card py-2 ps-9 pe-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-teal"
+      [placeholder]="placeholder"
+      i18n-placeholder="@@headerSearchPlaceholder"
+      aria-label="Search"
+      role="combobox"
+      aria-haspopup="listbox"
+      [attr.aria-expanded]="open()"
+      [value]="query()"
+      (input)="onInput($event)"
+      (focus)="onFocus()"
+    />
+  </div>
+
+  @if (open() && query().trim() !== '') {
+    <div class="absolute top-full z-40 mt-1 max-h-[28rem] w-full min-w-[20rem] overflow-hidden rounded-md border border-border bg-card shadow-lg" role="listbox">
+      <div class="max-h-80 overflow-y-auto py-1">
+        @if (loading()) {
+          <app-loading-state />
+        } @else if (totalCount() === 0) {
+          <app-empty-state [title]="noResultsTitle" />
+        } @else {
+          @if (results()?.ideas?.length) {
+            <div class="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ ideasLabel }}</div>
+            @for (item of results()!.ideas; track item.id) {
+              <button
+                type="button"
+                class="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-start text-sm transition-colors hover:bg-brand-teal-light"
+                [class.bg-brand-teal-light]="isHighlighted(item)"
+                [attr.data-result-id]="item.id"
+                (click)="selectItem(item)"
+              >
+                <span class="font-medium text-foreground">{{ itemTitle(item) }}</span>
+                <span class="text-xs text-muted-foreground">{{ item.subtitle }}</span>
+              </button>
+            }
+          }
+          @if (results()?.challenges?.length) {
+            <div class="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ challengesLabel }}</div>
+            @for (item of results()!.challenges; track item.id) {
+              <button
+                type="button"
+                class="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-start text-sm transition-colors hover:bg-brand-teal-light"
+                [class.bg-brand-teal-light]="isHighlighted(item)"
+                [attr.data-result-id]="item.id"
+                (click)="selectItem(item)"
+              >
+                <span class="font-medium text-foreground">{{ itemTitle(item) }}</span>
+                <span class="text-xs text-muted-foreground">{{ item.subtitle }}</span>
+              </button>
+            }
+          }
+          @if (results()?.users?.length) {
+            <div class="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ usersLabel }}</div>
+            @for (item of results()!.users; track item.id) {
+              <button
+                type="button"
+                class="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-start text-sm transition-colors hover:bg-brand-teal-light"
+                [class.bg-brand-teal-light]="isHighlighted(item)"
+                [attr.data-result-id]="item.id"
+                (click)="selectItem(item)"
+              >
+                <span class="font-medium text-foreground">{{ itemTitle(item) }}</span>
+                <span class="text-xs text-muted-foreground">{{ item.subtitle }}</span>
+              </button>
+            }
+          }
+        }
+      </div>
+      <button
+        type="button"
+        class="block w-full border-t border-border px-3 py-2 text-center text-sm font-medium text-brand-teal transition-colors hover:bg-brand-teal-light"
+        (click)="viewAll()"
+      >
+        {{ viewAllLabel }}
+      </button>
+    </div>
+  }
+</div>

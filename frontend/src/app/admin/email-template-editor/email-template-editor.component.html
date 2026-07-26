@@ -1,0 +1,91 @@
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (templates().length === 0) {
+  <app-empty-state title="No email templates configured yet." i18n-title="@@emailTemplateEmpty" icon="document-text" />
+} @else {
+<div class="flex flex-wrap gap-2 border-b border-border pb-2">
+  @for (kind of kindOrder; track kind) {
+    <button
+      type="button"
+      class="rounded-t-lg px-4 py-2 text-sm font-medium"
+      [class.bg-brand-teal]="activeKind() === kind"
+      [class.text-white]="activeKind() === kind"
+      (click)="switchTo(kind)"
+    >
+      @switch (kind) {
+        @case ('invite') { <span i18n="@@emailTemplateKindInvite">Invite</span> }
+        @case ('accept') { <span i18n="@@emailTemplateKindAccept">Accept</span> }
+        @case ('reject') { <span i18n="@@emailTemplateKindReject">Reject</span> }
+        @default { <span i18n="@@emailTemplateKindReminder">Reminder</span> }
+      }
+    </button>
+  }
+</div>
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mt-3">{{ msg }}</p>
+}
+
+<div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+  <section class="card-surface card-body lg:col-span-2">
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@emailTemplateSubjectAr">Subject (AR)</label>
+      <input class="field-input" dir="rtl" [ngModel]="subjectAr()" (ngModelChange)="subjectAr.set($event)" />
+    </div>
+    <div class="mt-3 flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@emailTemplateSubjectEn">Subject (EN)</label>
+      <input class="field-input" dir="ltr" [ngModel]="subjectEn()" (ngModelChange)="subjectEn.set($event)" />
+    </div>
+    <div class="mt-3 flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@emailTemplateBodyAr">Body (AR)</label>
+      <textarea class="field-input" dir="rtl" rows="8" [ngModel]="bodyAr()" (ngModelChange)="bodyAr.set($event)"></textarea>
+    </div>
+    <div class="mt-3 flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@emailTemplateBodyEn">Body (EN)</label>
+      <textarea class="field-input" dir="ltr" rows="8" [ngModel]="bodyEn()" (ngModelChange)="bodyEn.set($event)"></textarea>
+    </div>
+
+    <div class="mt-4 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+      <p class="font-semibold" i18n="@@emailTemplatePlaceholdersLabel">Supported placeholders:</p>
+      <code class="mt-1 block font-mono">{{ '{{full_name}} · {{role_ar}} · {{role_en}} · {{invite_link}} · {{expires_at}} · {{program}} · {{dashboard_link}}' }}</code>
+    </div>
+
+    <label class="mt-4 flex items-center gap-2">
+      <input type="checkbox" [ngModel]="isBroadcast()" (ngModelChange)="isBroadcast.set($event)" />
+      <span class="text-sm" i18n="@@emailTemplateBroadcastLabel">For everyone (broadcast)</span>
+    </label>
+
+    <div class="mt-4 flex justify-end">
+      <button type="button" class="btn-default" (click)="save()" [disabled]="saving()" i18n="@@emailTemplateSaveButton">Save</button>
+    </div>
+  </section>
+
+  <section class="card-surface card-body">
+    <h3 class="section-title" i18n="@@emailTemplateAttachmentsTitle">Attachments</h3>
+    <p class="text-xs text-muted-foreground" i18n="@@emailTemplateAttachmentsSubtitle">Automatically attached to every email using this template.</p>
+
+    <label class="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-4 text-sm text-muted-foreground">
+      <span i18n="@@emailTemplateUploadButton">Upload file</span>
+      <input
+        type="file"
+        class="hidden"
+        [disabled]="uploading()"
+        (change)="onFileSelected($any($event.target).files[0]); $any($event.target).value = ''"
+      />
+    </label>
+
+    <div class="mt-3 flex flex-col gap-2">
+      @for (attachment of attachments(); track attachment.id) {
+        <div class="flex items-center justify-between gap-2 rounded-lg border border-border p-2 text-xs">
+          <span class="truncate">{{ attachment.fileName }}</span>
+          <button type="button" class="btn-ghost btn-sm text-red-700" (click)="onDeleteAttachment(attachment.id)" i18n="@@emailTemplateDeleteAttachment">Delete</button>
+        </div>
+      } @empty {
+        <p class="text-center text-xs text-muted-foreground" i18n="@@emailTemplateNoAttachments">No attachments yet.</p>
+      }
+    </div>
+  </section>
+</div>
+}

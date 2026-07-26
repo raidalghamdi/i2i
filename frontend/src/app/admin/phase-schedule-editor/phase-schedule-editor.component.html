@@ -1,0 +1,124 @@
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (phases().length === 0) {
+  <app-empty-state title="No phases configured yet." i18n-title="@@adminPhasesEmpty" icon="calendar" />
+} @else {
+<div class="flex flex-col gap-4">
+  @for (phase of phases(); track phase.idx) {
+    <section class="card-surface card-body">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand-teal/10 text-sm font-bold text-brand-teal">{{ phase.idx + 1 }}</span>
+          <h3 class="section-title">{{ phase.labelAr }}</h3>
+        </div>
+        <app-status-badge [status]="status(phase)">
+          @switch (status(phase)) {
+            @case ('active') { <span i18n="@@adminPhasesStatusActive">Active now</span> }
+            @case ('past') { <span i18n="@@adminPhasesStatusPast">Completed</span> }
+            @case ('future') { <span i18n="@@adminPhasesStatusFuture">Upcoming</span> }
+            @default { <span i18n="@@adminPhasesStatusUnscheduled">Unscheduled</span> }
+          }
+        </app-status-badge>
+      </div>
+      <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div class="flex flex-col gap-1.5">
+          <label class="field-label" i18n="@@adminPhasesStartLabel">Start date</label>
+          <input
+            type="datetime-local"
+            class="field-input"
+            [ngModel]="toLocalInput(phase.startsAt)"
+            (ngModelChange)="updateStartsAt(phase.idx, $event)"
+          />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="field-label" i18n="@@adminPhasesEndLabel">End date</label>
+          <input
+            type="datetime-local"
+            class="field-input"
+            [ngModel]="toLocalInput(phase.endsAt)"
+            (ngModelChange)="updateEndsAt(phase.idx, $event)"
+          />
+        </div>
+      </div>
+      <div class="mt-4 flex items-center justify-between gap-3">
+        <p class="text-xs text-muted-foreground">
+          <span i18n="@@adminPhasesCodeLabel">Phase code:</span> <code>{{ phase.code }}</code>
+        </p>
+        <div class="flex items-center gap-3">
+          @if (errors()[phase.idx]) {
+            <span class="field-error">{{ errors()[phase.idx] }}</span>
+          }
+          @if (saved()[phase.idx]) {
+            <span class="text-sm text-emerald-600" i18n="@@adminPhasesSavedLabel">Saved</span>
+          }
+          <button type="button" class="btn-default btn-sm" (click)="save(phase.idx)" [disabled]="saving()[phase.idx]" i18n="@@adminPhasesSaveButton">Save</button>
+        </div>
+      </div>
+
+      <div class="mt-4 flex flex-col gap-2 border-t border-border pt-4">
+        <label class="field-label" i18n="@@adminPhasesAudienceLabel">Notify these roles when announced</label>
+        <div class="flex flex-wrap gap-3">
+          @for (role of roles(); track role.roleCode) {
+            <label class="inline-flex items-center gap-1.5 text-sm">
+              <input
+                type="checkbox"
+                [value]="role.roleCode"
+                [checked]="isAudienceRoleSelected(phase.idx, role.roleCode)"
+                (change)="toggleAudienceRole(phase.idx, role.roleCode, $any($event.target).checked)"
+              />
+              {{ role.roleNameAr }}
+            </label>
+          }
+        </div>
+        <div class="mt-1 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            @if (audienceErrors()[phase.idx]) {
+              <span class="field-error">{{ audienceErrors()[phase.idx] }}</span>
+            }
+            @if (audienceSaved()[phase.idx]) {
+              <span class="text-sm text-emerald-600" i18n="@@adminPhasesAudienceSavedLabel">Audience saved</span>
+            }
+          </div>
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              class="btn-outline btn-sm"
+              (click)="saveAudience(phase.idx)"
+              [disabled]="audienceSaving()[phase.idx]"
+              i18n="@@adminPhasesAudienceSaveButton"
+            >
+              Save audience
+            </button>
+            <button
+              type="button"
+              class="btn-default btn-sm"
+              (click)="announce(phase.idx)"
+              [disabled]="announcing()[phase.idx]"
+              i18n="@@adminPhasesAnnounceButton"
+            >
+              Announce
+            </button>
+          </div>
+        </div>
+        @if (announceErrors()[phase.idx]) {
+          <span class="field-error">{{ announceErrors()[phase.idx] }}</span>
+        }
+        @if (announceRecipientCount()[phase.idx] !== undefined && announceRecipientCount()[phase.idx] !== null) {
+          <p class="text-sm text-emerald-600">
+            <span i18n="@@adminPhasesAnnounceSentLabel">Announcement sent to</span>
+            {{ announceRecipientCount()[phase.idx] }}
+            <span i18n="@@adminPhasesAnnounceRecipientsLabel">recipient(s).</span>
+          </p>
+        }
+        @if (phase.announcedAt) {
+          <p class="text-xs text-muted-foreground">
+            <span i18n="@@adminPhasesAnnouncedAtLabel">Announced at:</span> {{ phase.announcedAt }}
+          </p>
+        }
+      </div>
+    </section>
+  }
+</div>
+}

@@ -1,0 +1,79 @@
+@if (loading()) {
+  <app-loading-state variant="spinner" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (idea(); as idea) {
+  <app-page-header [title]="idea.code + ' — ' + idea.titleEn" />
+
+  <app-idea-context-panel [idea]="idea" viewMode="supervisor" [evaluationDetail]="detail()" class="mb-6 block max-w-2xl" />
+
+  @if (detail(); as d) {
+    <section class="card-surface card-body mb-6 max-w-2xl flex flex-col gap-3">
+      <h2 class="section-title" i18n="@@evaluationReviewFormCommentsTitle">Evaluator Comments</h2>
+      @if (d.evaluations.length === 0) {
+        <p class="text-sm text-muted-foreground" i18n="@@evaluationReviewFormNoComments">No evaluator comments yet.</p>
+      } @else {
+        <ul class="flex flex-col gap-2">
+          @for (e of d.evaluations; track e.reviewerLabel) {
+            <li class="rounded-lg border border-border p-3">
+              <p class="text-sm font-medium text-foreground">{{ e.reviewerLabel }}</p>
+              @if (e.comment) {
+                <p class="mt-1 text-sm text-muted-foreground">{{ e.comment }}</p>
+              } @else {
+                <p class="mt-1 text-sm text-muted-foreground" i18n="@@evaluationReviewFormNoComment">No comment provided.</p>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="card-surface card-body flex max-w-2xl flex-col gap-5">
+    @if (errorMessage(); as msg) {
+      <div class="field-error" role="alert">{{ msg }}</div>
+    }
+
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@evaluationReviewFormDecision">Decision</label>
+      <select class="field-select" formControlName="decisionCode">
+        <option value="" i18n="@@evaluationReviewFormSelectDecision">Select a decision</option>
+        <option value="forward" i18n="@@evaluationReviewFormForward">Forward to Committee</option>
+        <option value="return" i18n="@@evaluationReviewFormReturn">Return to Submitter</option>
+        <option value="fail" i18n="@@evaluationReviewFormFail">Fail</option>
+      </select>
+    </div>
+
+    @if (form.get('decisionCode')!.value === 'forward') {
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@evaluationReviewFormSupervisorComment">Comment (optional)</label>
+        <textarea class="field-textarea" formControlName="supervisorComment"></textarea>
+      </div>
+    }
+
+    @if (form.get('decisionCode')!.value === 'return') {
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@evaluationReviewFormEditableSections">Sections the submitter may edit</label>
+        <app-section-multiselect
+          [selectedSections]="selectedSections()"
+          (selectionChange)="selectedSections.set($event)"
+        />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@evaluationReviewFormReason">Reason</label>
+        <textarea class="field-textarea" formControlName="reason"></textarea>
+      </div>
+    }
+
+    @if (form.get('decisionCode')!.value === 'fail') {
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@evaluationReviewFormFailReason">Reason (optional)</label>
+        <textarea class="field-textarea" formControlName="reason"></textarea>
+      </div>
+    }
+
+    <div class="flex justify-end">
+      <button type="submit" class="btn-default" [disabled]="form.invalid" i18n="@@evaluationReviewFormSubmit">Submit Decision</button>
+    </div>
+  </form>
+}

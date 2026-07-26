@@ -1,0 +1,37 @@
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+  data-testid="terms-modal-backdrop"
+  (click)="onBackdropClick()"
+>
+  <div
+    class="card-surface card-body flex max-h-[85vh] w-full max-w-2xl flex-col overflow-y-auto"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="modalTitle"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="mb-4 flex items-center justify-between gap-4">
+      <h2 class="text-lg font-semibold text-foreground">{{ modalTitle }}</h2>
+      <button
+        type="button"
+        class="btn-ghost btn-sm"
+        data-testid="terms-modal-close"
+        [attr.aria-label]="closeLabel"
+        (click)="onClose()"
+      >
+        <app-icon name="x" size="h-4 w-4" />
+      </button>
+    </div>
+    <div class="flex flex-col gap-4">
+      @if (cmsParagraphs(); as cms) {
+        @for (paragraph of cms; track paragraph) {
+          <p class="text-sm leading-relaxed text-foreground">{{ paragraph }}</p>
+        }
+      } @else {
+        @for (paragraph of paragraphs; track paragraph) {
+          <p class="text-sm leading-relaxed text-foreground">{{ paragraph }}</p>
+        }
+      }
+    </div>
+  </div>
+</div>

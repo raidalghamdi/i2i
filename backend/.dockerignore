@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+**/.vs/
+tests/
+*.user
+*.sln
+evidence-storage/
+report-storage/

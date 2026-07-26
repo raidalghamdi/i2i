@@ -1,0 +1,37 @@
+<app-page-header title="Content Block" i18n-title="@@cmsBlockFormPageTitle" />
+
+@if (loading()) {
+  <app-loading-state variant="spinner" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else {
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="card-surface card-body flex max-w-2xl flex-col gap-5">
+  @if (errorMessage(); as msg) {
+    <div class="field-error" role="alert">{{ msg }}</div>
+  }
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@cmsBlockFormKey">Key</label>
+    <input class="field-input" formControlName="key" />
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@cmsBlockFormContentAr">Content (Arabic)</label>
+    <textarea class="field-textarea" formControlName="contentAr"></textarea>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@cmsBlockFormContentEn">Content (English)</label>
+    <textarea class="field-textarea" formControlName="contentEn"></textarea>
+  </div>
+
+  <label class="flex items-center gap-2">
+    <input type="checkbox" class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" formControlName="isPublished" />
+    <span class="field-label" i18n="@@cmsBlockFormPublished">Published</span>
+  </label>
+
+  <div class="flex justify-end">
+    <button type="submit" class="btn-default" [disabled]="form.invalid" i18n="@@cmsBlockFormSave">Save</button>
+  </div>
+</form>
+}

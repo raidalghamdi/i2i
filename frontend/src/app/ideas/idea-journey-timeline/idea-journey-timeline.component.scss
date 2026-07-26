@@ -1,0 +1,178 @@
+.ij-track {
+  /* State colors — Item 2 four-state scheme. */
+  --ij-completed: #059669; /* emerald-600 */
+  --ij-current: #E0A82E;   /* brand gold */
+  --ij-current-deep: #B0821D;
+  --ij-stopped: #e11d48;   /* rose-600 */
+  --ij-neutral: #cbd5e1;   /* slate-300 */
+  margin-top: 28px;
+  position: relative;
+  padding-top: 22px;
+}
+.ij-group-heads {
+  display: grid;
+  grid-template-columns: 5fr 3fr;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 0 8px;
+}
+.ij-group-head {
+  font-size: 10.5px;
+  letter-spacing: 0.6px;
+  color: rgba(232, 237, 245, 0.55);
+  font-weight: 600;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ij-group-head::before,
+.ij-group-head::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.ij-steps {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  align-items: start;
+  position: relative;
+  padding: 0 4px;
+}
+.ij-track-line {
+  position: absolute;
+  top: 40px;
+  right: 4.5%;
+  left: 4.5%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  z-index: 0;
+  border-radius: 2px;
+}
+.ij-track-line-fill {
+  position: absolute;
+  top: 40px;
+  right: 4.5%;
+  height: 2px;
+  z-index: 1;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+.ij-divider {
+  position: absolute;
+  top: 12px;
+  bottom: 22px;
+  right: calc(62.5% - 0.5px);
+  width: 1px;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0 4px, transparent 4px 8px);
+  background-size: 1px 8px;
+  z-index: 0;
+}
+.ij-step {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 26px;
+}
+.ij-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 12.5px;
+  background: transparent;
+  color: #8fa0bd;
+  border: 1.5px solid var(--ij-neutral);
+  position: relative;
+  transition: transform 0.2s ease;
+}
+/* completed — green filled with a checkmark */
+.ij-step.completed .ij-circle {
+  background: var(--ij-completed);
+  color: #ffffff;
+  border-color: var(--ij-completed);
+}
+.ij-step.completed .ij-circle::after {
+  content: "✓";
+  font-size: 14px;
+  font-weight: 800;
+}
+.ij-step.completed .ij-circle .ij-num {
+  display: none;
+}
+/* current — gold filled with the stage number */
+.ij-step.current .ij-circle {
+  background: var(--ij-current);
+  color: #1C4854;
+  border-color: var(--ij-current-deep);
+  box-shadow: 0 0 0 4px rgba(224, 168, 46, 0.2);
+  animation: ij-pulse 2.2s ease-in-out infinite;
+}
+/* stopped — red filled with the stage number */
+.ij-step.stopped .ij-circle {
+  background: var(--ij-stopped);
+  color: #ffffff;
+  border-color: #9f1239;
+  box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.22);
+}
+@keyframes ij-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(224, 168, 46, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(224, 168, 46, 0.1);
+  }
+}
+.ij-label {
+  font-size: 11.5px;
+  color: rgba(232, 237, 245, 0.55);
+  text-align: center;
+  line-height: 1.35;
+  max-width: 90px;
+  font-weight: 500;
+}
+.ij-step.completed .ij-label {
+  color: #6ee7b7; /* emerald-300 */
+}
+.ij-step.current .ij-label {
+  color: #F2C76A;
+  font-weight: 700;
+}
+.ij-step.stopped .ij-label {
+  color: #fda4af; /* rose-300 */
+  font-weight: 700;
+}
+.ij-stop-pill {
+  margin-top: 2px;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(225, 29, 72, 0.2);
+  color: #fda4af;
+  border: 1px solid rgba(225, 29, 72, 0.35);
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+@media (max-width: 720px) {
+  .ij-label {
+    font-size: 10px;
+    max-width: 60px;
+  }
+  .ij-circle {
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+  }
+  .ij-track-line,
+  .ij-track-line-fill {
+    top: 38px;
+  }
+}

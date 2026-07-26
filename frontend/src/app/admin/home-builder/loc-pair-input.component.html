@@ -1,0 +1,23 @@
+<div class="flex flex-col gap-1.5">
+  @if (label()) {
+    <label class="field-label">{{ label() }}</label>
+  }
+  <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+    <div class="flex flex-col gap-1">
+      <span class="text-xs font-medium text-muted-foreground">{{ arLabel }}</span>
+      @if (multiline()) {
+        <textarea class="field-input" dir="rtl" rows="3" [value]="value().ar" (input)="updateAr($any($event.target).value)"></textarea>
+      } @else {
+        <input class="field-input" dir="rtl" [value]="value().ar" (input)="updateAr($any($event.target).value)" />
+      }
+    </div>
+    <div class="flex flex-col gap-1">
+      <span class="text-xs font-medium text-muted-foreground">{{ enLabel }}</span>
+      @if (multiline()) {
+        <textarea class="field-input" dir="ltr" rows="3" [value]="value().en" (input)="updateEn($any($event.target).value)"></textarea>
+      } @else {
+        <input class="field-input" dir="ltr" [value]="value().en" (input)="updateEn($any($event.target).value)" />
+      }
+    </div>
+  </div>
+</div>

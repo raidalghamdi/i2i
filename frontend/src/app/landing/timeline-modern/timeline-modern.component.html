@@ -1,0 +1,32 @@
+<div class="relative">
+  <div
+    class="absolute inset-y-0 start-6 w-[3px] -translate-x-1/2 rounded-full rtl:translate-x-1/2 md:start-1/2"
+    style="background: linear-gradient(180deg, #CFEDF8 0%, #CFEDF8 57%, #1C4854 57%, #1C4854 100%)"
+  ></div>
+
+  <div class="flex flex-col gap-6 md:gap-4">
+    @for (stage of stages(); track stage.id; let i = $index) {
+      <div
+        #stageEl
+        [attr.data-stage-id]="stage.id"
+        class="relative transition-all duration-700 ease-out md:flex md:min-h-[120px] md:items-center"
+        [class]="visibleIds().has(stage.id) ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'"
+      >
+        <span
+          class="absolute start-6 top-6 z-10 h-4 w-4 -translate-x-1/2 rounded-full rtl:translate-x-1/2 md:start-1/2 md:top-1/2 md:h-5 md:w-5 md:-translate-y-1/2"
+          [class]="stage.tone === 'gold'
+            ? 'bg-brand-gold shadow-[0_0_0_4px_#FFFFFF,0_0_16px_rgba(28,72,84,0.7)]'
+            : 'bg-brand-cyan-light shadow-[0_0_0_4px_#FFFFFF,0_0_16px_rgba(207,237,248,0.6)]'"
+        ></span>
+
+        <div class="ps-14 md:w-1/2 md:ps-0" [class]="isEnd(i) ? 'md:ms-auto md:ps-12' : 'md:pe-12'">
+          <div class="rounded-2xl border bg-card p-5 shadow-sm transition" [class]="stage.tone === 'gold' ? 'border-brand-gold/40' : 'border-brand-cyan/30'">
+            <span class="block text-sm font-bold" [class]="stage.tone === 'gold' ? 'text-brand-gold' : 'text-brand-cyan'">{{ stage.date }}</span>
+            <h3 class="mt-1 text-base font-semibold text-brand-teal sm:text-lg">{{ stage.title }}</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{{ stage.description }}</p>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

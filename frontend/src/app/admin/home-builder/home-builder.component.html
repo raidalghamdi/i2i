@@ -1,0 +1,188 @@
+<app-page-header title="Homepage Builder" i18n-title="@@homeBuilderTitle">
+  <div actions class="flex items-center gap-3">
+    @if (saved()) {
+      <span class="text-sm text-emerald-600" i18n="@@homeBuilderSavedLabel">Saved</span>
+    }
+    <button
+      type="button"
+      class="btn-default btn-sm"
+      (click)="save()"
+      [disabled]="saving() || rows().length === 0"
+      i18n="@@homeBuilderSaveButton"
+    >
+      Save
+    </button>
+  </div>
+</app-page-header>
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mb-4" role="alert">{{ msg }}</p>
+}
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="4" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else {
+  <div class="card-surface card-body mb-6 flex flex-wrap items-end gap-3">
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@homeBuilderAddTypeLabel">Section type</label>
+      <select class="field-input" [ngModel]="newSectionType()" (ngModelChange)="newSectionType.set($event)">
+        @for (t of sectionTypes; track t) {
+          <option [value]="t">{{ t }}</option>
+        }
+      </select>
+    </div>
+    <button type="button" class="btn-default btn-sm" (click)="addSection()" i18n="@@homeBuilderAddButton">Add section</button>
+  </div>
+
+  @if (rows().length === 0) {
+    <app-empty-state title="No homepage sections yet." i18n-title="@@homeBuilderEmpty" icon="stack" />
+  } @else {
+    <div class="flex flex-col gap-4">
+      @for (row of rows(); track row.key; let i = $index; let first = $first; let last = $last) {
+        <section class="card-surface card-body">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand-teal/10 text-sm font-bold text-brand-teal">{{ i + 1 }}</span>
+              <h3 class="section-title uppercase">{{ row.type }}</h3>
+              @if (!row.isVisible) {
+                <span class="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground" i18n="@@homeBuilderHiddenBadge">Hidden</span>
+              }
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" class="btn-outline btn-sm" (click)="moveUp(row.key)" [disabled]="first" i18n="@@homeBuilderMoveUp">Move up</button>
+              <button type="button" class="btn-outline btn-sm" (click)="moveDown(row.key)" [disabled]="last" i18n="@@homeBuilderMoveDown">Move down</button>
+              <button type="button" class="btn-outline btn-sm" (click)="toggleVisible(row.key)">
+                @if (row.isVisible) {
+                  <span i18n="@@homeBuilderHideButton">Hide</span>
+                } @else {
+                  <span i18n="@@homeBuilderShowButton">Show</span>
+                }
+              </button>
+              <button type="button" class="btn-ghost btn-sm" (click)="toggleExpanded(row.key)">
+                @if (isExpanded(row.key)) {
+                  <span i18n="@@homeBuilderCollapseButton">Collapse</span>
+                } @else {
+                  <span i18n="@@homeBuilderExpandButton">Edit</span>
+                }
+              </button>
+              <button type="button" class="btn-ghost btn-sm text-destructive" (click)="deleteRow(row.key)" i18n="@@homeBuilderDeleteButton">Delete</button>
+            </div>
+          </div>
+
+          @if (isExpanded(row.key)) {
+            <div class="mt-4 flex flex-col gap-5 border-t border-border pt-4">
+              @for (field of fieldsFor(row.type); track field.key) {
+                @switch (field.kind) {
+                  @case ('loc') {
+                    <app-loc-pair-input
+                      [label]="field.label"
+                      [value]="getLoc(row, field.key)"
+                      (valueChange)="setLocField(row.key, field.key, $event)"
+                    />
+                  }
+                  @case ('text') {
+                    <div class="flex flex-col gap-1.5">
+                      <label class="field-label">{{ field.label }}</label>
+                      <input
+                        class="field-input"
+                        [ngModel]="getText(row, field.key)"
+                        (ngModelChange)="setTextField(row.key, field.key, $event)"
+                      />
+                    </div>
+                  }
+                  @case ('image') {
+                    <app-media-field-input
+                      [label]="field.label"
+                      [value]="getText(row, field.key)"
+                      kind="image"
+                      (valueChange)="setTextField(row.key, field.key, $event)"
+                    />
+                  }
+                  @case ('video') {
+                    <app-media-field-input
+                      [label]="field.label"
+                      [value]="getText(row, field.key)"
+                      kind="video"
+                      (valueChange)="setTextField(row.key, field.key, $event)"
+                    />
+                  }
+                  @case ('locArray') {
+                    <ng-template #locRowTpl let-item let-i="index">
+                      <app-loc-pair-input [value]="item" (valueChange)="setLocArrayItem(row.key, field.key, i, $event)" />
+                    </ng-template>
+                    <app-repeatable-list
+                      [label]="field.label"
+                      [items]="getArray(row, field.key)"
+                      [rowTemplate]="locRowTpl"
+                      (add)="addArrayRow(row.key, field.key, emptyRowFor(field))"
+                      (remove)="removeArrayRow(row.key, field.key, $event)"
+                    />
+                  }
+                  @case ('objArray') {
+                    <ng-template #objRowTpl let-item let-i="index">
+                      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        @for (sub of field.objFields ?? []; track sub.key) {
+                          @switch (sub.kind) {
+                            @case ('loc') {
+                              <div class="sm:col-span-2">
+                                <app-loc-pair-input
+                                  [label]="sub.label"
+                                  [value]="getSubLoc(item, sub.key)"
+                                  (valueChange)="setObjArrayItemField(row.key, field.key, i, sub.key, $event)"
+                                />
+                              </div>
+                            }
+                            @case ('number') {
+                              <div class="flex flex-col gap-1.5">
+                                <label class="field-label">{{ sub.label }}</label>
+                                <input
+                                  type="number"
+                                  class="field-input"
+                                  [ngModel]="getSubNumber(item, sub.key)"
+                                  (ngModelChange)="setObjArrayItemField(row.key, field.key, i, sub.key, $event)"
+                                />
+                              </div>
+                            }
+                            @case ('text') {
+                              <div class="flex flex-col gap-1.5">
+                                <label class="field-label">{{ sub.label }}</label>
+                                <input
+                                  class="field-input"
+                                  [ngModel]="getSubText(item, sub.key)"
+                                  (ngModelChange)="setObjArrayItemField(row.key, field.key, i, sub.key, $event)"
+                                />
+                              </div>
+                            }
+                            @case ('image') {
+                              <div class="sm:col-span-2">
+                                <app-media-field-input
+                                  [label]="sub.label"
+                                  [value]="getSubText(item, sub.key)"
+                                  kind="image"
+                                  (valueChange)="setObjArrayItemField(row.key, field.key, i, sub.key, $event)"
+                                />
+                              </div>
+                            }
+                          }
+                        }
+                      </div>
+                    </ng-template>
+                    <app-repeatable-list
+                      [label]="field.label"
+                      [items]="getArray(row, field.key)"
+                      [rowTemplate]="objRowTpl"
+                      (add)="addArrayRow(row.key, field.key, emptyRowFor(field))"
+                      (remove)="removeArrayRow(row.key, field.key, $event)"
+                    />
+                  }
+                }
+              }
+            </div>
+          }
+        </section>
+      }
+    </div>
+  }
+}

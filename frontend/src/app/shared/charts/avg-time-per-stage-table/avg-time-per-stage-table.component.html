@@ -1,0 +1,28 @@
+<div class="data-table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th i18n="@@chartsAvgTimeColumnStage">Stage</th>
+        <th i18n="@@chartsAvgTimeColumnTime">Time</th>
+        <th i18n="@@chartsAvgTimeColumnAvgDays">Avg. Days</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track row.stage) {
+        <tr>
+          <td>
+            <span data-stage-badge class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-teal-light text-[10px] font-semibold text-brand-teal">{{
+              row.stage
+            }}</span>
+          </td>
+          <td>
+            <div class="h-2 w-32 overflow-hidden rounded-full bg-muted">
+              <div data-mini-bar-fill class="h-full rounded-full" [style.width.%]="row.widthPct" [style.background]="'#1B474D'"></div>
+            </div>
+          </td>
+          <td class="font-semibold text-brand-teal">{{ row.avgDaysLabel }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,7 @@
+@if (enabled) {
+  <select class="field-select h-9 w-auto" (change)="onChange($event)" aria-label="Impersonate dev user" title="Impersonate dev user (development only)">
+    @for (user of users; track user) {
+      <option [value]="user" [selected]="user === current">{{ user }}</option>
+    }
+  </select>
+}

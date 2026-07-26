@@ -1,0 +1,38 @@
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" label="Loading workload heatmap…" i18n-label="@@workloadHeatmapLoading" />
+} @else if (loadError(); as lerr) {
+  <app-error-state [message]="lerr" (retry)="reload()" />
+} @else if (rows().length === 0) {
+  <app-empty-state title="No workload data yet." i18n-title="@@workloadHeatmapEmpty" icon="users" />
+} @else {
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th i18n="@@workloadHeatmapEvaluator">Evaluator</th>
+          <th i18n="@@workloadHeatmapPending">Pending</th>
+          <th i18n="@@workloadHeatmapDueSoon">Due soon</th>
+          <th i18n="@@workloadHeatmapOverdue">Overdue</th>
+          <th i18n="@@workloadHeatmapCompletedRecent">Completed (7d)</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.evaluatorId) {
+          <tr>
+            <td class="font-medium">{{ row.evaluatorName }}</td>
+            @for (bucket of buckets; track bucket) {
+              <td>
+                <button
+                  type="button"
+                  class="inline-flex h-8 w-12 items-center justify-center rounded"
+                  [class]="shadeClass(countFor(row, bucket))"
+                  (click)="onCellClick(row.evaluatorId, bucket)"
+                >{{ countFor(row, bucket) }}</button>
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

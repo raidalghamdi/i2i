@@ -1,0 +1,68 @@
+<app-public-page-hero slug="search" [defaultTitle]="pageTitle" [defaultBody]="pageBody" />
+
+<form class="mt-6 flex gap-2" (submit)="onSubmit($event)">
+  <input
+    type="search"
+    class="field-input flex-1"
+    name="q"
+    [value]="query()"
+    (input)="query.set($any($event.target).value)"
+    i18n-placeholder="@@searchInputPlaceholder"
+    placeholder="Search ideas and tracks…"
+    aria-label="Search"
+    i18n-aria-label="@@searchInputAria"
+  />
+  <button type="submit" class="btn-default btn-sm">
+    <app-icon name="search" size="h-4 w-4" />
+    <span i18n="@@searchSubmit">Search</span>
+  </button>
+</form>
+
+@if (loading()) {
+  <app-loading-state label="Searching…" i18n-label="@@searchLoading" />
+} @else if (error(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (ran() && totalCount === 0) {
+  <app-empty-state icon="search" title="No results found." i18n-title="@@searchNoResults">
+    @if (query(); as q) {
+      <p class="text-sm text-muted-foreground" i18n="@@searchNoResultsForQuery">No results for "{{ q }}".</p>
+    }
+  </app-empty-state>
+} @else {
+  @if (ideas().length > 0) {
+    <section class="mt-6">
+      <p class="mb-3 flex items-center gap-2 text-sm font-semibold text-brand-teal">
+        <app-icon name="lightbulb" size="h-4 w-4" />
+        <span i18n="@@searchGroupIdeas">Ideas</span> · {{ ideas().length }}
+      </p>
+      <ul class="space-y-3">
+        @for (idea of ideas(); track idea.id) {
+          <li>
+            <a [routerLink]="['/ideas', idea.id]" class="card-surface card-body block transition-shadow hover:shadow-md">
+              <p class="font-medium text-brand-teal">{{ ideaTitle(idea) }}</p>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (tracks().length > 0) {
+    <section class="mt-6">
+      <p class="mb-3 flex items-center gap-2 text-sm font-semibold text-brand-teal">
+        <app-icon name="target" size="h-4 w-4" />
+        <span i18n="@@searchGroupTracks">Tracks</span> · {{ tracks().length }}
+      </p>
+      <ul class="space-y-3">
+        @for (track of tracks(); track track.id) {
+          <li>
+            <a [routerLink]="['/tracks', track.id]" class="card-surface card-body block transition-shadow hover:shadow-md">
+              <p class="font-medium text-brand-teal">{{ trackName(track) }}</p>
+              <p class="mt-1 line-clamp-2 text-sm text-muted-foreground">{{ trackDescription(track) }}</p>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+}

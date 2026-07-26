@@ -1,0 +1,146 @@
+<app-page-header title="Idea" i18n-title="@@ideaFormPageTitle" />
+
+@if (loading()) {
+  <app-loading-state />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else {
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="card-surface card-body flex max-w-2xl flex-col gap-5">
+  @if (errorMessage(); as msg) {
+    <div class="field-error" role="alert">{{ msg }}</div>
+  }
+
+  @if (isReturned()) {
+    <p class="rounded-md border border-brand-gold/40 bg-brand-gold/10 px-3 py-2 text-sm text-foreground" i18n="@@ideaFormSectionRestrictionHint">
+      This idea was returned for edits. Only the fields the supervisor selected are editable below.
+    </p>
+  }
+
+  <!-- Title -->
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormTitleAr">Title</label>
+    <input class="field-input" formControlName="titleAr" />
+  </div>
+
+  <!-- Problem statement (draft-only; never resubmittable) -->
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormProblemAr">Problem Statement</label>
+    <textarea class="field-textarea" formControlName="problemStatementAr"></textarea>
+  </div>
+
+  <!-- Proposed solution -->
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormSolutionAr">Proposed Solution</label>
+    <textarea class="field-textarea" formControlName="proposedSolutionAr"></textarea>
+  </div>
+
+  <!-- Expected benefits (draft-only; never resubmittable) -->
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormBenefitsAr">Expected Benefits</label>
+    <textarea class="field-textarea" formControlName="expectedBenefitsAr"></textarea>
+  </div>
+
+  <!-- Strategic theme -->
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormTheme">Strategic Theme</label>
+    <select class="field-select" formControlName="strategicThemeId" (change)="onThemeSelected()">
+      <option value="" i18n="@@ideaFormSelectTheme">Select a theme</option>
+      @for (theme of themes(); track theme.id) {
+        <option [value]="theme.id">{{ theme.nameAr }}</option>
+      }
+    </select>
+  </div>
+
+  <!-- Activity -->
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormActivity">Activity</label>
+    <select class="field-select" formControlName="activityId">
+      <option value="" i18n="@@ideaFormSelectActivity">Select an activity</option>
+      @for (activity of activities(); track activity.id) {
+        <option [value]="activity.id">{{ activity.nameAr }}</option>
+      }
+    </select>
+  </div>
+
+  <!-- Challenge (only when the selected theme has challenges) -->
+  @if (challengeOptions().length > 0) {
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@ideaFormChallenge">Challenge</label>
+      <select class="field-select" formControlName="challengeId">
+        <option value="" i18n="@@ideaFormSelectChallenge">Select a challenge</option>
+        @for (challenge of challengeOptions(); track challenge.id) {
+          <option [value]="challenge.id">{{ challenge.textAr }}</option>
+        }
+      </select>
+    </div>
+  }
+
+  <!-- Participation type -->
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormParticipation">Participation Type</label>
+    <div class="flex gap-4 text-sm">
+      <label class="flex items-center gap-2">
+        <input type="radio" formControlName="participationType" value="individual" />
+        <span i18n="@@ideaFormParticipationIndividual">Individual</span>
+      </label>
+      <label class="flex items-center gap-2">
+        <input type="radio" formControlName="participationType" value="team" />
+        <span i18n="@@ideaFormParticipationTeam">Team</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Team (name + members) shown only for team participation -->
+  @if (form.controls.participationType.value === 'team') {
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@ideaFormTeamName">Team Name</label>
+      <input class="field-input" formControlName="teamName" />
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label" i18n="@@ideaFormTeamMembers">Team Members</label>
+      @if (sectionEditable('team')) {
+        <app-directory-picker [multiple]="true" [initialSelection]="initialTeam()" (selectionChange)="onTeamMembersSelected($event)" />
+      } @else {
+        <ul class="flex flex-col gap-1 text-sm text-muted-foreground">
+          @for (member of teamMembers(); track member.email) {
+            <li>{{ member.name }} @if (member.samAccountName) { <span>({{ member.samAccountName }})</span> } — {{ member.email }}</li>
+          }
+        </ul>
+        <p class="text-xs text-muted-foreground" i18n="@@ideaFormTeamLocked">Team editing wasn't enabled for this return.</p>
+      }
+    </div>
+  }
+
+  <!-- Attachments -->
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@ideaFormAttachments">Attachments</label>
+    @if (existingAttachments().length > 0) {
+      <ul class="flex flex-col gap-1 text-sm text-muted-foreground">
+        @for (attachment of existingAttachments(); track attachment.id) {
+          <li class="truncate">{{ attachment.fileName }}</li>
+        }
+      </ul>
+    }
+    @if (sectionEditable('attachments')) {
+      <input class="field-input file:me-3 file:rounded file:border-0 file:bg-brand-teal-light file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-teal" type="file" (change)="onFileSelected($event)" />
+      @if (queuedFiles().length > 0) {
+        <ul class="flex flex-col gap-1.5">
+          @for (file of queuedFiles(); track file.name; let i = $index) {
+            <li class="flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
+              <span class="truncate">{{ file.name }}</span>
+              <button type="button" class="btn-ghost btn-sm" (click)="removeQueuedFile(i)" i18n="@@ideaFormRemoveFile">Remove</button>
+            </li>
+          }
+        </ul>
+      }
+    } @else if (isReturned()) {
+      <p class="text-xs text-muted-foreground" i18n="@@ideaFormAttachmentsLocked">Attachment editing wasn't enabled for this return.</p>
+    }
+  </div>
+
+  <div class="flex justify-end">
+    <button type="submit" class="btn-default" [disabled]="form.invalid" i18n="@@ideaFormSave">Save</button>
+  </div>
+</form>
+}

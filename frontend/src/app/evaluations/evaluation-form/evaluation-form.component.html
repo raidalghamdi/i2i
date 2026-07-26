@@ -1,0 +1,95 @@
+<app-page-header title="Evaluate Idea" i18n-title="@@evalFormPageTitle" />
+
+<div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+  <div class="flex flex-col gap-4 lg:col-span-2">
+    @if (idea(); as idea) {
+      <app-idea-context-panel [idea]="idea" viewMode="evaluator" [themeName]="trackName()" [activityName]="activityName()" />
+
+      <section class="card-surface card-body">
+        <h2 class="section-title" i18n="@@ideaDetailAttachments">Attachments</h2>
+        @if (idea.attachments.length === 0) {
+          <p class="mt-2 text-sm text-muted-foreground" i18n="@@ideaDetailNoAttachments">No attachments yet.</p>
+        } @else {
+          <ul class="mt-2 flex flex-col gap-1.5">
+            @for (attachment of idea.attachments; track attachment.id) {
+              <li class="rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
+                <button type="button" class="text-brand-teal hover:underline" (click)="openAttachment(attachment)">{{ attachment.fileName }}</button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    } @else if (ideaInfoUnavailable()) {
+      <section class="card-surface card-body">
+        <p class="text-sm text-muted-foreground" i18n="@@ideaDetailLoadError">Couldn't load this idea. Please try again.</p>
+      </section>
+    }
+  </div>
+
+  <div class="lg:col-span-1">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="card-surface card-body flex flex-col gap-5">
+      @if (errorMessage(); as msg) {
+        <div class="field-error" role="alert">{{ msg }}</div>
+      }
+
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@evalFormInnovation">Innovation (0-10)</label>
+        <select class="field-select" formControlName="innovation">
+          <option [ngValue]="null" disabled>—</option>
+          @for (n of scoreOptions; track n) {
+            <option [ngValue]="n">{{ n }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@evalFormImpact">Impact (0-10)</label>
+        <select class="field-select" formControlName="impact">
+          <option [ngValue]="null" disabled>—</option>
+          @for (n of scoreOptions; track n) {
+            <option [ngValue]="n">{{ n }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@evalFormExecution">Execution (0-10)</label>
+        <select class="field-select" formControlName="execution">
+          <option [ngValue]="null" disabled>—</option>
+          @for (n of scoreOptions; track n) {
+            <option [ngValue]="n">{{ n }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@evalFormScalability">Scalability (0-10)</label>
+        <select class="field-select" formControlName="scalability">
+          <option [ngValue]="null" disabled>—</option>
+          @for (n of scoreOptions; track n) {
+            <option [ngValue]="n">{{ n }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@evalFormPresentation">Presentation (0-10)</label>
+        <select class="field-select" formControlName="presentation">
+          <option [ngValue]="null" disabled>—</option>
+          @for (n of scoreOptions; track n) {
+            <option [ngValue]="n">{{ n }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@evalFormComments">Comments</label>
+        <textarea class="field-textarea" formControlName="comments"></textarea>
+      </div>
+
+      <div class="flex justify-end">
+        <button type="submit" class="btn-default" [disabled]="form.invalid" i18n="@@evalFormSubmit">Submit Evaluation</button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,24 @@
+<app-public-page-hero slug="tracks" [defaultTitle]="pageTitle" [defaultBody]="pageBody" />
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" label="Loading tracks…" i18n-label="@@tracksLoading" />
+} @else if (error(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (tracks().length === 0) {
+  <app-empty-state title="No tracks to show yet." i18n-title="@@tracksEmpty" icon="target" />
+} @else {
+  <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    @for (theme of tracks(); track theme.id) {
+      <a
+        [routerLink]="['/tracks', theme.id]"
+        class="card-surface card-body flex flex-col gap-3 transition-shadow hover:shadow-md"
+      >
+        <div class="kpi-icon">
+          <app-icon name="target" size="h-5 w-5" />
+        </div>
+        <h2 class="section-title">{{ name(theme) }}</h2>
+        <p class="line-clamp-3 text-sm leading-relaxed text-muted-foreground">{{ description(theme) }}</p>
+      </a>
+    }
+  </div>
+}

@@ -1,0 +1,59 @@
+<app-page-header title="Grant a Role to an AD Group" i18n-title="@@groupGrantTitle" />
+
+@if (loading()) {
+  <app-loading-state variant="spinner" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else {
+<div class="card-surface card-body flex max-w-xl flex-col gap-5">
+  @if (errorMessage(); as msg) {
+    <div class="field-error" role="alert">{{ msg }}</div>
+  }
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@groupGrantGroupName">AD Group Name</label>
+    <input type="text" class="field-input" [ngModel]="groupName()" (ngModelChange)="groupName.set($event)" />
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="field-label" i18n="@@groupGrantSelectRole">Role</label>
+    <select class="field-select" [ngModel]="selectedRoleCode()" (ngModelChange)="selectedRoleCode.set($event)">
+      <option value="" i18n="@@groupGrantSelectRolePlaceholder">Select a role</option>
+      @for (role of roleOptions(); track role.id) {
+        <option [value]="role.code">{{ role.nameEn }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="flex justify-end">
+    <button type="button" class="btn-default" (click)="onSubmit()" [disabled]="!groupName() || !selectedRoleCode()" i18n="@@groupGrantSubmit">Grant to Group</button>
+  </div>
+</div>
+
+@if (result(); as result) {
+  <div class="card-surface card-body mt-6 max-w-xl">
+    <h2 class="section-title" i18n="@@groupGrantResultTitle">Result</h2>
+    <dl class="mt-3 grid grid-cols-3 gap-4 text-center">
+      <div>
+        <dt class="text-xs text-muted-foreground" i18n="@@groupGrantGrantedCount">Granted:</dt>
+        <dd class="mt-1 text-xl font-bold text-brand-teal">{{ result.grantedCount }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs text-muted-foreground" i18n="@@groupGrantPendingCount">Pending:</dt>
+        <dd class="mt-1 text-xl font-bold text-brand-teal">{{ result.pendingCount }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs text-muted-foreground" i18n="@@groupGrantSkippedCount">Skipped:</dt>
+        <dd class="mt-1 text-xl font-bold text-brand-teal">{{ result.skippedCount }}</dd>
+      </div>
+    </dl>
+    @if (result.errors.length > 0) {
+      <ul class="mt-4 flex flex-col gap-1">
+        @for (error of result.errors; track error) {
+          <li class="field-error">{{ error }}</li>
+        }
+      </ul>
+    }
+  </div>
+}
+}

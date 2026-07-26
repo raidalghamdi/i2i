@@ -1,0 +1,62 @@
+<ul class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+  <li>
+    <label class="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm">
+      <input type="checkbox" class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" [checked]="isSelected('title')" (change)="toggle('title')" />
+      <span i18n="@@sectionMultiselectTitle">العنوان</span>
+    </label>
+  </li>
+  <li>
+    <label class="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm">
+      <input type="checkbox" class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" [checked]="isSelected('problem_statement')" (change)="toggle('problem_statement')" />
+      <span i18n="@@sectionMultiselectProblemStatement">بيان المشكلة</span>
+    </label>
+  </li>
+  <li>
+    <label class="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm">
+      <input type="checkbox" class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" [checked]="isSelected('proposed_solution')" (change)="toggle('proposed_solution')" />
+      <span i18n="@@sectionMultiselectProposedSolution">الحل المقترح</span>
+    </label>
+  </li>
+  <li>
+    <label class="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm">
+      <input type="checkbox" class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" [checked]="isSelected('expected_benefits')" (change)="toggle('expected_benefits')" />
+      <span i18n="@@sectionMultiselectExpectedBenefits">الفوائد المتوقعة</span>
+    </label>
+  </li>
+  <li>
+    <label class="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm">
+      <input type="checkbox" class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" [checked]="isSelected('activity_id')" (change)="toggle('activity_id')" />
+      <span i18n="@@sectionMultiselectActivity">النشاط</span>
+    </label>
+  </li>
+  <li>
+    <label class="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm">
+      <input type="checkbox" class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" [checked]="isSelected('strategic_theme_id')" (change)="toggle('strategic_theme_id')" />
+      <span i18n="@@sectionMultiselectStrategicTheme">المحور الاستراتيجي</span>
+    </label>
+  </li>
+  <li>
+    <label class="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm">
+      <input type="checkbox" class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" [checked]="isSelected('challenge')" (change)="toggle('challenge')" />
+      <span i18n="@@sectionMultiselectChallenge">التحدي</span>
+    </label>
+  </li>
+  <li>
+    <label class="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm">
+      <input type="checkbox" class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" [checked]="isSelected('participation_type')" (change)="toggle('participation_type')" />
+      <span i18n="@@sectionMultiselectParticipationType">نوع المشاركة</span>
+    </label>
+  </li>
+  <li>
+    <label class="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm">
+      <input type="checkbox" class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" [checked]="isSelected('team')" (change)="toggle('team')" />
+      <span i18n="@@sectionMultiselectTeam">الفريق</span>
+    </label>
+  </li>
+  <li>
+    <label class="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm">
+      <input type="checkbox" class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" [checked]="isSelected('attachments')" (change)="toggle('attachments')" />
+      <span i18n="@@sectionMultiselectAttachments">المرفقات</span>
+    </label>
+  </li>
+</ul>

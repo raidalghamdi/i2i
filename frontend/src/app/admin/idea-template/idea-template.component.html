@@ -1,0 +1,45 @@
+<app-page-header
+  title="Idea description template"
+  i18n-title="@@adminIdeaTemplateTitle"
+  subtitle="Manage the .docx template submitters download from the idea wizard. Uploading a new file replaces the current one."
+  i18n-subtitle="@@adminIdeaTemplateSubtitle"
+/>
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="2" />
+} @else {
+  <section class="card-surface card-body max-w-xl">
+    <h3 class="section-title" i18n="@@adminIdeaTemplateCurrentTitle">Current template</h3>
+
+    @if (current(); as t) {
+      <div class="mt-3 flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
+        <div class="min-w-0">
+          <p class="truncate font-medium">{{ t.fileName }}</p>
+          <p class="text-xs text-muted-foreground">
+            {{ formatSize(t.sizeBytes) }} &middot; {{ t.uploadedAt | date: 'medium' }}
+          </p>
+        </div>
+      </div>
+    } @else {
+      <p class="mt-3 text-sm text-muted-foreground" i18n="@@adminIdeaTemplateNone">No template uploaded yet.</p>
+    }
+
+    @if (successMessage(); as msg) {
+      <div class="mt-3 rounded-md bg-emerald-50 px-4 py-2 text-sm text-emerald-700" role="status">{{ msg }}</div>
+    }
+    @if (errorMessage(); as msg) {
+      <p class="field-error mt-3">{{ msg }}</p>
+    }
+
+    <label class="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-4 text-sm text-muted-foreground">
+      <span i18n="@@adminIdeaTemplateUploadButton">Upload new template</span>
+      <input
+        type="file"
+        class="hidden"
+        accept=".docx,.doc"
+        [disabled]="uploading()"
+        (change)="onFileSelected($any($event.target).files[0]); $any($event.target).value = ''"
+      />
+    </label>
+  </section>
+}

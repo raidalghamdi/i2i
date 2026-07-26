@@ -1,0 +1,113 @@
+<app-page-header title="Invitation & Reminder Settings" i18n-title="@@invitationSettingsPageTitle" />
+
+@if (loading()) {
+  <app-loading-state variant="spinner" />
+} @else if (loadError(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else {
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex max-w-3xl flex-col gap-6">
+  @if (errorMessage(); as msg) {
+    <div class="field-error" role="alert">{{ msg }}</div>
+  }
+  @if (saved()) {
+    <div class="rounded-md bg-emerald-50 px-4 py-2 text-sm text-emerald-700" role="status" i18n="@@invitationSettingsSaved">Settings saved.</div>
+  }
+
+  <section class="card-surface card-body flex flex-col gap-4">
+    <h2 class="section-title" i18n="@@invitationSettingsScheduleHeading">Automatic reminders</h2>
+
+    <label class="flex items-center gap-2">
+      <input type="checkbox" class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" formControlName="enabled" />
+      <span class="field-label" i18n="@@invitationSettingsEnabled">Enable automatic reminders</span>
+    </label>
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@invitationSettingsCron">Schedule (cron)</label>
+        <input class="field-input font-mono" formControlName="cronExpression" />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@invitationSettingsTimezone">Timezone</label>
+        <input class="field-input" formControlName="timezone" />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@invitationSettingsStopAfter">Max reminders per invitation</label>
+        <input class="field-input" type="number" min="0" formControlName="stopAfterNReminders" />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@invitationSettingsGapHours">Gap between reminders (hours)</label>
+        <input class="field-input" type="number" min="1" formControlName="gapHours" />
+      </div>
+    </div>
+  </section>
+
+  <section class="card-surface card-body flex flex-col gap-4">
+    <h2 class="section-title" i18n="@@invitationSettingsDefaultsHeading">Default sender &amp; program info</h2>
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@invitationSettingsExpiresDays">Expires after (days)</label>
+        <input class="field-input" type="number" min="1" formControlName="expiresDays" />
+      </div>
+      <div></div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@invitationSettingsFromName">From name</label>
+        <input class="field-input" formControlName="fromName" />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@invitationSettingsFromEmail">From email</label>
+        <input class="field-input" type="email" formControlName="fromEmail" />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@invitationSettingsProgramNameAr">Program name (Arabic)</label>
+        <input class="field-input" dir="rtl" formControlName="programNameAr" />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@invitationSettingsProgramNameEn">Program name (English)</label>
+        <input class="field-input" formControlName="programNameEn" />
+      </div>
+    </div>
+  </section>
+
+  <div class="flex justify-end">
+    <button type="submit" class="btn-default" [disabled]="form.invalid" i18n="@@invitationSettingsSave">Save settings</button>
+  </div>
+</form>
+
+<form [formGroup]="roleInvitationForm" (ngSubmit)="onSubmitRoleInvitationSettings()" class="mt-8 flex max-w-3xl flex-col gap-6">
+  @if (roleInvitationErrorMessage(); as msg) {
+    <div class="field-error" role="alert">{{ msg }}</div>
+  }
+  @if (roleInvitationSaved()) {
+    <div class="rounded-md bg-emerald-50 px-4 py-2 text-sm text-emerald-700" role="status" i18n="@@roleInvitationSettingsSaved">Settings saved.</div>
+  }
+
+  <section class="card-surface card-body flex flex-col gap-4">
+    <h2 class="section-title" i18n="@@roleInvitationSettingsHeading">Role invitation reminders</h2>
+
+    <label class="flex items-center gap-2">
+      <input type="checkbox" class="h-4 w-4 rounded border-input text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" formControlName="enabled" />
+      <span class="field-label" i18n="@@roleInvitationSettingsEnabled">Enable automatic reminders</span>
+    </label>
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@roleInvitationSettingsExpiresDays">Default expiry (days)</label>
+        <input class="field-input" type="number" min="1" formControlName="defaultExpiresDays" />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@roleInvitationSettingsGapHours">Gap between reminders (hours)</label>
+        <input class="field-input" type="number" min="1" formControlName="reminderGapHours" />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@roleInvitationSettingsMaxReminders">Max reminders per invitation</label>
+        <input class="field-input" type="number" min="0" formControlName="maxReminders" />
+      </div>
+    </div>
+  </section>
+
+  <div class="flex justify-end">
+    <button type="submit" class="btn-default" [disabled]="roleInvitationForm.invalid" i18n="@@roleInvitationSettingsSave">Save role invitation settings</button>
+  </div>
+</form>
+}

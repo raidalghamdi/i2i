@@ -1,0 +1,20 @@
+<span class="inline-grid">
+  <span class="invisible col-start-1 row-start-1 bg-gradient-to-l from-brand-cyan-light via-brand-cyan to-brand-gold bg-clip-text text-transparent">{{ longestWord() }}</span>
+  @for (word of words(); track word; let i = $index) {
+    <span
+      class="col-start-1 row-start-1 bg-gradient-to-l from-brand-cyan-light via-brand-cyan to-brand-gold bg-clip-text text-transparent transition-all duration-500 ease-out"
+      [class]="i === activeIndex() ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0'"
+    >{{ word }}</span>
+  }
+</span>
+<span class="mt-4 flex items-center justify-center gap-2">
+  @for (word of words(); track word; let i = $index) {
+    @if (i > 0) {
+      <app-icon name="arrow-right" size="h-3 w-3" class="shrink-0 text-white/40 rtl:rotate-180" />
+    }
+    <span
+      class="rounded-full transition-all duration-500"
+      [class]="i === activeIndex() ? 'h-2.5 w-2.5 bg-brand-gold' : 'h-2 w-2 bg-white/30'"
+    ></span>
+  }
+</span>

@@ -1,0 +1,27 @@
+@if (link()) {
+  <a [routerLink]="link()" class="flex h-full flex-col rounded-2xl border border-border bg-card p-4 transition-shadow hover:shadow-md sm:p-5">
+    <div class="flex items-center justify-between gap-2">
+      <span class="text-xs font-medium text-muted-foreground">{{ label() }}</span>
+      @if (icon()) {
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-teal-light text-brand-teal">
+          <app-icon [name]="icon()!" size="h-4 w-4" />
+        </span>
+      }
+    </div>
+    <span class="mt-2 text-2xl font-bold tabular-nums text-foreground sm:text-3xl">{{ value() }}</span>
+    @if (hint()) { <span class="mt-1 text-xs text-muted-foreground">{{ hint() }}</span> }
+  </a>
+} @else {
+  <div class="flex h-full flex-col rounded-2xl border border-border bg-card p-4 sm:p-5">
+    <div class="flex items-center justify-between gap-2">
+      <span class="text-xs font-medium text-muted-foreground">{{ label() }}</span>
+      @if (icon()) {
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-teal-light text-brand-teal">
+          <app-icon [name]="icon()!" size="h-4 w-4" />
+        </span>
+      }
+    </div>
+    <span class="mt-2 text-2xl font-bold tabular-nums text-foreground sm:text-3xl">{{ value() }}</span>
+    @if (hint()) { <span class="mt-1 text-xs text-muted-foreground">{{ hint() }}</span> }
+  </div>
+}

@@ -1,0 +1,30 @@
+<app-page-header title="My Committee Decisions" i18n-title="@@myDecisionsTitle" />
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" />
+} @else if (error(); as e) {
+  <app-error-state [message]="e" (retry)="reload()" />
+} @else if (decisions().length === 0) {
+  <app-empty-state title="You haven't submitted any committee decisions yet." i18n-title="@@myDecisionsEmpty" icon="gavel" />
+} @else {
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th i18n="@@myDecisionsColumnIdea">Idea</th>
+          <th i18n="@@myDecisionsColumnScore">Score</th>
+          <th i18n="@@myDecisionsColumnDate">Decided On</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (decision of decisions(); track decision.id) {
+          <tr>
+            <td class="font-medium">{{ decision.ideaCode }} — {{ decision.ideaTitleEn }}</td>
+            <td>{{ decision.totalScore }}</td>
+            <td>{{ decision.decidedAt | date: 'mediumDate' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
