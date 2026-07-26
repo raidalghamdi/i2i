@@ -1,0 +1,176 @@
+<!-- Change 20260726 -->
+<app-page-header title="Edit Idea" i18n-title="@@ideas.edit.title" />
+
+@if (loading()) {
+  <div class="card-surface card-body flex flex-col gap-3" aria-busy="true" data-testid="idea-edit-skeleton">
+    <div class="h-10 animate-pulse rounded bg-muted"></div>
+    <div class="h-10 animate-pulse rounded bg-muted"></div>
+    <div class="h-24 animate-pulse rounded bg-muted"></div>
+  </div>
+} @else if (blocked(); as reason) {
+  <div class="card-surface card-body mx-auto max-w-md text-center" data-testid="idea-edit-blocked">
+    <p class="mb-4 text-sm text-muted-foreground">{{ reason }}</p>
+    <a routerLink="/ideas/mine" class="btn-outline btn-sm inline-flex" i18n="@@ideas.edit.backToMine">
+      Back to My Ideas
+    </a>
+  </div>
+} @else {
+  @if (error(); as message) {
+    <div
+      class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+      role="alert"
+      data-testid="idea-edit-error"
+    >{{ message }}</div>
+  }
+
+  @if (isRestricted()) {
+    <div class="field-error mb-4" data-testid="idea-edit-restricted" i18n="@@ideas.edit.restricted">
+      Only certain fields are editable at this stage.
+    </div>
+  }
+
+  @if (themesFailed()) {
+    <div class="field-error mb-4" data-testid="idea-edit-themes-failed" i18n="@@ideas.edit.themesFailed">
+      Strategic themes could not be loaded. Your existing theme is unchanged.
+    </div>
+  }
+
+  <form [formGroup]="form" class="card-surface card-body flex flex-col gap-4" novalidate>
+    <div class="grid gap-4 md:grid-cols-2">
+      <label class="flex flex-col gap-1">
+        <span class="field-label" i18n="@@ideas.edit.titleEn">Title (English)</span>
+        <input type="text" class="field-input" formControlName="titleEn" data-testid="idea-title-en" />
+        @if (form.controls.titleEn.touched && form.controls.titleEn.invalid) {
+          <span class="text-xs text-red-700" i18n="@@ideas.edit.titleEnRequired">Title (English) is required.</span>
+        }
+      </label>
+
+      <label class="flex flex-col gap-1">
+        <span class="field-label" i18n="@@ideas.edit.titleAr">Title (Arabic)</span>
+        <input type="text" class="field-input" dir="rtl" formControlName="titleAr" data-testid="idea-title-ar" />
+      </label>
+    </div>
+
+    <label class="flex flex-col gap-1">
+      <span class="field-label" i18n="@@ideas.edit.descriptionEn">Description (English)</span>
+      <textarea rows="6" class="field-textarea" formControlName="descriptionEn" data-testid="idea-desc-en"></textarea>
+    </label>
+
+    <label class="flex flex-col gap-1">
+      <span class="field-label" i18n="@@ideas.edit.descriptionAr">Description (Arabic)</span>
+      <textarea rows="6" class="field-textarea" dir="rtl" formControlName="descriptionAr" data-testid="idea-desc-ar"></textarea>
+    </label>
+
+    <label class="flex flex-col gap-1">
+      <span class="field-label" i18n="@@ideas.edit.theme">Strategic theme</span>
+      <select class="field-select" formControlName="strategicThemeId" data-testid="idea-theme">
+        <option value="" i18n="@@ideas.edit.themePlaceholder">Select a theme</option>
+        @for (theme of themes(); track theme.id) {
+          <option [value]="theme.id">{{ themeLabel(theme) }}</option>
+        }
+      </select>
+    </label>
+
+    <fieldset class="flex flex-col gap-2 border-t border-border pt-4">
+      <legend class="field-label" i18n="@@ideas.edit.attachments">Attachments</legend>
+
+      @if (existingAttachments().length) {
+        <ul class="flex flex-col gap-2" data-testid="idea-existing-attachments">
+          @for (item of existingAttachments(); track item.id) {
+            <li class="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2 text-sm">
+              <span class="truncate">{{ item.fileName }}</span>
+              <button
+                type="button"
+                class="btn-link text-sm"
+                (click)="deleteExistingAttachment(item)"
+                i18n="@@ideas.edit.deleteAttachment"
+              >Delete</button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="text-xs text-muted-foreground" i18n="@@ideas.edit.noAttachments">No files attached yet.</p>
+      }
+
+      <input type="file" multiple (change)="onFilesSelected($event)" data-testid="idea-files" />
+
+      @if (pendingUploads().length) {
+        <ul class="flex flex-col gap-2" data-testid="idea-pending-attachments">
+          @for (name of pendingUploads(); track $index) {
+            <li class="flex items-center justify-between gap-3 rounded-md border border-dashed border-border px-3 py-2 text-sm">
+              <span class="truncate">{{ name }}</span>
+              <button
+                type="button"
+                class="btn-link text-sm"
+                (click)="removePendingUpload($index)"
+                i18n="@@ideas.edit.removeAttachment"
+              >Remove</button>
+            </li>
+          }
+        </ul>
+      }
+    </fieldset>
+
+    @if (submitAttempted() && !isSubmitReady()) {
+      <p class="field-error" role="alert" data-testid="idea-edit-submit-invalid" i18n="@@ideas.edit.submitInvalid">
+        Fill in both titles, both descriptions and a strategic theme before resubmitting.
+      </p>
+    }
+
+    <div class="flex flex-wrap items-center gap-3 border-t border-border pt-4">
+      @if (canSaveDraft()) {
+        <button
+          type="button"
+          class="btn-outline"
+          [disabled]="saving()"
+          (click)="saveDraft()"
+          data-testid="idea-save-draft"
+          i18n="@@ideas.edit.saveDraft"
+        >Save Draft</button>
+      }
+
+      <button
+        type="button"
+        class="btn-default"
+        [disabled]="saving()"
+        (click)="requestResubmit()"
+        data-testid="idea-resubmit"
+        i18n="@@ideas.edit.saveResubmit"
+      >Save &amp; Resubmit</button>
+
+      @if (saving()) {
+        <span class="idea-spinner" role="status" aria-live="polite" data-testid="idea-edit-spinner">
+          <span class="sr-only" i18n="@@ideas.edit.saving">Saving…</span>
+        </span>
+      }
+    </div>
+  </form>
+
+  @if (confirming()) {
+    <div class="idea-confirm-backdrop" (click)="cancelResubmit()"></div>
+    <div
+      class="idea-confirm-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="idea-edit-confirm-title"
+      data-testid="idea-edit-confirm"
+    >
+      <h2 id="idea-edit-confirm-title" class="section-title" i18n="@@ideas.edit.confirmTitle">Resubmit this idea?</h2>
+      <p class="mt-3 text-sm text-foreground" i18n="@@ideas.edit.confirmBody">
+        Once submitted, you can't edit unless returned.
+      </p>
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" class="btn-outline btn-sm" (click)="cancelResubmit()" i18n="@@ideas.edit.confirmCancel">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn-default btn-sm"
+          (click)="confirmResubmit()"
+          data-testid="idea-edit-confirm-submit"
+          i18n="@@ideas.edit.confirmSubmit"
+        >Resubmit</button>
+      </div>
+    </div>
+  }
+}

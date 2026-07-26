@@ -1,0 +1,37 @@
+/* Change 20260726 */
+.idea-spinner {
+  display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid rgb(0 0 0 / 15%);
+  border-top-color: currentcolor;
+  border-radius: 50%;
+  animation: idea-spin 0.8s linear infinite;
+}
+
+@keyframes idea-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.idea-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgb(0 0 0 / 45%);
+}
+
+.idea-confirm-panel {
+  position: fixed;
+  z-index: 41;
+  inset-inline: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(30rem, calc(100% - 2rem));
+  margin-inline: auto;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  background: #fff;
+  box-shadow: 0 20px 40px rgb(0 0 0 / 20%);
+}
