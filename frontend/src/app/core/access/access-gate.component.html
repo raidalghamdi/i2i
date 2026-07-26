@@ -1,0 +1,42 @@
+<!-- Change 20260726 -->
+<div class="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 px-4 py-12">
+  <!-- Change 20260726 -->
+  <div class="text-center">
+    <!-- Change 20260726 -->
+    <p class="text-sm font-semibold tracking-wide text-muted-foreground">i2i</p>
+    <!-- Change 20260726 -->
+    <h1 class="mt-1 text-2xl font-semibold text-foreground">Access required</h1>
+    <!-- Change 20260726 -->
+    <h2 class="text-2xl font-semibold text-foreground" dir="rtl">يلزم إذن الدخول</h2>
+  </div>
+
+  <!-- Change 20260726 -->
+  <section class="card-surface card-body flex flex-col gap-4">
+    <!-- Change 20260726 -->
+    @if (incorrect()) {
+      <!-- Change 20260726 -->
+      <div class="field-error" role="alert">Incorrect password / كلمة السر غير صحيحة</div>
+    }
+
+    <!-- Change 20260726 -->
+    <div class="flex flex-col gap-2">
+      <!-- Change 20260726 -->
+      <label class="field-label" for="access-password">Enter password / أدخل كلمة السر</label>
+      <!-- Change 20260726 -->
+      <input
+        id="access-password"
+        type="password"
+        class="field-input"
+        autocomplete="current-password"
+        [value]="password()"
+        (input)="password.set($any($event.target).value)"
+        (keyup.enter)="submit()"
+      />
+    </div>
+
+    <!-- Change 20260726 -->
+    <button type="button" class="btn-default w-full" [disabled]="submitting()" (click)="submit()">
+      Continue / متابعة <!-- Change 20260726 -->
+    </button>
+  </section>
+</div>

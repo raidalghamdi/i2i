@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { accessGateGuard, accessLogoutGuard } from './core/access/access-gate.guard'; // Change 20260726
 import {
   adminOnlyGuard,
   anyAssignedRoleGuard,
@@ -12,9 +13,23 @@ import { PublicShellComponent } from './shell/public-shell/public-shell.componen
 import { AppShellComponent } from './shell/app-shell/app-shell.component';
 
 export const routes: Routes = [
+  // Change 20260726 — the testing gate itself must stay reachable, so it is declared
+  // before (and without) accessGateGuard.
+  {
+    path: 'gate', // Change 20260726
+    loadComponent: () => // Change 20260726
+      import('./core/access/access-gate.component').then((m) => m.AccessGateComponent), // Change 20260726
+  }, // Change 20260726
+  {
+    path: 'access-logout', // Change 20260726
+    canActivate: [accessLogoutGuard], // Change 20260726
+    loadComponent: () => // Change 20260726
+      import('./core/access/access-gate.component').then((m) => m.AccessGateComponent), // Change 20260726
+  }, // Change 20260726
   {
     path: '',
     component: PublicShellComponent,
+    canActivate: [accessGateGuard], // Change 20260726
     children: [
       { path: '', component: LandingComponent },
       {
@@ -138,6 +153,7 @@ export const routes: Routes = [
   {
     path: '',
     component: AppShellComponent,
+    canActivate: [accessGateGuard], // Change 20260726
     children: [
       {
         path: 'ideas/new',
