@@ -2184,10 +2184,10 @@ app.MapPost("/api/ideas/{id:guid}/submit-to-committee", async (Guid id, SubmitTo
     };
 }).RequireAuthorization("SupervisorOrAdmin");
 
-app.MapPost("/api/ideas/{id:guid}/withdraw", async (Guid id, ClaimsPrincipal user, IIdeaService service) =>
+app.MapPost("/api/ideas/{id:guid}/withdraw", async (Guid id, IdeaWithdrawInput? input, ClaimsPrincipal user, IIdeaService service) => // Change 20260726
 {
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    var result = await service.WithdrawAsync(id, userId);
+    var result = await service.WithdrawAsync(id, userId, input?.Reason); // Change 20260726
     return result.Status switch
     {
         IdeaCommandStatus.Success => Results.Ok(new { id = result.Idea!.Id, status = result.Idea.IdeaStatus.Code }),

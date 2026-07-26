@@ -13,7 +13,7 @@ public interface IIdeaService
     Task<IdeaQueryResult> UpdateAsync(Guid ideaId, Guid submitterId, IdeaInput input, CancellationToken cancellationToken = default);
     Task<IdeaQueryResult> SubmitAsync(Guid ideaId, Guid submitterId, CancellationToken cancellationToken = default);
     Task<IdeaQueryResult> ResubmitAsync(Guid ideaId, Guid submitterId, IdeaResubmitInput input, CancellationToken cancellationToken = default);
-    Task<IdeaQueryResult> WithdrawAsync(Guid ideaId, Guid submitterId, CancellationToken cancellationToken = default);
+    Task<IdeaQueryResult> WithdrawAsync(Guid ideaId, Guid submitterId, string? reason = null, CancellationToken cancellationToken = default); // Change 20260726
     Task<IReadOnlyList<MyIdeaItem>> GetMineDetailedAsync(Guid userId, string? statusGroup, string userEmail, string? callerSam = null, CancellationToken cancellationToken = default);
     Task<IdeaQueryResult> GetByIdAsync(Guid ideaId, Guid submitterId, bool isElevatedReviewer = false, string? callerSam = null, CancellationToken cancellationToken = default);
     Task<IdeaAttachmentResult> AddAttachmentAsync(Guid ideaId, Guid submitterId, string fileName, string contentType, byte[] content, CancellationToken cancellationToken = default);

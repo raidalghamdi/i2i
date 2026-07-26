@@ -285,7 +285,7 @@ public class IdeaService : IIdeaService
     private static readonly string[] WithdrawableStatuses =
         { IdeaStatusCodes.Draft, IdeaStatusCodes.Submitted, IdeaStatusCodes.Returned };
 
-    public async Task<IdeaQueryResult> WithdrawAsync(Guid ideaId, Guid submitterId, CancellationToken cancellationToken = default)
+    public async Task<IdeaQueryResult> WithdrawAsync(Guid ideaId, Guid submitterId, string? reason = null, CancellationToken cancellationToken = default) // Change 20260726
     {
         var idea = await _db.Ideas.Include(i => i.IdeaStatus).SingleOrDefaultAsync(i => i.Id == ideaId, cancellationToken);
         if (idea is null) return new IdeaQueryResult(IdeaCommandStatus.NotFound);
@@ -301,7 +301,7 @@ public class IdeaService : IIdeaService
         await _db.SaveChangesAsync(cancellationToken);
 
         await _auditLogWriter.AppendAsync("idea", idea.Id, "idea.withdrawn", submitterId,
-            JsonSerializer.Serialize(new { before = beforeStatus, after = IdeaStatusCodes.Withdrawn }), cancellationToken);
+            JsonSerializer.Serialize(new { before = beforeStatus, after = IdeaStatusCodes.Withdrawn, reason }), cancellationToken); // Change 20260726
 
         var evaluatorIds = await _db.Assignments.Where(a => a.IdeaId == ideaId).Select(a => a.EvaluatorId).Distinct().ToListAsync(cancellationToken);
         foreach (var evaluatorId in evaluatorIds)
