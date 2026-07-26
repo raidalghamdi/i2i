@@ -164,6 +164,21 @@ export const routes: Routes = [
         canActivate: [ideaAuthorGuard],
       },
       {
+        // `ideas/new` already resolves to the shipped 5-step submit wizard, so the Phase 2c // Change 20260726
+        // single-page draft form is mounted alongside it rather than replacing it. // Change 20260726
+        path: 'ideas/new-draft', // Change 20260726
+        loadComponent: () => // Change 20260726
+          import('./ideas/new/idea-new.component').then((m) => m.IdeaNewComponent), // Change 20260726
+        canActivate: [ideaAuthorGuard], // Change 20260726
+      }, // Change 20260726
+      {
+        // Likewise `ideas/:id/edit` is the pre-existing form; Phase 2c's editor sits beside it. // Change 20260726
+        path: 'ideas/:id/edit-draft', // Change 20260726
+        loadComponent: () => // Change 20260726
+          import('./ideas/edit/idea-edit.component').then((m) => m.IdeaEditComponent), // Change 20260726
+        canActivate: [ideaAuthorGuard], // Change 20260726
+      }, // Change 20260726
+      {
         path: 'ideas/mine', // Change 20260726
         loadComponent: () => // Change 20260726
           import('./ideas/mine/mine-ideas.component').then((m) => m.MineIdeasComponent), // Change 20260726
