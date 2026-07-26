@@ -3,6 +3,7 @@ namespace InnovationToImpact.Domain.Ideas;
 public static class IdeaStatusCodes
 {
     public const string Draft = "draft";
+    public const string NeedsCompletion = "needs_completion"; // Change 20260726
     public const string Submitted = "submitted";
     public const string Evaluation = "evaluation";
     public const string PassAwaitingAttachments = "pass_awaiting_attachments";

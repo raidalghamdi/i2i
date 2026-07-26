@@ -147,12 +147,16 @@ public class IdeaService : IIdeaService
         return new IdeaQueryResult(IdeaCommandStatus.Success, idea);
     }
 
+    /// <summary>Statuses whose owner may still edit the idea in place.</summary> // Change 20260726
+    private static readonly string[] EditableStatuses = // Change 20260726
+        { IdeaStatusCodes.Draft, IdeaStatusCodes.NeedsCompletion, IdeaStatusCodes.Returned }; // Change 20260726
+
     public async Task<IdeaQueryResult> UpdateAsync(Guid ideaId, Guid submitterId, IdeaInput input, CancellationToken cancellationToken = default)
     {
         var idea = await _db.Ideas.Include(i => i.IdeaStatus).SingleOrDefaultAsync(i => i.Id == ideaId, cancellationToken);
         if (idea is null) return new IdeaQueryResult(IdeaCommandStatus.NotFound);
         if (idea.SubmitterId != submitterId) return new IdeaQueryResult(IdeaCommandStatus.Forbidden);
-        if (idea.IdeaStatus.Code != IdeaStatusCodes.Draft && idea.IdeaStatus.Code != IdeaStatusCodes.Returned) return new IdeaQueryResult(IdeaCommandStatus.InvalidState);
+        if (!EditableStatuses.Contains(idea.IdeaStatus.Code)) return new IdeaQueryResult(IdeaCommandStatus.InvalidState); // Change 20260726
 
         var themeExists = await _db.StrategicThemes.AnyAsync(t => t.Id == input.StrategicThemeId, cancellationToken);
         if (!themeExists) return new IdeaQueryResult(IdeaCommandStatus.InvalidStrategicTheme);
@@ -180,6 +184,9 @@ public class IdeaService : IIdeaService
         idea.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(cancellationToken);
+
+        await _auditLogWriter.AppendAsync("idea", idea.Id, "idea.updated", submitterId, // Change 20260726
+            JsonSerializer.Serialize(new { status = idea.IdeaStatus.Code }), cancellationToken); // Change 20260726
 
         return new IdeaQueryResult(IdeaCommandStatus.Success, idea);
     }

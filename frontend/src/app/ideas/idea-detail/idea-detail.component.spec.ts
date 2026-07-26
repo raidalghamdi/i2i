@@ -430,63 +430,84 @@ describe('IdeaDetailComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Problem');
   });
 
-  it('shows a Withdraw control for the owner when the status is withdrawable, and withdraws on confirm', async () => {
-    setup({ ...baseIdea, status: 'submitted' });
-    spyOn(window, 'confirm').and.returnValue(true);
-    ideasApi.withdraw.and.returnValue(Promise.resolve());
-    fixture.detectChanges();
-    await fixture.componentInstance.ngOnInit();
-    fixture.detectChanges();
+  /** Clicks the page-level "Withdraw idea" button, which now opens the confirmation dialog. */ // Change 20260726
+  function clickWithdraw(): HTMLButtonElement | undefined { // Change 20260726
+    const button = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find( // Change 20260726
+      (b) => b.textContent?.includes('Withdraw idea'), // Change 20260726
+    ); // Change 20260726
+    button?.click(); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
+    return button; // Change 20260726
+  } // Change 20260726
 
-    const withdrawButton = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
-      (b) => b.textContent?.includes('Withdraw'),
-    );
-    expect(withdrawButton).toBeTruthy();
+  it('opens the withdraw dialog for the owner and withdraws with a reason on confirm', async () => { // Change 20260726
+    setup({ ...baseIdea, status: 'submitted' }); // Change 20260726
+    ideasApi.withdraw.and.returnValue(Promise.resolve()); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
+    await fixture.componentInstance.ngOnInit(); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
 
-    ideasApi.getById.and.returnValue(Promise.resolve({ ...baseIdea, status: 'withdrawn' }));
-    withdrawButton!.click();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    expect(clickWithdraw()).toBeTruthy(); // Change 20260726
+    const dialog = fixture.nativeElement.querySelector('app-withdraw-dialog'); // Change 20260726
+    expect(dialog).toBeTruthy(); // Change 20260726
+    expect(ideasApi.withdraw).not.toHaveBeenCalled(); // Change 20260726
 
-    expect(window.confirm).toHaveBeenCalled();
-    expect(ideasApi.withdraw).toHaveBeenCalledWith('idea-1');
-    expect(fixture.componentInstance.idea()?.status).toBe('withdrawn');
-  });
+    const textarea = dialog.querySelector('textarea') as HTMLTextAreaElement; // Change 20260726
+    textarea.value = 'Duplicate submission'; // Change 20260726
+    textarea.dispatchEvent(new Event('input')); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
 
-  it('does not call withdraw when the confirmation is dismissed', async () => {
-    setup({ ...baseIdea, status: 'draft' });
-    spyOn(window, 'confirm').and.returnValue(false);
-    fixture.detectChanges();
-    await fixture.componentInstance.ngOnInit();
-    fixture.detectChanges();
+    ideasApi.getById.and.returnValue(Promise.resolve({ ...baseIdea, status: 'withdrawn' })); // Change 20260726
+    const confirmButton = Array.from(dialog.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find( // Change 20260726
+      (b) => b.textContent?.includes('Confirm withdrawal'), // Change 20260726
+    ); // Change 20260726
+    confirmButton!.click(); // Change 20260726
+    await fixture.whenStable(); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
 
-    const withdrawButton = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
-      (b) => b.textContent?.includes('Withdraw'),
-    );
-    expect(withdrawButton).toBeTruthy();
-    withdrawButton!.click();
-    await fixture.whenStable();
+    expect(ideasApi.withdraw).toHaveBeenCalledWith('idea-1', 'Duplicate submission'); // Change 20260726
+    expect(fixture.componentInstance.idea()?.status).toBe('withdrawn'); // Change 20260726
+    expect(fixture.nativeElement.querySelector('app-withdraw-dialog')).toBeNull(); // Change 20260726
+  }); // Change 20260726
 
-    expect(ideasApi.withdraw).not.toHaveBeenCalled();
-  });
+  it('does not call withdraw when the dialog is cancelled', async () => { // Change 20260726
+    setup({ ...baseIdea, status: 'draft' }); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
+    await fixture.componentInstance.ngOnInit(); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
 
-  it('shows an error message when withdraw fails', async () => {
-    setup({ ...baseIdea, status: 'returned' });
-    spyOn(window, 'confirm').and.returnValue(true);
-    ideasApi.withdraw.and.returnValue(Promise.reject({ error: { error: 'Cannot withdraw right now.' } }));
-    fixture.detectChanges();
-    await fixture.componentInstance.ngOnInit();
-    fixture.detectChanges();
+    expect(clickWithdraw()).toBeTruthy(); // Change 20260726
+    const dialog = fixture.nativeElement.querySelector('app-withdraw-dialog'); // Change 20260726
+    const cancelButton = Array.from(dialog.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find( // Change 20260726
+      (b) => b.textContent?.trim() === 'Cancel', // Change 20260726
+    ); // Change 20260726
+    cancelButton!.click(); // Change 20260726
+    await fixture.whenStable(); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
 
-    const withdrawButton = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
-      (b) => b.textContent?.includes('Withdraw'),
-    );
-    withdrawButton!.click();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    expect(ideasApi.withdraw).not.toHaveBeenCalled(); // Change 20260726
+    expect(fixture.nativeElement.querySelector('app-withdraw-dialog')).toBeNull(); // Change 20260726
+  }); // Change 20260726
 
-    expect(fixture.nativeElement.textContent).toContain('Cannot withdraw right now.');
-  });
+  it('shows an error inside the dialog when withdraw fails', async () => { // Change 20260726
+    setup({ ...baseIdea, status: 'returned' }); // Change 20260726
+    ideasApi.withdraw.and.returnValue(Promise.reject({ error: { error: 'Cannot withdraw right now.' } })); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
+    await fixture.componentInstance.ngOnInit(); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
+
+    clickWithdraw(); // Change 20260726
+    const dialog = fixture.nativeElement.querySelector('app-withdraw-dialog'); // Change 20260726
+    const confirmButton = Array.from(dialog.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find( // Change 20260726
+      (b) => b.textContent?.includes('Confirm withdrawal'), // Change 20260726
+    ); // Change 20260726
+    confirmButton!.click(); // Change 20260726
+    await fixture.whenStable(); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
+
+    expect(fixture.nativeElement.textContent).toContain('Cannot withdraw right now.'); // Change 20260726
+    expect(fixture.nativeElement.querySelector('app-withdraw-dialog')).toBeTruthy(); // Change 20260726
+  }); // Change 20260726
 
   it('does not show a Withdraw control when the status is not withdrawable', async () => {
     setup({ ...baseIdea, status: 'approved' });

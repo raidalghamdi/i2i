@@ -73,6 +73,9 @@ export class IdeaFormComponent implements OnInit {
   readonly existingAttachments = signal<IdeaAttachment[]>([]);
   readonly queuedFiles = signal<File[]>([]);
   readonly errorMessage = signal<string | null>(null);
+  readonly attachmentError = signal<string | null>(null); // Change 20260726
+  /** Id of the attachment whose deletion is in flight, or null when idle. */ // Change 20260726
+  readonly deletingAttachmentId = signal<string | null>(null); // Change 20260726
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
   /** True when the idea was returned by a supervisor — sections are individually locked. */
@@ -197,6 +200,26 @@ export class IdeaFormComponent implements OnInit {
   removeQueuedFile(index: number): void {
     this.queuedFiles.update((files) => files.filter((_, i) => i !== index));
   }
+
+  /** Deletes an already-uploaded attachment; the backend soft-deletes it. */ // Change 20260726
+  async removeExistingAttachment(attachment: IdeaAttachment): Promise<void> { // Change 20260726
+    if (!this.ideaId || this.deletingAttachmentId()) return; // Change 20260726
+    const confirmed = window.confirm( // Change 20260726
+      $localize`:@@ideaFormDeleteAttachmentConfirm:Delete this attachment? This cannot be undone.`, // Change 20260726
+    ); // Change 20260726
+    if (!confirmed) return; // Change 20260726
+
+    this.attachmentError.set(null); // Change 20260726
+    this.deletingAttachmentId.set(attachment.id); // Change 20260726
+    try { // Change 20260726
+      await this.ideasApi.deleteAttachment(this.ideaId, attachment.id); // Change 20260726
+      this.existingAttachments.update((list) => list.filter((a) => a.id !== attachment.id)); // Change 20260726
+    } catch (error) { // Change 20260726
+      this.attachmentError.set(this.extractErrorMessage(error)); // Change 20260726
+    } finally { // Change 20260726
+      this.deletingAttachmentId.set(null); // Change 20260726
+    } // Change 20260726
+  } // Change 20260726
 
   async onSubmit(): Promise<void> {
     if (this.form.invalid) {

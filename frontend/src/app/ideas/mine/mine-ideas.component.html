@@ -88,14 +88,23 @@
                 } @else {
                   <button type="button" class="btn-outline btn-sm" disabled i18n="@@ideas.mine.actionEdit">Edit</button>
                 }
-                <button
-                  type="button"
-                  class="btn-outline btn-sm"
-                  disabled
-                  title="Coming soon"
-                  i18n-title="@@ideas.mine.comingSoon"
-                  i18n="@@ideas.mine.actionWithdraw"
-                >Withdraw</button>
+                <!-- Change 20260726 -->
+                @if (isWithdrawable(item)) {
+                  <button
+                    type="button"
+                    class="btn-outline btn-sm"
+                    data-testid="mine-withdraw"
+                    (click)="askWithdraw(item)"
+                    i18n="@@ideas.mine.actionWithdraw"
+                  >Withdraw</button>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn-outline btn-sm"
+                    disabled
+                    i18n="@@ideas.mine.actionWithdraw"
+                  >Withdraw</button>
+                }
               </div>
             </td>
           </tr>
@@ -125,6 +134,10 @@
           @if (isEditable(item)) {
             <a [routerLink]="['/ideas', item.id, 'edit']" class="btn-outline btn-sm" i18n="@@ideas.mine.actionEdit">Edit</a>
           }
+          <!-- Change 20260726 -->
+          @if (isWithdrawable(item)) {
+            <button type="button" class="btn-outline btn-sm" (click)="askWithdraw(item)" i18n="@@ideas.mine.actionWithdraw">Withdraw</button>
+          }
         </div>
       </div>
     }
@@ -135,4 +148,14 @@
     <span class="text-muted-foreground" data-testid="mine-page-indicator" i18n="@@ideas.mine.pageIndicator">Page {{ page() }} of {{ totalPages() }}</span>
     <button type="button" class="btn-outline btn-sm" [disabled]="page() >= totalPages()" (click)="goToPage(page() + 1)" i18n="@@ideas.mine.next">Next</button>
   </div>
+}
+
+<!-- Change 20260726 -->
+@if (withdrawTarget(); as target) {
+  <app-withdraw-dialog
+    [ideaId]="target.id"
+    [ideaTitle]="title(target)"
+    (withdrawn)="onWithdrawn()"
+    (cancelled)="closeWithdraw()"
+  />
 }
