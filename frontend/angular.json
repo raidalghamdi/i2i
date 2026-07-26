@@ -28,8 +28,7 @@
         "sourceLocale": "en",
         "locales": {
           "ar": {
-            "translation": "src/locale/messages.ar.xlf",
-            "baseHref": ""
+            "translation": "src/locale/messages.ar.xlf"
           }
         }
       },
@@ -55,7 +54,7 @@
                 {
                   "type": "initial",
                   "maximumWarning": "600kB",
-                  "maximumError": "2MB"
+                  "maximumError": "1MB"
                 },
                 {
                   "type": "anyComponentStyle",

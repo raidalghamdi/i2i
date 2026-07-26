@@ -1,3 +1,0 @@
-namespace InnovationToImpact.Domain.UserManagement;
-
-public sealed record UserManagementCommandResult(UserManagementCommandStatus Status);

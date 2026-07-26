@@ -1,7 +1,5 @@
 using System.Security.Claims;
-using System.Text;
 using System.Text.Json;
-using System.Threading.RateLimiting;
 using InnovationToImpact.Api.Auth;
 using InnovationToImpact.Api.Notifications;
 using InnovationToImpact.Domain.Analytics;
@@ -13,14 +11,18 @@ using InnovationToImpact.Domain.Backup;
 using InnovationToImpact.Domain.Briefing;
 using InnovationToImpact.Domain.Cms;
 using InnovationToImpact.Domain.Committee;
+using InnovationToImpact.Domain.CommitteeReferral;
 using InnovationToImpact.Domain.Content;
 using InnovationToImpact.Domain.Dashboards;
 using InnovationToImpact.Domain.Email;
 using InnovationToImpact.Domain.EmailTemplates;
 using InnovationToImpact.Domain.Entities;
 using InnovationToImpact.Domain.Escalations;
+using InnovationToImpact.Domain.EvaluationReview;
+using InnovationToImpact.Domain.SubmitterReview;
 using InnovationToImpact.Domain.Evaluations;
 using InnovationToImpact.Domain.FinalRanking;
+using InnovationToImpact.Domain.Home;
 using InnovationToImpact.Domain.Ideas;
 using InnovationToImpact.Domain.Invitations;
 using InnovationToImpact.Domain.Notifications;
@@ -45,14 +47,18 @@ using InnovationToImpact.Infrastructure.Backup;
 using InnovationToImpact.Infrastructure.Briefing;
 using InnovationToImpact.Infrastructure.Cms;
 using InnovationToImpact.Infrastructure.Committee;
+using InnovationToImpact.Infrastructure.CommitteeReferral;
 using InnovationToImpact.Infrastructure.Content;
 using InnovationToImpact.Infrastructure.Dashboards;
 using InnovationToImpact.Infrastructure.Data;
 using InnovationToImpact.Infrastructure.Email;
 using InnovationToImpact.Infrastructure.EmailTemplates;
 using InnovationToImpact.Infrastructure.Escalations;
+using InnovationToImpact.Infrastructure.EvaluationReview;
+using InnovationToImpact.Infrastructure.SubmitterReview;
 using InnovationToImpact.Infrastructure.Evaluations;
 using InnovationToImpact.Infrastructure.FinalRanking;
+using InnovationToImpact.Infrastructure.Home;
 using InnovationToImpact.Infrastructure.Ideas;
 using InnovationToImpact.Infrastructure.Invitations;
 using InnovationToImpact.Infrastructure.Notifications;
@@ -71,26 +77,14 @@ using InnovationToImpact.Infrastructure.StrategicThemes;
 using InnovationToImpact.Infrastructure.TrackAssignments;
 using InnovationToImpact.Infrastructure.UserManagement;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Negotiate;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// PaaS hosts (Railway, etc.) assign the listen port via $PORT at runtime; local dev keeps using
-// launchSettings.json / --urls since PORT is unset there.
-var paasPort = Environment.GetEnvironmentVariable("PORT");
-if (!string.IsNullOrEmpty(paasPort))
-{
-    builder.WebHost.UseUrls($"http://+:{paasPort}");
-}
-
 builder.Services.AddDbContext<InnovationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("InnovationDb"), sqlOptions =>
-        sqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null)));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("InnovationDb")));
 
 builder.Services.AddMemoryCache();
 builder.Services.Configure<ActiveDirectoryOptions>(builder.Configuration.GetSection("ActiveDirectory"));
@@ -136,17 +130,28 @@ builder.Services.AddScoped<IReportGenerationService, ReportGenerationService>();
 builder.Services.Configure<EvidenceStorageOptions>(builder.Configuration.GetSection("EvidenceStorage"));
 builder.Services.AddSingleton<IEvidenceFileStorage>(sp =>
     new LocalDiskFileStorage(sp.GetRequiredService<IOptions<EvidenceStorageOptions>>().Value.RootPath));
+builder.Services.Configure<TemplateStorageOptions>(builder.Configuration.GetSection("TemplateStorage"));
+builder.Services.AddSingleton<IIdeaTemplateFileStorage>(sp =>
+    new LocalDiskFileStorage(sp.GetRequiredService<IOptions<TemplateStorageOptions>>().Value.RootPath));
+builder.Services.AddScoped<IIdeaTemplateService, IdeaTemplateService>();
+builder.Services.Configure<HomeMediaStorageOptions>(builder.Configuration.GetSection("HomeMediaStorage"));
+builder.Services.AddSingleton<IHomeMediaFileStorage>(sp =>
+    new LocalDiskFileStorage(sp.GetRequiredService<IOptions<HomeMediaStorageOptions>>().Value.RootPath));
+builder.Services.AddScoped<IHomeMediaService, HomeMediaService>();
 builder.Services.AddScoped<IIdeaService, IdeaService>();
 builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<IChallengeService, ChallengeService>();
 builder.Services.AddScoped<IEvaluationService, EvaluationService>();
 builder.Services.AddScoped<IEvaluationSettingsService, EvaluationSettingsService>();
 builder.Services.AddScoped<ICommitteeService, CommitteeService>();
+builder.Services.AddScoped<ICommitteeReferralService, CommitteeReferralService>();
 builder.Services.AddScoped<ICommitteeCriteriaService, CommitteeCriteriaService>();
 builder.Services.AddScoped<IBackupExportService, BackupExportService>();
 builder.Services.AddScoped<IPlatformSettingsService, PlatformSettingsService>();
 builder.Services.AddScoped<IRolesCatalogService, RolesCatalogService>();
 builder.Services.AddScoped<IScreeningService, ScreeningService>();
+builder.Services.AddScoped<IEvaluationReviewService, EvaluationReviewService>();
+builder.Services.AddScoped<ISubmitterReviewService, SubmitterReviewService>();
 builder.Services.AddScoped<IPostProgramService, PostProgramService>();
 builder.Services.AddScoped<ITrackAssignmentService, TrackAssignmentService>();
 builder.Services.AddScoped<IPhaseScheduleService, PhaseScheduleService>();
@@ -163,53 +168,13 @@ builder.Services.AddScoped<ICmsService, CmsService>();
 builder.Services.AddScoped<IPublicContentService, PublicContentService>();
 builder.Services.AddScoped<IPublicDataService, PublicDataService>();
 builder.Services.AddScoped<ISupportInboxService, SupportInboxService>();
-
-// Registered unconditionally (not just in the Staging branch below): AuthEndpoints.MapAuthEndpoints()
-// is mapped for every environment, and minimal API's parameter-source inference fails hard at host
-// startup -- for every endpoint in the app, not just these -- if IJwtTokenService has no registration
-// to resolve. Only the JWT bearer *scheme* itself (which actively validates incoming tokens) stays
-// Staging-only below; login/refresh simply 401 in Development/Production since no seeded user there
-// has a PasswordHash set.
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
-builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IHomePageService, HomePageService>();
 
 if (builder.Environment.IsProduction())
 {
     builder.Services.AddSingleton<IAdIdentityLookupService, LdapIdentityLookupService>();
     builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
         .AddNegotiate();
-}
-else if (builder.Environment.EnvironmentName == "Staging")
-{
-    // Cloud/testing deployments before real AD connectivity exists: JWT + password login instead of
-    // Negotiate. IdentityClaimsTransformation is still registered (it's unconditional below) and
-    // still needs SOME IAdIdentityLookupService to satisfy its constructor, but its AD-resolution
-    // branch never runs for JWT principals -- see the NameIdentifier short-circuit guard in that file.
-    builder.Services.AddSingleton<IAdIdentityLookupService>(_ => new FakeAdIdentityLookupService());
-
-    var jwtSection = builder.Configuration.GetSection("Jwt");
-    var jwtSecret = jwtSection["Secret"];
-    if (string.IsNullOrWhiteSpace(jwtSecret))
-    {
-        throw new InvalidOperationException("Jwt:Secret must be configured (env var Jwt__Secret) in the Staging environment.");
-    }
-
-    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
-        {
-            options.MapInboundClaims = false; // we set ClaimTypes.* explicitly at issuance; don't let the default inbound map rewrite them
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidIssuer = jwtSection["Issuer"] ?? "i2i",
-                ValidateAudience = true,
-                ValidAudience = jwtSection["Audience"] ?? "i2i-clients",
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-                ClockSkew = TimeSpan.FromSeconds(30),
-            };
-        });
 }
 else
 {
@@ -237,37 +202,12 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("EvaluatorAndAbove", policy => policy.RequireRole(RoleCodes.Evaluator, RoleCodes.Judge, RoleCodes.Supervisor, RoleCodes.Admin));
     options.AddPolicy("AnyAssignedRole", policy => policy.RequireRole(RoleCodes.Submitter, RoleCodes.Evaluator, RoleCodes.Judge, RoleCodes.Supervisor, RoleCodes.Admin));
     options.AddPolicy("SupervisorOrAdmin", policy => policy.RequireRole(RoleCodes.Supervisor, RoleCodes.Admin));
-});
-
-var corsAllowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("Default", policy =>
-    {
-        if (corsAllowedOrigins.Length > 0)
-        {
-            policy.WithOrigins(corsAllowedOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
-        }
-    });
-});
-
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.AddFixedWindowLimiter("login", limiterOptions =>
-    {
-        limiterOptions.PermitLimit = 5;
-        limiterOptions.Window = TimeSpan.FromMinutes(1);
-        limiterOptions.QueueLimit = 0;
-    });
+    options.AddPolicy("IdeaAuthor", policy => policy.RequireRole(RoleCodes.Submitter, RoleCodes.Admin));
 });
 
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var app = builder.Build();
-
-app.UseCors("Default");
-app.UseRateLimiter();
 
 app.Use(async (context, next) =>
 {
@@ -286,7 +226,72 @@ app.Use(async (context, next) =>
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapAuthEndpoints();
+// Seed the initial "current" idea-description template, once, from a backend-embedded copy of the
+// .docx that used to be a static frontend asset. Safe to call on every startup: it's a no-op once a
+// row exists, and it's a no-op (rather than a crash) if the seed asset or the IdeaTemplates table
+// isn't present yet (e.g. migrations haven't run). See IdeaTemplateSeeder for details.
+// Gated to the real SQL Server provider (never SQLite) so it never fires under the in-memory/SQLite
+// WebApplicationFactory test fixtures used throughout Api.Tests -- those don't override
+// TemplateStorageOptions, so an unguarded seed would write into the default relative
+// "template-storage" directory on every test run and would also break tests that assert
+// "no template uploaded yet" (e.g. IdeaTemplateEndpointTests).
+using (var templateSeedScope = app.Services.CreateScope())
+{
+    try
+    {
+        var seedDb = templateSeedScope.ServiceProvider.GetRequiredService<InnovationDbContext>();
+        if (seedDb.Database.IsSqlServer())
+        {
+            var seedStorage = templateSeedScope.ServiceProvider.GetRequiredService<IIdeaTemplateFileStorage>();
+            var seedAssetPath = Path.Combine(AppContext.BaseDirectory, "SeedAssets", "idea-description-template.docx");
+            // Canonical "system" user seeded by the SeedStrategicThemesAndSystemUser migration.
+            var systemUserId = new Guid("00000000-0000-0000-0026-000000000001");
+            await IdeaTemplateSeeder.SeedIfMissingAsync(seedDb, seedStorage, seedAssetPath, systemUserId);
+        }
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Skipped seeding the initial idea-description template.");
+    }
+}
+
+// Seed the initial 12 homepage sections with today's landing-page content, once, if the table is
+// empty. Same SqlServer-only guard as the idea-template seeder above -- never fires under the
+// SQLite WebApplicationFactory test fixtures (HomePageEndpointTests seeds directly instead).
+using (var homePageSeedScope = app.Services.CreateScope())
+{
+    try
+    {
+        var homeDb = homePageSeedScope.ServiceProvider.GetRequiredService<InnovationDbContext>();
+        if (homeDb.Database.IsSqlServer())
+        {
+            await HomePageSeeder.SeedIfMissingAsync(homeDb);
+        }
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Skipped seeding the initial homepage sections.");
+    }
+}
+
+// DEV/TEST ONLY: provision 5 users per role (40) plus grant devuser every role, so the system can be
+// exercised across all roles. Development environment only + SqlServer-only (never SQLite test fixtures).
+if (app.Environment.IsDevelopment())
+{
+    using var devUsersScope = app.Services.CreateScope();
+    try
+    {
+        var devDb = devUsersScope.ServiceProvider.GetRequiredService<InnovationDbContext>();
+        if (devDb.Database.IsSqlServer())
+        {
+            await InnovationToImpact.Infrastructure.Auth.DevUsersSeeder.SeedAsync(devDb);
+        }
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Skipped seeding dev test users.");
+    }
+}
 
 app.MapGet("/api/health/db", async (InnovationDbContext db) =>
 {
@@ -317,6 +322,83 @@ app.MapGet("/api/public/tracks/{id:guid}", async (Guid id, IPublicDataService se
         ideas = d.Ideas.Select(i => new { id = i.Id, code = i.Code, titleAr = i.TitleAr, titleEn = i.TitleEn, status = i.Status }),
     });
 });
+
+// Re-parses the stored ContentJson text into a nested JSON element for the response. Clone() detaches
+// the element from the JsonDocument so it survives disposal -- without this the JsonDocument would leak.
+static JsonElement ParseHomeContent(string contentJson)
+{
+    using var doc = JsonDocument.Parse(contentJson);
+    return doc.RootElement.Clone();
+}
+
+// True when contentJson is well-formed JSON. Admin writes go straight to the DB text column and are
+// re-parsed on every GET, so a malformed row would 500 the anonymous public homepage for everyone --
+// reject it at the write boundary instead. Mirrors the PATCH /api/admin/settings/{key} validation.
+static bool IsValidHomeContentJson(string? contentJson)
+{
+    if (string.IsNullOrEmpty(contentJson)) return false;
+    try
+    {
+        using var _ = JsonDocument.Parse(contentJson);
+        return true;
+    }
+    catch (JsonException)
+    {
+        return false;
+    }
+}
+
+static object ToHomeSectionPublicDto(HomePageSection s) => new
+{
+    idx = s.Idx,
+    type = s.Type,
+    isVisible = s.IsVisible,
+    contentJson = ParseHomeContent(s.ContentJson),
+};
+
+static object ToHomeSectionAdminDto(HomePageSection s) => new
+{
+    id = s.Id,
+    idx = s.Idx,
+    type = s.Type,
+    isVisible = s.IsVisible,
+    contentJson = ParseHomeContent(s.ContentJson),
+    updatedAt = s.UpdatedAt,
+    updatedById = s.UpdatedById,
+};
+
+app.MapGet("/api/public/home", async (IHomePageService service) =>
+    Results.Ok((await service.ListPublicAsync()).Select(ToHomeSectionPublicDto)));
+
+app.MapGet("/api/admin/home/sections", async (IHomePageService service) =>
+    Results.Ok((await service.ListAllAsync()).Select(ToHomeSectionAdminDto)))
+    .RequireAuthorization("AdminOnly");
+
+app.MapPut("/api/admin/home/sections", async (HomePageSectionsReplaceRequest body, ClaimsPrincipal user, IHomePageService service) =>
+{
+    if (body.Sections.Any(s => !IsValidHomeContentJson(s.ContentJson)))
+        return Results.BadRequest(new { error = "Every section's contentJson must be valid JSON." });
+
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    await service.ReplaceAllAsync(body.Sections, actorId);
+    return Results.Ok((await service.ListAllAsync()).Select(ToHomeSectionAdminDto));
+}).RequireAuthorization("AdminOnly");
+
+app.MapPost("/api/admin/home/sections", async (HomePageSectionInput input, ClaimsPrincipal user, IHomePageService service) =>
+{
+    if (!IsValidHomeContentJson(input.ContentJson))
+        return Results.BadRequest(new { error = "contentJson must be valid JSON." });
+
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var section = await service.AddAsync(input, actorId);
+    return Results.Ok(ToHomeSectionAdminDto(section));
+}).RequireAuthorization("AdminOnly");
+
+app.MapDelete("/api/admin/home/sections/{id:guid}", async (Guid id, IHomePageService service) =>
+{
+    await service.DeleteAsync(id);
+    return Results.NoContent();
+}).RequireAuthorization("AdminOnly");
 
 app.MapGet("/api/public/activities", async (IPublicDataService service) =>
     Results.Ok((await service.ListActivitiesAsync()).Select(a => new { id = a.Id, nameAr = a.NameAr, nameEn = a.NameEn, type = a.Type, status = a.Status, startDate = a.StartDate, endDate = a.EndDate, ideaCount = a.IdeaCount })));
@@ -638,12 +720,12 @@ app.MapGet("/api/admin/escalations/{id:guid}", async (Guid id, IEscalationServic
         entityType = escalation.EntityType,
         entityId = escalation.EntityId,
         tierCode = escalation.EscalationTier.Code,
-        tierNameEn = escalation.EscalationTier.NameEn,
+        tierNameEn = escalation.EscalationTier.NameAr,
         reasonAr = escalation.ReasonAr,
         reasonEn = escalation.ReasonEn,
         statusCode = escalation.EscalationStatus.Code,
-        statusNameEn = escalation.EscalationStatus.NameEn,
-        ownerName = escalation.Owner != null ? escalation.Owner.FullNameEn : null,
+        statusNameEn = escalation.EscalationStatus.NameAr,
+        ownerName = escalation.Owner != null ? escalation.Owner.FullNameAr : null,
         openedAt = escalation.OpenedAt,
         resolutionAr = escalation.ResolutionAr,
         resolutionEn = escalation.ResolutionEn,
@@ -829,12 +911,12 @@ static object ToEscalationDto(Escalation e) => new
     entityType = e.EntityType,
     entityId = e.EntityId,
     tierCode = e.EscalationTier.Code,
-    tierNameEn = e.EscalationTier.NameEn,
+    tierNameEn = e.EscalationTier.NameAr,
     reasonAr = e.ReasonAr,
     reasonEn = e.ReasonEn,
     statusCode = e.EscalationStatus.Code,
-    statusNameEn = e.EscalationStatus.NameEn,
-    ownerName = e.Owner != null ? e.Owner.FullNameEn : null,
+    statusNameEn = e.EscalationStatus.NameAr,
+    ownerName = e.Owner != null ? e.Owner.FullNameAr : null,
     openedAt = e.OpenedAt,
 };
 
@@ -944,18 +1026,33 @@ app.MapPatch("/api/admin/settings/{key}", async (string key, PlatformSettingPatc
     return Results.Ok(new { key = row.Key, valueJson = row.ValueJson, updatedAt = row.UpdatedAt });
 }).RequireAuthorization("AdminOnly");
 
-app.MapPost("/api/admin/ideas/{id:guid}/post-program-stage", async (Guid id, PostProgramStageInput input, IPostProgramService service) =>
+app.MapPost("/api/admin/ideas/{id:guid}/post-program-stage", async (Guid id, PostProgramStageInput input, ClaimsPrincipal user, IPostProgramService service) =>
 {
-    var result = await service.AdvanceAsync(id, input.Stage);
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.AdvanceAsync(id, input.Stage, actorId, input.Comment);
     return result.Status switch
     {
         PostProgramAdvanceStatus.Success => Results.Ok(new { id = result.Idea!.Id, status = result.Idea.IdeaStatus.Code }),
         PostProgramAdvanceStatus.NotFound => Results.NotFound(),
         PostProgramAdvanceStatus.InvalidStage => Results.BadRequest(new { error = "Invalid post-program stage." }),
         PostProgramAdvanceStatus.InvalidTransition => Results.BadRequest(new { error = "Idea cannot advance to that stage from its current status." }),
+        PostProgramAdvanceStatus.CommentRequired => Results.BadRequest(new { error = "A comment is required for a post-program status update." }),
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
-}).RequireAuthorization("AdminOnly");
+}).RequireAuthorization("SupervisorOrAdmin");
+
+app.MapGet("/api/admin/ideas/{id:guid}/post-program-history", async (Guid id, IPostProgramService service) =>
+{
+    var history = await service.GetHistoryAsync(id);
+    return Results.Ok(history.Select(h => new
+    {
+        fromStage = h.FromStage,
+        toStage = h.ToStage,
+        comment = h.Comment,
+        changedAt = h.ChangedAt,
+        changedById = h.ChangedById,
+    }));
+}).RequireAuthorization("SupervisorOrAdmin");
 
 app.MapGet("/api/admin/post-program/ideas", async (IPostProgramService service) =>
 {
@@ -1050,7 +1147,10 @@ app.MapGet("/api/admin/reports/{id:guid}/download", async (Guid id, InnovationDb
     }
 
     var bytes = await storage.ReadAsync(reportGeneration.FileUrl);
-    var fileName = Path.GetFileName(reportGeneration.FileUrl);
+    // Derive the download name from the DB Format field, NOT from the physical stored path: the
+    // stored path is now an opaque "{guid}{ext}" (see LocalDiskFileStorage) and no longer carries a
+    // meaningful name.
+    var fileName = $"report.{reportGeneration.Format}";
     var mimeType = reportGeneration.Format switch
     {
         ReportFormatCodes.Pdf => "application/pdf",
@@ -1072,10 +1172,11 @@ app.MapPost("/api/ideas", async (IdeaInput input, ClaimsPrincipal user, IIdeaSer
         IdeaCommandStatus.InvalidActivity => Results.BadRequest(new { error = "Activity does not exist." }),
         IdeaCommandStatus.InvalidChallenge => Results.BadRequest(new { error = "A valid challenge selection is required for this track." }),
         IdeaCommandStatus.InvalidParticipation => Results.BadRequest(new { error = "Invalid participation type or team roster." }),
+        IdeaCommandStatus.TeamMemberNotFound => Results.BadRequest(new { error = "One or more team members could not be found in the directory." }),
         IdeaCommandStatus.ConsentRequired => Results.BadRequest(new { error = "You must acknowledge authorship and agree to the terms." }),
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
-}).RequireAuthorization("AnyAssignedRole");
+}).RequireAuthorization("IdeaAuthor");
 
 app.MapPut("/api/ideas/{id:guid}", async (Guid id, IdeaInput input, ClaimsPrincipal user, IIdeaService service) =>
 {
@@ -1091,10 +1192,11 @@ app.MapPut("/api/ideas/{id:guid}", async (Guid id, IdeaInput input, ClaimsPrinci
         IdeaCommandStatus.InvalidActivity => Results.BadRequest(new { error = "Activity does not exist." }),
         IdeaCommandStatus.InvalidChallenge => Results.BadRequest(new { error = "A valid challenge selection is required for this track." }),
         IdeaCommandStatus.InvalidParticipation => Results.BadRequest(new { error = "Invalid participation type or team roster." }),
+        IdeaCommandStatus.TeamMemberNotFound => Results.BadRequest(new { error = "One or more team members could not be found in the directory." }),
         IdeaCommandStatus.ConsentRequired => Results.BadRequest(new { error = "You must acknowledge authorship and agree to the terms." }),
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
-}).RequireAuthorization("AnyAssignedRole");
+}).RequireAuthorization("IdeaAuthor");
 
 app.MapPost("/api/ideas/{id:guid}/submit", async (Guid id, ClaimsPrincipal user, IIdeaService service) =>
 {
@@ -1108,7 +1210,7 @@ app.MapPost("/api/ideas/{id:guid}/submit", async (Guid id, ClaimsPrincipal user,
         IdeaCommandStatus.InvalidState => Results.BadRequest(new { error = "Idea must be in draft state with at least one attachment to submit." }),
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
-}).RequireAuthorization("AnyAssignedRole");
+}).RequireAuthorization("IdeaAuthor");
 
 app.MapPost("/api/ideas/{id:guid}/resubmit", async (Guid id, IdeaResubmitInput input, ClaimsPrincipal user, IIdeaService service) =>
 {
@@ -1127,15 +1229,16 @@ app.MapPost("/api/ideas/{id:guid}/resubmit", async (Guid id, IdeaResubmitInput i
         IdeaCommandStatus.InvalidParticipation => Results.BadRequest(new { error = "Invalid participation type or team roster." }),
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
-}).RequireAuthorization("AnyAssignedRole");
+}).RequireAuthorization("IdeaAuthor");
 
 app.MapGet("/api/ideas", async (string? q, Guid? strategicThemeId, Guid? activityId, string? status, int? stage, int? page, int? pageSize, ClaimsPrincipal user, IIdeaService service) =>
 {
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
     var email = user.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
     var roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray();
+    var callerSam = CallerIdentity.ResolveSam(user);
     var filter = new IdeaListFilter(q, strategicThemeId, activityId, status, stage, page ?? 1, pageSize ?? 25);
-    var result = await service.ListAsync(filter, userId, email, roles);
+    var result = await service.ListAsync(filter, userId, email, roles, callerSam);
     return Results.Ok(new
     {
         items = result.Items.Select(i => new { id = i.Id, code = i.Code, titleAr = i.TitleAr, titleEn = i.TitleEn, problemStatementAr = i.ProblemStatementAr, problemStatementEn = i.ProblemStatementEn, currentStage = i.CurrentStage, status = i.Status, strategicThemeId = i.StrategicThemeId, activityId = i.ActivityId }),
@@ -1152,10 +1255,26 @@ app.MapGet("/api/search", async (string? q, ClaimsPrincipal user, ISearchService
     return Results.Ok(results);
 }).RequireAuthorization("AnyAssignedRole");
 
+app.MapGet("/api/directory/search", async (string? q, int? limit, IAdIdentityLookupService lookup, CancellationToken ct) =>
+{
+    var trimmed = q?.Trim() ?? string.Empty;
+    if (trimmed.Length < 2)
+    {
+        return Results.BadRequest(new { error = "Query must be at least 2 characters." });
+    }
+
+    var clampedLimit = Math.Clamp(limit ?? 10, 1, 25);
+    var identities = await lookup.SearchByNameAsync(trimmed, clampedLimit, ct);
+    var results = identities.Select(i => new DirectoryPersonDto(i.SamAccountName, i.DisplayName, i.Email));
+    return Results.Ok(results);
+}).RequireAuthorization("AnyAssignedRole");
+
 app.MapGet("/api/ideas/mine", async (string? statusGroup, ClaimsPrincipal user, IIdeaService service) =>
 {
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    var ideas = await service.GetMineDetailedAsync(userId, statusGroup);
+    var email = user.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
+    var callerSam = CallerIdentity.ResolveSam(user);
+    var ideas = await service.GetMineDetailedAsync(userId, statusGroup, email, callerSam);
     return Results.Ok(ideas.Select(i => new
     {
         id = i.Id,
@@ -1167,24 +1286,40 @@ app.MapGet("/api/ideas/mine", async (string? statusGroup, ClaimsPrincipal user, 
         createdAt = i.CreatedAt,
         updatedAt = i.UpdatedAt,
         feedbackCount = i.FeedbackCount,
+        isOwner = i.IsOwner,
     }));
 }).RequireAuthorization("AnyAssignedRole");
 
-app.MapGet("/api/ideas/{id:guid}", async (Guid id, ClaimsPrincipal user, IIdeaService service) =>
+app.MapGet("/api/ideas/{id:guid}", async (Guid id, ClaimsPrincipal user, IIdeaService service, InnovationDbContext db) =>
 {
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
     var isElevatedReviewer = user.IsInRole(RoleCodes.Evaluator) || user.IsInRole(RoleCodes.Judge) || user.IsInRole(RoleCodes.Supervisor) || user.IsInRole(RoleCodes.Admin);
-    var result = await service.GetByIdAsync(id, userId, isElevatedReviewer);
+    // An "evaluator-only" caller (evaluator role, but not also judge/supervisor/admin) must never see
+    // submitter/team identity, and may only fetch ideas they are assigned to evaluate (Rule B/D).
+    var isEvaluatorOnly = user.IsInRole(RoleCodes.Evaluator)
+        && !user.IsInRole(RoleCodes.Judge) && !user.IsInRole(RoleCodes.Supervisor) && !user.IsInRole(RoleCodes.Admin);
+    if (isEvaluatorOnly)
+    {
+        var assignedToMe = await db.Set<Assignment>().AnyAsync(a => a.IdeaId == id && a.EvaluatorId == userId && a.Kind == AssignmentKinds.Evaluator);
+        if (!assignedToMe) return Results.StatusCode(StatusCodes.Status403Forbidden);
+    }
+    var callerSam = CallerIdentity.ResolveSam(user);
+    var result = await service.GetByIdAsync(id, userId, isElevatedReviewer, callerSam);
     if (result.Status == IdeaCommandStatus.NotFound) return Results.NotFound();
     if (result.Status == IdeaCommandStatus.Forbidden) return Results.StatusCode(StatusCodes.Status403Forbidden);
 
-    var attachmentsResult = await service.GetAttachmentsAsync(id, userId, isElevatedReviewer);
+    var attachmentsResult = await service.GetAttachmentsAsync(id, userId, isElevatedReviewer, callerSam);
     var idea = result.Idea!;
     return Results.Ok(new
     {
         id = idea.Id,
         code = idea.Code,
-        submitterId = idea.SubmitterId,
+        submitterId = isEvaluatorOnly ? (Guid?)null : idea.SubmitterId,
+        // The submitter is the idea's team lead; surface their identity so the detail page can show
+        // them at the head of the roster. Hidden from evaluator-only reviewers, same as the roster.
+        submitter = isEvaluatorOnly || idea.Submitter is null
+            ? null
+            : new { name = idea.Submitter.FullNameAr, samAccountName = idea.Submitter.SamAccountName, email = idea.Submitter.Email },
         titleAr = idea.TitleAr,
         titleEn = idea.TitleEn,
         problemStatementAr = idea.ProblemStatementAr,
@@ -1197,15 +1332,17 @@ app.MapGet("/api/ideas/{id:guid}", async (Guid id, ClaimsPrincipal user, IIdeaSe
         activityId = idea.ActivityId,
         challengeId = idea.ChallengeId,
         participationType = idea.ParticipationType,
-        teamName = idea.TeamName,
-        teamMembers = idea.TeamMembers.OrderBy(m => m.SortOrder).Select(m => new { m.Id, m.Name, m.Email }),
+        teamName = isEvaluatorOnly ? null : idea.TeamName,
+        teamMembers = idea.TeamMembers.Where(m => !isEvaluatorOnly).OrderBy(m => m.SortOrder).Select(m => new { m.Id, m.Name, m.Email, m.SamAccountName }),
         ipAcknowledged = idea.IpAcknowledged,
         termsAgreed = idea.TermsAgreed,
         editableSections = idea.EditableSections,
         status = idea.IdeaStatus.Code,
         screeningReason = idea.ScreeningReason,
         currentStage = idea.CurrentStage,
+        createdAt = idea.CreatedAt,
         updatedAt = idea.UpdatedAt,
+        approvedAt = idea.ApprovedAt,
         attachments = attachmentsResult.Attachments.Select(a => new { id = a.Id, fileName = a.FileName, contentType = a.ContentType, fileSizeBytes = a.FileSizeBytes, uploadedAt = a.UploadedAt }),
     });
 }).RequireAuthorization("AnyAssignedRole");
@@ -1228,13 +1365,14 @@ app.MapPost("/api/ideas/{id:guid}/attachments", async (Guid id, IFormFile file, 
         IdeaCommandStatus.InvalidAttachment => Results.BadRequest(new { error = "Unsupported file type or file exceeds the size limit." }),
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
-}).RequireAuthorization("AnyAssignedRole").DisableAntiforgery();
+}).RequireAuthorization("IdeaAuthor").DisableAntiforgery();
 
 app.MapGet("/api/ideas/{id:guid}/attachments", async (Guid id, ClaimsPrincipal user, IIdeaService service) =>
 {
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
     var isElevatedReviewer = user.IsInRole(RoleCodes.Evaluator) || user.IsInRole(RoleCodes.Judge) || user.IsInRole(RoleCodes.Supervisor) || user.IsInRole(RoleCodes.Admin);
-    var result = await service.GetAttachmentsAsync(id, userId, isElevatedReviewer);
+    var callerSam = CallerIdentity.ResolveSam(user);
+    var result = await service.GetAttachmentsAsync(id, userId, isElevatedReviewer, callerSam);
     return result.Status switch
     {
         IdeaCommandStatus.Success => Results.Ok(result.Attachments.Select(a => new { id = a.Id, fileName = a.FileName, contentType = a.ContentType, fileSizeBytes = a.FileSizeBytes, uploadedAt = a.UploadedAt })),
@@ -1243,6 +1381,86 @@ app.MapGet("/api/ideas/{id:guid}/attachments", async (Guid id, ClaimsPrincipal u
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
 }).RequireAuthorization("AnyAssignedRole");
+
+app.MapGet("/api/ideas/{id:guid}/attachments/{attachmentId:guid}", async (Guid id, Guid attachmentId, ClaimsPrincipal user, IIdeaService service) =>
+{
+    var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var isElevatedReviewer = user.IsInRole(RoleCodes.Evaluator) || user.IsInRole(RoleCodes.Judge) || user.IsInRole(RoleCodes.Supervisor) || user.IsInRole(RoleCodes.Admin);
+    var callerSam = CallerIdentity.ResolveSam(user);
+    var result = await service.GetAttachmentFileAsync(id, attachmentId, userId, isElevatedReviewer, callerSam);
+    return result.Status switch
+    {
+        IdeaCommandStatus.Success => Results.File(result.Content!, result.ContentType, result.FileName),
+        IdeaCommandStatus.NotFound => Results.NotFound(),
+        IdeaCommandStatus.Forbidden => Results.StatusCode(StatusCodes.Status403Forbidden),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("AnyAssignedRole");
+
+app.MapPost("/api/admin/idea-template", async (IFormFile? file, ClaimsPrincipal user, IIdeaTemplateService service) =>
+{
+    if (file is null || file.Length == 0)
+        return Results.BadRequest(new { error = "A file is required." });
+
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    await using var stream = file.OpenReadStream();
+    var template = await service.ReplaceAsync(stream, file.FileName, file.ContentType, actorId);
+
+    return Results.Ok(new
+    {
+        fileName = template.FileName,
+        contentType = template.ContentType,
+        sizeBytes = template.SizeBytes,
+        uploadedAt = template.UploadedAt,
+    });
+}).RequireAuthorization("AdminOnly").DisableAntiforgery();
+
+app.MapGet("/api/admin/idea-template", async (IIdeaTemplateService service) =>
+{
+    var current = await service.GetCurrentAsync();
+    if (current is null) return Results.NotFound();
+
+    return Results.Ok(new
+    {
+        fileName = current.FileName,
+        contentType = current.ContentType,
+        sizeBytes = current.SizeBytes,
+        uploadedAt = current.UploadedAt,
+    });
+}).RequireAuthorization("AdminOnly");
+
+app.MapGet("/api/idea-template/current", async (IIdeaTemplateService service, IIdeaTemplateFileStorage storage) =>
+{
+    var current = await service.GetCurrentAsync();
+    if (current is null) return Results.NotFound();
+
+    var bytes = await storage.ReadAsync(current.StoredPath);
+    return Results.File(bytes, current.ContentType, current.FileName);
+}).RequireAuthorization("AnyAssignedRole");
+
+app.MapPost("/api/admin/home/media", async (IFormFile? file, ClaimsPrincipal user, IHomeMediaService service) =>
+{
+    if (file is null || file.Length == 0)
+        return Results.BadRequest(new { error = "A file is required." });
+    if (!HomeMediaRules.IsAllowed(file.ContentType))
+        return Results.BadRequest(new { error = "Unsupported file type." });
+    if (file.Length > HomeMediaRules.MaxSizeFor(file.ContentType))
+        return Results.BadRequest(new { error = "File is too large." });
+
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    await using var stream = file.OpenReadStream();
+    var media = await service.SaveAsync(stream, file.FileName, file.ContentType, actorId);
+
+    return Results.Ok(new { id = media.Id, url = $"/api/public/home/media/{media.Id}" });
+}).RequireAuthorization("AdminOnly").DisableAntiforgery();
+
+app.MapGet("/api/public/home/media/{id:guid}", async (Guid id, IHomeMediaService service, IHomeMediaFileStorage storage) =>
+{
+    var media = await service.GetAsync(id);
+    if (media is null) return Results.NotFound();
+    var bytes = await storage.ReadAsync(media.StoredPath);
+    return Results.File(bytes, media.ContentType);
+});
 
 app.MapGet("/api/strategic-themes", async (InnovationDbContext db) =>
 {
@@ -1358,7 +1576,7 @@ app.MapGet("/api/admin/assignments", async (Guid? evaluatorId, string? status, s
             ideaTitleAr = a.Idea.TitleAr,
             ideaTitleEn = a.Idea.TitleEn,
             evaluatorId = a.EvaluatorId,
-            evaluatorName = a.Evaluator.FullNameEn,
+            evaluatorName = a.Evaluator.FullNameAr,
             assignedAt = a.AssignedAt,
             dueAt = a.DueAt,
             statusCode = a.AssignmentStatus.Code,
@@ -1479,7 +1697,7 @@ app.MapGet("/api/admin/roster/{roleCode}", async (string roleCode, IRosterServic
     {
         roleCode = detail.RoleCode,
         roleNameAr = detail.RoleNameAr,
-        roleNameEn = detail.RoleNameEn,
+        roleNameEn = detail.RoleNameAr,
         activeMembers = detail.ActiveMembers.Select(m => new
         {
             userId = m.UserId,
@@ -1501,7 +1719,7 @@ app.MapGet("/api/admin/roster/{roleCode}", async (string roleCode, IRosterServic
             reminderCount = i.ReminderCount,
             lastReminderAt = i.LastReminderAt,
             source = i.Source,
-            invitedByName = i.InvitedBy.FullNameEn,
+            invitedByName = i.InvitedBy.FullNameAr,
             createdAt = i.CreatedAt,
         }),
     });
@@ -1607,7 +1825,7 @@ app.MapPost("/api/admin/employees/import", async (EmployeeImportRequest input, C
 app.MapGet("/api/admin/phases", async (IPhaseScheduleService service) =>
 {
     var phases = await service.ListAsync();
-    return Results.Ok(phases.Select(p => new { idx = p.Idx, code = p.Code, labelAr = p.LabelAr, labelEn = p.LabelEn, startsAt = p.StartsAt, endsAt = p.EndsAt, updatedAt = p.UpdatedAt }));
+    return Results.Ok(phases.Select(p => new { idx = p.Idx, code = p.Code, labelAr = p.LabelAr, labelEn = p.LabelEn, startsAt = p.StartsAt, endsAt = p.EndsAt, updatedAt = p.UpdatedAt, announcedAt = p.AnnouncedAt }));
 }).RequireAuthorization("SupervisorOrAdmin");
 
 app.MapPatch("/api/admin/phases/{idx:int}", async (int idx, PhaseScheduleInput input, ClaimsPrincipal user, IPhaseScheduleService service) =>
@@ -1620,6 +1838,31 @@ app.MapPatch("/api/admin/phases/{idx:int}", async (int idx, PhaseScheduleInput i
         PhaseScheduleCommandStatus.NotFound => Results.NotFound(),
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
+}).RequireAuthorization("SupervisorOrAdmin");
+
+app.MapPost("/api/admin/phases/{idx:int}/announce", async (int idx, ClaimsPrincipal user, IPhaseScheduleService service) =>
+{
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.AnnounceAsync(idx, actorId);
+    return result.Status switch
+    {
+        PhaseAnnounceStatus.Success => Results.Ok(new { recipientCount = result.RecipientCount }),
+        PhaseAnnounceStatus.NotFound => Results.NotFound(),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("SupervisorOrAdmin");
+
+app.MapGet("/api/admin/phases/{idx:int}/audience", async (int idx, IPhaseScheduleService service) =>
+{
+    var roleCodes = await service.GetAudienceAsync(idx);
+    return Results.Ok(new { roleCodes });
+}).RequireAuthorization("SupervisorOrAdmin");
+
+app.MapPut("/api/admin/phases/{idx:int}/audience", async (int idx, PhaseAudienceInput input, IPhaseScheduleService service) =>
+{
+    await service.SetAudienceAsync(idx, input.RoleCodes);
+    var roleCodes = await service.GetAudienceAsync(idx);
+    return Results.Ok(new { roleCodes });
 }).RequireAuthorization("SupervisorOrAdmin");
 
 app.MapGet("/api/activities", async (InnovationDbContext db) =>
@@ -1708,11 +1951,34 @@ app.MapPost("/api/ideas/{id:guid}/evaluations", async (Guid id, EvaluationInput 
     };
 }).RequireAuthorization("EvaluatorAndAbove");
 
+// Statuses reachable only once the supervisor has forwarded evaluation feedback onward
+// (idea has left evaluation_review for submitter_review or beyond).
+var forwardedEvaluationReviewStatuses = new HashSet<string>
+{
+    IdeaStatusCodes.SubmitterReview,
+    IdeaStatusCodes.CommitteePending,
+    IdeaStatusCodes.Committee,
+    IdeaStatusCodes.PendingFinalRanking,
+    IdeaStatusCodes.Approved,
+    IdeaStatusCodes.NotSelected,
+    IdeaStatusCodes.InPilot,
+    IdeaStatusCodes.InMeasurement,
+    IdeaStatusCodes.InScaling,
+};
+
 app.MapGet("/api/ideas/{id:guid}/evaluations", async (Guid id, ClaimsPrincipal user, InnovationDbContext db) =>
 {
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    var idea = await db.Ideas.SingleOrDefaultAsync(i => i.Id == id);
+    var idea = await db.Ideas.Include(i => i.IdeaStatus).SingleOrDefaultAsync(i => i.Id == id);
     if (idea is null || idea.SubmitterId != userId) return Results.NotFound();
+
+    // The submitter must never see round-1 evaluator scores — only comments, and only once the
+    // supervisor has forwarded feedback (idea has left evaluation_review onward to submitter_review
+    // or beyond). Before that, the submitter hasn't been sent anything yet.
+    if (!forwardedEvaluationReviewStatuses.Contains(idea.IdeaStatus.Code))
+    {
+        return Results.Ok(new { evaluations = Array.Empty<object>(), supervisorComment = (string?)null });
+    }
 
     var submitted = await db.Evaluations
         .Where(e => e.IdeaId == id && e.SubmittedAt != null)
@@ -1722,14 +1988,10 @@ app.MapGet("/api/ideas/{id:guid}/evaluations", async (Guid id, ClaimsPrincipal u
     var evaluations = submitted.Select((e, i) => new
     {
         reviewerLabel = $"Reviewer {i + 1}",
-        score = (double?)e.TotalScore,
         comment = e.Comments,
     }).ToList();
 
-    var scores = submitted.Select(e => (double)e.TotalScore).ToList();
-    double? averageScore = scores.Count > 0 ? scores.Average() : null;
-
-    return Results.Ok(new { evaluations, averageScore });
+    return Results.Ok(new { evaluations, supervisorComment = idea.SupervisorEvaluationComment });
 }).RequireAuthorization();
 
 app.MapGet("/api/ideas/{id:guid}/journey", async (Guid id, ClaimsPrincipal user, InnovationDbContext db, IEvaluationSettingsService settings) =>
@@ -1764,11 +2026,15 @@ app.MapGet("/api/ideas/{id:guid}/journey", async (Guid id, ClaimsPrincipal user,
             d.DecidedAt)).ToList(),
         (double)passThreshold);
 
+    // The round-1 evaluator aggregate score must never reach the submitter — only supervisor/judge/admin
+    // may see it (see the workflow confidentiality matrix). The submitter's journey shows stages only.
+    var canSeeEvaluationScore = user.IsInRole(RoleCodes.Supervisor) || user.IsInRole(RoleCodes.Judge) || user.IsInRole(RoleCodes.Admin);
+
     return Results.Ok(new
     {
         currentStage = journey.CurrentStage,
         stopped = journey.Stopped,
-        evaluationScore = journey.EvaluationScore,
+        evaluationScore = canSeeEvaluationScore ? journey.EvaluationScore : (double?)null,
         stages = journey.Stages.Select(s => new
         {
             index = s.Index,
@@ -1789,7 +2055,6 @@ app.MapGet("/api/evaluations/queue", async (ClaimsPrincipal user, IEvaluationSer
         code = i.Code,
         titleAr = i.TitleAr,
         titleEn = i.TitleEn,
-        submitterName = i.Submitter.FullNameEn,
         strategicThemeId = i.StrategicThemeId,
         updatedAt = i.UpdatedAt,
     }));
@@ -1804,7 +2069,7 @@ app.MapGet("/api/evaluations/mine", async (ClaimsPrincipal user, IEvaluationServ
         id = e.Id,
         ideaId = e.IdeaId,
         ideaCode = e.Idea.Code,
-        ideaTitleEn = e.Idea.TitleEn,
+        ideaTitleEn = e.Idea.TitleAr,
         totalScore = e.TotalScore,
         recommendation = e.Recommendation,
         submittedAt = e.SubmittedAt,
@@ -1812,23 +2077,24 @@ app.MapGet("/api/evaluations/mine", async (ClaimsPrincipal user, IEvaluationServ
     }));
 }).RequireAuthorization("EvaluatorAndAbove");
 
-app.MapPost("/api/ideas/{id:guid}/submit-to-committee", async (Guid id, ClaimsPrincipal user, IIdeaService service, ISlaClockService slaClockService) =>
+app.MapPost("/api/ideas/{id:guid}/submit-to-committee", async (Guid id, SubmitToCommitteeInput input, ClaimsPrincipal user, ICommitteeReferralService service, ISlaClockService slaClockService) =>
 {
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    var result = await service.SubmitToCommitteeAsync(id, userId);
-    if (result.Status == IdeaCommandStatus.Success)
+    var result = await service.SubmitToCommitteeAsync(id, userId, input);
+    if (result.Status == CommitteeReferralCommandStatus.Success)
     {
         await slaClockService.OpenAsync("committee", id);
     }
     return result.Status switch
     {
-        IdeaCommandStatus.Success => Results.Ok(new { id = result.Idea!.Id, status = result.Idea.IdeaStatus.Code }),
-        IdeaCommandStatus.NotFound => Results.NotFound(),
-        IdeaCommandStatus.Forbidden => Results.StatusCode(StatusCodes.Status403Forbidden),
-        IdeaCommandStatus.InvalidState => Results.BadRequest(new { error = "Idea must be in pass_awaiting_attachments state with at least one attachment to submit to committee." }),
+        CommitteeReferralCommandStatus.Success => Results.Ok(new { id = result.Idea!.Id, status = result.Idea.IdeaStatus.Code }),
+        CommitteeReferralCommandStatus.NotFound => Results.NotFound(),
+        CommitteeReferralCommandStatus.InvalidState => Results.BadRequest(new { error = "Idea must be in committee_pending state to submit to committee." }),
+        CommitteeReferralCommandStatus.JudgesRequired => Results.BadRequest(new { error = "Select at least one judge." }),
+        CommitteeReferralCommandStatus.InvalidJudge => Results.BadRequest(new { error = "One or more selected users are not judges." }),
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
-}).RequireAuthorization("AnyAssignedRole");
+}).RequireAuthorization("SupervisorOrAdmin");
 
 app.MapPost("/api/ideas/{id:guid}/withdraw", async (Guid id, ClaimsPrincipal user, IIdeaService service) =>
 {
@@ -1841,7 +2107,7 @@ app.MapPost("/api/ideas/{id:guid}/withdraw", async (Guid id, ClaimsPrincipal use
         IdeaCommandStatus.Forbidden => Results.Forbid(),
         _ => Results.Conflict(new { error = "Idea cannot be withdrawn in its current state." }),
     };
-}).RequireAuthorization("AnyAssignedRole");
+}).RequireAuthorization("IdeaAuthor");
 
 app.MapGet("/api/committee-criteria", async (InnovationDbContext db) =>
 {
@@ -1941,6 +2207,7 @@ app.MapPost("/api/ideas/{id:guid}/committee-decisions", async (Guid id, Committe
         CommitteeCommandStatus.AlreadyDecided => Results.BadRequest(new { error = "You have already decided on this idea." }),
         CommitteeCommandStatus.InvalidDecisionType => Results.BadRequest(new { error = "Invalid decision type." }),
         CommitteeCommandStatus.InvalidCriteria => Results.BadRequest(new { error = "Criteria scores must include exactly the active criteria, each between 0 and 10." }),
+        CommitteeCommandStatus.Forbidden => Results.StatusCode(StatusCodes.Status403Forbidden),
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
 }).RequireAuthorization("SupervisorOrCommittee");
@@ -1955,7 +2222,7 @@ app.MapGet("/api/committee/queue", async (ClaimsPrincipal user, ICommitteeServic
         code = q.Idea.Code,
         titleAr = q.Idea.TitleAr,
         titleEn = q.Idea.TitleEn,
-        submitterName = q.Idea.Submitter.FullNameEn,
+        submitterName = q.Idea.Submitter.FullNameAr,
         hasDecided = q.HasDecided,
         decidedCount = q.DecidedCount,
         totalJudges = q.TotalJudges,
@@ -1972,7 +2239,7 @@ app.MapGet("/api/committee/mine", async (ClaimsPrincipal user, ICommitteeService
         id = d.Id,
         ideaId = d.IdeaId,
         ideaCode = d.Idea.Code,
-        ideaTitleEn = d.Idea.TitleEn,
+        ideaTitleEn = d.Idea.TitleAr,
         totalScore = d.TotalScore,
         decidedAt = d.DecidedAt,
     }));
@@ -1993,9 +2260,72 @@ app.MapPost("/api/ideas/{id:guid}/screening-decision", async (Guid id, Screening
         ScreeningCommandStatus.InvalidState => Results.BadRequest(new { error = "Idea is not awaiting screening." }),
         ScreeningCommandStatus.ReasonRequired => Results.BadRequest(new { error = "A reason is required for this decision." }),
         ScreeningCommandStatus.InvalidDecision => Results.BadRequest(new { error = "Invalid screening decision." }),
+        ScreeningCommandStatus.EvaluatorsRequired => Results.BadRequest(new { error = "Select at least one evaluator to approve." }),
+        ScreeningCommandStatus.InvalidEvaluator => Results.BadRequest(new { error = "One or more selected users are not evaluators." }),
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
 }).RequireAuthorization("SupervisorOrAdmin");
+
+app.MapPost("/api/ideas/{id:guid}/evaluation-review-decision", async (Guid id, EvaluationReviewDecisionInput input, ClaimsPrincipal user, IEvaluationReviewService service) =>
+{
+    var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.SubmitDecisionAsync(id, userId, input);
+    return result.Status switch
+    {
+        EvaluationReviewCommandStatus.Success => Results.Ok(new { id = result.Idea!.Id, status = result.Idea.IdeaStatus.Code }),
+        EvaluationReviewCommandStatus.NotFound => Results.NotFound(),
+        EvaluationReviewCommandStatus.InvalidState => Results.BadRequest(new { error = "Idea is not awaiting evaluation review." }),
+        EvaluationReviewCommandStatus.ReasonRequired => Results.BadRequest(new { error = "A reason is required for this decision." }),
+        EvaluationReviewCommandStatus.InvalidDecision => Results.BadRequest(new { error = "Invalid evaluation-review decision." }),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("SupervisorOrAdmin");
+
+app.MapPost("/api/ideas/{id:guid}/resubmit-evaluation", async (Guid id, ResubmitEvaluationInput input, ClaimsPrincipal user, ISubmitterReviewService service) =>
+{
+    var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.ResubmitAsync(id, userId, input);
+    return result.Status switch
+    {
+        SubmitterReviewCommandStatus.Success => Results.Ok(new { id = result.Idea!.Id, status = result.Idea.IdeaStatus.Code }),
+        SubmitterReviewCommandStatus.NotFound => Results.NotFound(),
+        SubmitterReviewCommandStatus.Forbidden => Results.StatusCode(StatusCodes.Status403Forbidden),
+        SubmitterReviewCommandStatus.InvalidState => Results.BadRequest(new { error = "Idea is not awaiting your review." }),
+        SubmitterReviewCommandStatus.CommentRequired => Results.BadRequest(new { error = "A comment is required." }),
+        SubmitterReviewCommandStatus.BelowTarget => Results.BadRequest(new { error = "Idea did not meet the target rating." }),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("IdeaAuthor");
+
+app.MapGet("/api/ideas/{id:guid}/evaluation-detail", async (Guid id, InnovationDbContext db) =>
+{
+    var idea = await db.Ideas.SingleOrDefaultAsync(i => i.Id == id);
+    if (idea is null) return Results.NotFound();
+
+    var submitted = await db.Evaluations
+        .Where(e => e.IdeaId == id && e.SubmittedAt != null)
+        .OrderBy(e => e.SubmittedAt)
+        .ToListAsync();
+
+    var evaluations = submitted.Select((e, i) => new
+    {
+        reviewerLabel = $"Reviewer {i + 1}",
+        score = (double?)e.TotalScore,
+        comment = e.Comments,
+    }).ToList();
+
+    Dictionary<string, decimal>? aggregateByCriteria = idea.EvaluationAggregateJson is null
+        ? null
+        : JsonSerializer.Deserialize<Dictionary<string, decimal>>(idea.EvaluationAggregateJson);
+
+    return Results.Ok(new
+    {
+        evaluations,
+        aggregateScore = idea.EvaluationAggregateScore,
+        aggregateByCriteria,
+        supervisorComment = idea.SupervisorEvaluationComment,
+    });
+}).RequireAuthorization("SupervisorOrCommittee");
 
 app.MapGet("/api/screening/queue", async (IScreeningService service) =>
 {
@@ -2006,8 +2336,40 @@ app.MapGet("/api/screening/queue", async (IScreeningService service) =>
         code = i.Code,
         titleAr = i.TitleAr,
         titleEn = i.TitleEn,
-        submitterName = i.Submitter.FullNameEn,
+        submitterName = i.Submitter.FullNameAr,
         strategicThemeId = i.StrategicThemeId,
+        updatedAt = i.UpdatedAt,
+    }));
+}).RequireAuthorization("SupervisorOrAdmin");
+
+app.MapGet("/api/supervisor/evaluation-review-queue", async (IEvaluationReviewService service) =>
+{
+    var ideas = await service.GetReviewQueueAsync();
+    return Results.Ok(ideas.Select(i => new
+    {
+        id = i.Id,
+        code = i.Code,
+        titleAr = i.TitleAr,
+        titleEn = i.TitleEn,
+        submitterName = i.Submitter.FullNameAr,
+        strategicThemeId = i.StrategicThemeId,
+        evaluationAggregateScore = i.EvaluationAggregateScore,
+        updatedAt = i.UpdatedAt,
+    }));
+}).RequireAuthorization("SupervisorOrAdmin");
+
+app.MapGet("/api/supervisor/committee-pending-queue", async (ICommitteeReferralService service) =>
+{
+    var ideas = await service.GetPendingQueueAsync();
+    return Results.Ok(ideas.Select(i => new
+    {
+        id = i.Id,
+        code = i.Code,
+        titleAr = i.TitleAr,
+        titleEn = i.TitleEn,
+        submitterName = i.Submitter.FullNameAr,
+        strategicThemeId = i.StrategicThemeId,
+        evaluationAggregateScore = i.EvaluationAggregateScore,
         updatedAt = i.UpdatedAt,
     }));
 }).RequireAuthorization("SupervisorOrAdmin");
@@ -2019,9 +2381,9 @@ app.MapGet("/api/track-assignments", async (ITrackAssignmentService service) =>
     {
         id = a.Id,
         evaluatorId = a.EvaluatorId,
-        evaluatorName = a.Evaluator.FullNameEn,
+        evaluatorName = a.Evaluator.FullNameAr,
         trackId = a.TrackId,
-        trackNameEn = a.Track.NameEn,
+        trackNameEn = a.Track.NameAr,
     }));
 }).RequireAuthorization("SupervisorOrAdmin");
 
@@ -2141,7 +2503,7 @@ app.MapGet("/api/admin/users", async (IUserManagementService service) =>
         department = u.Department,
         title = u.Title,
         isActive = u.IsActive,
-        roles = u.UserRoles.Select(ur => new { roleId = ur.RoleId, code = ur.Role.Code, nameEn = ur.Role.NameEn }),
+        roles = u.UserRoles.Select(ur => new { roleId = ur.RoleId, code = ur.Role.Code, nameEn = ur.Role.NameAr }),
     }));
 }).RequireAuthorization("AdminOnly");
 
@@ -2159,7 +2521,7 @@ app.MapGet("/api/admin/users/{id:guid}", async (Guid id, IUserManagementService 
         department = user.Department,
         title = user.Title,
         isActive = user.IsActive,
-        roles = user.UserRoles.Select(ur => new { roleId = ur.RoleId, code = ur.Role.Code, nameEn = ur.Role.NameEn }),
+        roles = user.UserRoles.Select(ur => new { roleId = ur.RoleId, code = ur.Role.Code, nameEn = ur.Role.NameAr }),
     });
 }).RequireAuthorization("AdminOnly");
 
@@ -2177,6 +2539,45 @@ app.MapPost("/api/admin/role-grants", async (RoleGrantInput input, ClaimsPrincip
         RoleGrantCommandStatus.AdUserNotFound => Results.BadRequest(new { error = "No matching Active Directory user was found for this account name." }),
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
+}).RequireAuthorization("AdminOnly");
+
+app.MapPost("/api/admin/directory/import", async (DirectoryImportRequest input, ClaimsPrincipal user, IUserManagementService service) =>
+{
+    if (input.SamAccountNames is null || input.SamAccountNames.Length == 0)
+    {
+        return Results.BadRequest(new { error = "At least one samAccountName is required." });
+    }
+    if (string.IsNullOrWhiteSpace(input.RoleCode))
+    {
+        return Results.BadRequest(new { error = "roleCode is required." });
+    }
+
+    var granterId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var results = new List<DirectoryImportResultItem>();
+    foreach (var sam in input.SamAccountNames)
+    {
+        var result = await service.GrantRoleAsync(new RoleGrantInput(sam, input.RoleCode), granterId);
+        results.Add(new DirectoryImportResultItem(sam, result.Status.ToString()));
+    }
+
+    return Results.Ok(results);
+}).RequireAuthorization("AdminOnly");
+
+// Bulk "import all users from AD": grants submitter to every directory user that currently has no
+// roles (existing users) or queues a pending submitter grant (never-logged-in users). Idempotent.
+app.MapPost("/api/admin/directory/import-all", async (ClaimsPrincipal user, IUserManagementService service) =>
+{
+    const int maxAdImportUsers = 5000;
+    var granterId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.ImportAllAdUsersAsSubmittersAsync(granterId, maxAdImportUsers);
+    return Results.Ok(new
+    {
+        total = result.Total,
+        granted = result.Granted,
+        pending = result.Pending,
+        skippedHasRoles = result.SkippedHasRoles,
+        skippedAlreadyPending = result.SkippedAlreadyPending,
+    });
 }).RequireAuthorization("AdminOnly");
 
 app.MapPost("/api/admin/role-grants/group", async (GroupGrantRequest input, ClaimsPrincipal user, IUserManagementService service) =>
@@ -2222,8 +2623,8 @@ app.MapGet("/api/admin/pending-role-grants", async (IUserManagementService servi
         id = g.Id,
         samAccountName = g.SamAccountName,
         roleCode = g.Role.Code,
-        roleNameEn = g.Role.NameEn,
-        grantedByName = g.GrantedBy.FullNameEn,
+        roleNameEn = g.Role.NameAr,
+        grantedByName = g.GrantedBy.FullNameAr,
         grantedAt = g.GrantedAt,
     }));
 }).RequireAuthorization("AdminOnly");
@@ -2394,7 +2795,7 @@ app.MapGet("/api/roles", async (InnovationDbContext db) =>
     var roles = await db.Roles
         .Where(r => r.IsActive)
         .OrderBy(r => r.SortOrder)
-        .Select(r => new { id = r.Id, code = r.Code, nameEn = r.NameEn })
+        .Select(r => new { id = r.Id, code = r.Code, nameEn = r.NameAr })
         .ToListAsync();
     return Results.Ok(roles);
 }).RequireAuthorization("AdminOnly");
@@ -2518,64 +2919,6 @@ app.MapDelete("/api/admin/report-titles/{id:guid}", async (Guid id, ClaimsPrinci
     return Results.NoContent();
 }).RequireAuthorization("AdminOnly");
 
-if (app.Environment.EnvironmentName == "Staging")
-{
-    // Idempotent admin bootstrap for the JWT auth path -- no secret is ever stored in source or in a
-    // migration. Set Bootstrap__AdminPassword (Railway/Vercel env var naming) to set/rotate the
-    // password on next restart; omit it on later deploys once you've logged in and no longer want
-    // the env var able to reset it.
-    //
-    // Wrapped in try/catch deliberately: this runs before app.Run(), so an unhandled exception here
-    // (e.g. the DB being briefly unreachable -- firewall rule not yet propagated, transient network
-    // blip) would previously crash the entire process before it ever started listening, taking down
-    // an otherwise-healthy deploy. Failing soft here means /api/health/db still correctly reports
-    // unhealthy via CanConnectAsync, but the app itself stays up and serves requests once the DB
-    // becomes reachable, instead of crash-looping.
-    try
-    {
-        using var bootstrapScope = app.Services.CreateScope();
-        var bootstrapDb = bootstrapScope.ServiceProvider.GetRequiredService<InnovationDbContext>();
-        var adminEmail = app.Configuration["Bootstrap:AdminEmail"] ?? "admin@internal.sa";
-        var adminPassword = app.Configuration["Bootstrap:AdminPassword"];
-
-        var adminUser = await bootstrapDb.Users
-            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
-            .FirstOrDefaultAsync(u => u.Email == adminEmail);
-        if (adminUser is null)
-        {
-            adminUser = new User
-            {
-                Id = Guid.NewGuid(),
-                SamAccountName = "admin.bootstrap",
-                Email = adminEmail,
-                FullNameAr = "مدير النظام",
-                FullNameEn = "System Admin",
-            };
-            bootstrapDb.Users.Add(adminUser);
-        }
-
-        // Only ever set the password when there isn't one yet -- once an admin has logged in and
-        // rotated it (via POST /api/auth/change-password), a later container restart must NOT
-        // silently revert it back to whatever Bootstrap__AdminPassword still happens to be set to.
-        if (adminUser.PasswordHash is null && !string.IsNullOrWhiteSpace(adminPassword))
-        {
-            adminUser.PasswordHash = PasswordHasher.Hash(adminPassword);
-        }
-
-        if (!adminUser.UserRoles.Any(ur => ur.Role.Code == RoleCodes.Admin))
-        {
-            var adminRoleId = await bootstrapDb.Roles.Where(r => r.Code == RoleCodes.Admin).Select(r => r.Id).SingleAsync();
-            adminUser.UserRoles.Add(new UserRole { UserId = adminUser.Id, RoleId = adminRoleId, IsPrimary = true });
-        }
-
-        await bootstrapDb.SaveChangesAsync();
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogWarning(ex, "Staging admin bootstrap failed at startup -- will retry on next restart. App will continue starting.");
-    }
-}
-
 app.Run();
 
 public partial class Program
@@ -2591,3 +2934,35 @@ public partial class Program
         "audit_log_export", "ideas_export", "evaluations_export", "escalations_export", "analytics_export",
     };
 }
+
+public sealed record HomePageSectionsReplaceRequest(List<HomePageSectionInput> Sections);
+
+internal static class CallerIdentity
+{
+    /// <summary>
+    /// Returns the caller's bare AD samAccountName for matching against stored IdeaTeamMember rows.
+    /// Prefers the normalized <c>samAccountName</c> claim emitted by IdentityClaimsTransformation; if it's
+    /// absent, falls back to <see cref="System.Security.Claims.ClaimsPrincipal.Identity"/>.Name with any
+    /// <c>DOMAIN\</c> prefix or <c>@domain</c> UPN suffix stripped (Negotiate supplies a domain-qualified name).
+    /// </summary>
+    public static string? ResolveSam(ClaimsPrincipal user)
+    {
+        var claim = user.FindFirstValue(IdentityClaimsTransformation.SamAccountNameClaimType);
+        if (!string.IsNullOrEmpty(claim)) return claim;
+
+        var name = user.Identity?.Name;
+        if (string.IsNullOrEmpty(name)) return name;
+
+        var backslash = name.IndexOf('\\');
+        if (backslash >= 0) name = name[(backslash + 1)..];
+        var at = name.IndexOf('@');
+        if (at >= 0) name = name[..at];
+        return name;
+    }
+}
+
+public sealed record DirectoryPersonDto(string SamAccountName, string DisplayName, string Email);
+
+public sealed record DirectoryImportRequest(string[] SamAccountNames, string RoleCode);
+
+public sealed record DirectoryImportResultItem(string SamAccountName, string Status);

@@ -13,6 +13,7 @@ namespace InnovationToImpact.Api.Auth;
 public class IdentityClaimsTransformation : IClaimsTransformation
 {
     private const string SyncedClaimType = "identity-sync-complete";
+    public const string SamAccountNameClaimType = "samAccountName";
 
     private readonly InnovationDbContext _db;
     private readonly IAdIdentityLookupService _lookupService;
@@ -43,15 +44,6 @@ public class IdentityClaimsTransformation : IClaimsTransformation
             return principal;
         }
 
-        // JWT-authenticated principals (Staging/cloud auth path) already carry NameIdentifier/Email/
-        // Role claims baked in at token-issuance time (see JwtTokenService) -- there is no AD identity
-        // to resolve for a JWT/password user, so skip AD lookup entirely rather than treat the JWT's
-        // `sub` as a SamAccountName.
-        if (identity.HasClaim(c => c.Type == ClaimTypes.NameIdentifier))
-        {
-            return principal;
-        }
-
         var samAccountName = ExtractSamAccountName(identity.Name);
         var cacheKey = $"identity-claims:{samAccountName}";
 
@@ -64,6 +56,9 @@ public class IdentityClaimsTransformation : IClaimsTransformation
         identity.AddClaim(new Claim(SyncedClaimType, "1"));
         identity.AddClaim(new Claim(ClaimTypes.Email, cached.Email));
         identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, cached.UserId.ToString()));
+        // The identity's Name is domain-qualified under Negotiate (DOMAIN\sam or a UPN); expose the bare
+        // SAM as its own claim so callers can match it against stored IdeaTeamMember.SamAccountName values.
+        identity.AddClaim(new Claim(SamAccountNameClaimType, samAccountName));
         if (!string.IsNullOrEmpty(cached.Department))
         {
             identity.AddClaim(new Claim("department", cached.Department));
