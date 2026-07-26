@@ -32,7 +32,7 @@ describe('MineIdeasComponent', () => { // Change 20260726
   let ideas: jasmine.SpyObj<IdeasService>; // Change 20260726
 
   async function setup(): Promise<void> { // Change 20260726
-    ideas = jasmine.createSpyObj<IdeasService>('IdeasService', ['getMine', 'getById']); // Change 20260726
+    ideas = jasmine.createSpyObj<IdeasService>('IdeasService', ['getMine', 'getById', 'withdrawIdea']); // Change 20260726
     TestBed.configureTestingModule({ // Change 20260726
       imports: [MineIdeasComponent], // Change 20260726
       providers: [provideRouter([]), { provide: IdeasService, useValue: ideas }], // Change 20260726
@@ -126,5 +126,51 @@ describe('MineIdeasComponent', () => { // Change 20260726
     await fixture.whenStable(); // Change 20260726
 
     expect(fixture.componentInstance.rows().map((r) => r.status)).toEqual(['approved', 'submitted']); // Change 20260726
+  }); // Change 20260726
+
+  it('opens the withdraw dialog for a withdrawable row and refreshes after success', async () => { // Change 20260726
+    ideas.getMine.and.resolveTo(page([row({ status: 'submitted' })])); // Change 20260726
+    ideas.withdrawIdea.and.resolveTo(undefined); // Change 20260726
+    await render(); // Change 20260726
+    const component = fixture.componentInstance; // Change 20260726
+
+    component.openWithdraw(component.rows()[0]); // Change 20260726
+    fixture.detectChanges(); // Change 20260726
+    expect(component.withdrawTarget()).not.toBeNull(); // Change 20260726
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-withdraw-dialog')).toBeTruthy(); // Change 20260726
+
+    const callsBefore = ideas.getMine.calls.count(); // Change 20260726
+    component.onWithdrawn(); // Change 20260726
+    await fixture.whenStable(); // Change 20260726
+
+    expect(component.withdrawTarget()).toBeNull(); // Change 20260726
+    expect(ideas.getMine.calls.count()).toBe(callsBefore + 1); // Change 20260726
+  }); // Change 20260726
+
+  it('closing the withdraw dialog leaves the list untouched', async () => { // Change 20260726
+    ideas.getMine.and.resolveTo(page([row({ status: 'submitted' })])); // Change 20260726
+    await render(); // Change 20260726
+    const component = fixture.componentInstance; // Change 20260726
+
+    component.openWithdraw(component.rows()[0]); // Change 20260726
+    const callsBefore = ideas.getMine.calls.count(); // Change 20260726
+    component.closeWithdraw(); // Change 20260726
+    await fixture.whenStable(); // Change 20260726
+
+    expect(component.withdrawTarget()).toBeNull(); // Change 20260726
+    expect(ideas.getMine.calls.count()).toBe(callsBefore); // Change 20260726
+    expect(ideas.withdrawIdea).not.toHaveBeenCalled(); // Change 20260726
+  }); // Change 20260726
+
+  it('only offers Withdraw for draft, submitted and returned ideas', async () => { // Change 20260726
+    ideas.getMine.and.resolveTo(page([row()])); // Change 20260726
+    await render(); // Change 20260726
+    const component = fixture.componentInstance; // Change 20260726
+
+    expect(component.isWithdrawable(row({ status: 'draft' }))).toBeTrue(); // Change 20260726
+    expect(component.isWithdrawable(row({ status: 'submitted' }))).toBeTrue(); // Change 20260726
+    expect(component.isWithdrawable(row({ status: 'returned' }))).toBeTrue(); // Change 20260726
+    expect(component.isWithdrawable(row({ status: 'approved' }))).toBeFalse(); // Change 20260726
+    expect(component.isWithdrawable(row({ status: 'withdrawn' }))).toBeFalse(); // Change 20260726
   }); // Change 20260726
 }); // Change 20260726

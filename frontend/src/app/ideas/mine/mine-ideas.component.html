@@ -84,16 +84,15 @@
               <div class="flex flex-wrap items-center gap-2">
                 <a [routerLink]="['/ideas', item.id]" class="btn-outline btn-sm" i18n="@@ideas.mine.actionView">View</a>
                 @if (isEditable(item)) {
-                  <a [routerLink]="['/ideas', item.id, 'edit']" class="btn-outline btn-sm" i18n="@@ideas.mine.actionEdit">Edit</a>
+                  <a [routerLink]="['/ideas', item.id, 'edit-draft']" class="btn-outline btn-sm" i18n="@@ideas.mine.actionEdit">Edit</a>
                 } @else {
                   <button type="button" class="btn-outline btn-sm" disabled i18n="@@ideas.mine.actionEdit">Edit</button>
                 }
                 <button
                   type="button"
                   class="btn-outline btn-sm"
-                  disabled
-                  title="Coming soon"
-                  i18n-title="@@ideas.mine.comingSoon"
+                  [disabled]="!isWithdrawable(item)"
+                  (click)="openWithdraw(item)"
                   i18n="@@ideas.mine.actionWithdraw"
                 >Withdraw</button>
               </div>
@@ -123,7 +122,16 @@
         <div class="flex flex-wrap items-center gap-2">
           <a [routerLink]="['/ideas', item.id]" class="btn-outline btn-sm" i18n="@@ideas.mine.actionView">View</a>
           @if (isEditable(item)) {
-            <a [routerLink]="['/ideas', item.id, 'edit']" class="btn-outline btn-sm" i18n="@@ideas.mine.actionEdit">Edit</a>
+            <a [routerLink]="['/ideas', item.id, 'edit-draft']" class="btn-outline btn-sm" i18n="@@ideas.mine.actionEdit">Edit</a>
+          }
+          @if (isWithdrawable(item)) {
+            <!-- Change 20260726 -->
+            <button
+              type="button"
+              class="btn-outline btn-sm"
+              (click)="openWithdraw(item)"
+              i18n="@@ideas.mine.actionWithdraw"
+            >Withdraw</button>
           }
         </div>
       </div>
@@ -135,4 +143,14 @@
     <span class="text-muted-foreground" data-testid="mine-page-indicator" i18n="@@ideas.mine.pageIndicator">Page {{ page() }} of {{ totalPages() }}</span>
     <button type="button" class="btn-outline btn-sm" [disabled]="page() >= totalPages()" (click)="goToPage(page() + 1)" i18n="@@ideas.mine.next">Next</button>
   </div>
+}
+
+<!-- Change 20260726 -->
+@if (withdrawTarget(); as target) {
+  <app-withdraw-dialog
+    [ideaId]="target.id"
+    [ideaTitle]="title(target)"
+    (withdrawn)="onWithdrawn()"
+    (cancelled)="closeWithdraw()"
+  />
 }

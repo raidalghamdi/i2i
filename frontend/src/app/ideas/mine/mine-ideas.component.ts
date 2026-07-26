@@ -4,9 +4,13 @@ import { RouterLink } from '@angular/router'; // Change 20260726
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component'; // Change 20260726
 import { StatusLabelPipe } from '../../shared/status-label/status-label.pipe'; // Change 20260726
 import { IdeasService, MineIdeaRow } from '../ideas.service'; // Change 20260726
+import { WithdrawDialogComponent } from '../shared/withdraw-dialog.component'; // Change 20260726
 
 /** Statuses an innovator may still edit themselves. */ // Change 20260726
 const EDITABLE_STATUSES = new Set(['draft', 'needs_completion', 'returned']); // Change 20260726
+
+/** Mirrors `IdeaService.WithdrawableStatuses`; anything else is a 400 from the API. */ // Change 20260726
+const WITHDRAWABLE_STATUSES = new Set(['draft', 'submitted', 'returned']); // Change 20260726
 
 /** Pill colour groups for the whole idea lifecycle (Phase 2b spec). */ // Change 20260726
 const STATUS_TONES: Record<string, string> = { // Change 20260726
@@ -39,7 +43,13 @@ const PAGE_SIZE = 20; // Change 20260726
 
 @Component({ // Change 20260726
   selector: 'app-mine-ideas', // Change 20260726
-  imports: [DatePipe, RouterLink, PageHeaderComponent, StatusLabelPipe], // Change 20260726
+  imports: [ // Change 20260726
+    DatePipe, // Change 20260726
+    RouterLink, // Change 20260726
+    PageHeaderComponent, // Change 20260726
+    StatusLabelPipe, // Change 20260726
+    WithdrawDialogComponent, // Change 20260726
+  ], // Change 20260726
   templateUrl: './mine-ideas.component.html', // Change 20260726
   styleUrl: './mine-ideas.component.scss', // Change 20260726
 }) // Change 20260726
@@ -63,6 +73,8 @@ export class MineIdeasComponent implements OnInit { // Change 20260726
       : this.items(), // Change 20260726
   ); // Change 20260726
   readonly skeletonRows = [0, 1, 2, 3, 4]; // Change 20260726
+  /** The row whose withdraw dialog is open, or `null` when the dialog is closed. */ // Change 20260726
+  readonly withdrawTarget = signal<MineIdeaRow | null>(null); // Change 20260726
 
   ngOnInit(): void { // Change 20260726
     void this.reload(); // Change 20260726
@@ -116,5 +128,22 @@ export class MineIdeasComponent implements OnInit { // Change 20260726
 
   isEditable(item: MineIdeaRow): boolean { // Change 20260726
     return EDITABLE_STATUSES.has(item.status?.toLowerCase()); // Change 20260726
+  } // Change 20260726
+
+  isWithdrawable(item: MineIdeaRow): boolean { // Change 20260726
+    return WITHDRAWABLE_STATUSES.has(item.status?.toLowerCase()); // Change 20260726
+  } // Change 20260726
+
+  openWithdraw(item: MineIdeaRow): void { // Change 20260726
+    this.withdrawTarget.set(item); // Change 20260726
+  } // Change 20260726
+
+  closeWithdraw(): void { // Change 20260726
+    this.withdrawTarget.set(null); // Change 20260726
+  } // Change 20260726
+
+  onWithdrawn(): void { // Change 20260726
+    this.withdrawTarget.set(null); // Change 20260726
+    void this.reload(); // Change 20260726
   } // Change 20260726
 } // Change 20260726
