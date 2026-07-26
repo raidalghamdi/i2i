@@ -17,6 +17,10 @@ export const routes: Routes = [
     component: PublicShellComponent,
     children: [
       { path: '', component: LandingComponent },
+      {
+        path: 'login',
+        loadComponent: () => import('./public/login/login.component').then((m) => m.LoginComponent),
+      },
       // Phase 3.1/3.2 public pages get added here as children.
       {
         path: 'privacy',
@@ -678,4 +682,5 @@ export const routes: Routes = [
       },
     ],
   },
+  { path: '**', redirectTo: '' },
 ];
