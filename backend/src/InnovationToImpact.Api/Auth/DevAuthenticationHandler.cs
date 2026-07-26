@@ -12,6 +12,9 @@ public class DevAuthenticationOptions : AuthenticationSchemeOptions
 public static class DevAuthenticationDefaults
 {
     public const string AuthenticationScheme = "DevAuth";
+
+    /// <summary>Default scheme in non-Production: routes each request to DevAuth or Negotiate.</summary> // Change 20260726
+    public const string SelectorScheme = "DevAuthOrNegotiate"; // Change 20260726
 }
 
 public class DevAuthenticationHandler : AuthenticationHandler<DevAuthenticationOptions>

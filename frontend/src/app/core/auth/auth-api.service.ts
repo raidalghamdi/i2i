@@ -16,6 +16,7 @@ export interface RefreshResult {
 }
 
 /** Calls the JWT auth endpoints added for the Staging (cloud) deployment -- see backend Api/Auth/AuthEndpoints.cs. */
+// Change 20260726 — Kept for future JWT integration; not used with AD/Negotiate path.
 @Injectable({ providedIn: 'root' })
 export class AuthApiService {
   private readonly http = inject(HttpClient);

@@ -190,9 +190,35 @@ else
     // semantics.
     builder.Services.AddSingleton<IAdIdentityLookupService>(_ => new FakeAdIdentityLookupService());
     builder.Services.Configure<DevAuthOptions>(builder.Configuration.GetSection("DevAuth"));
-    builder.Services.AddAuthentication(DevAuthenticationDefaults.AuthenticationScheme)
+    // DevAuth trusts an unauthenticated X-Dev-User header, so it must never be reachable from the // Change 20260726
+    // public internet (this app also runs as Staging on a public host). The default scheme is a // Change 20260726
+    // selector that only routes to DevAuth in Development or for private-IP callers; every other // Change 20260726
+    // caller falls through to Negotiate and gets a real AD challenge. // Change 20260726
+    builder.Services.AddAuthentication(DevAuthenticationDefaults.SelectorScheme) // Change 20260726
+        .AddPolicyScheme(DevAuthenticationDefaults.SelectorScheme, DevAuthenticationDefaults.SelectorScheme, options => // Change 20260726
+        { // Change 20260726
+            options.ForwardDefaultSelector = context => // Change 20260726
+            { // Change 20260726
+                var environment = context.RequestServices.GetRequiredService<IWebHostEnvironment>(); // Change 20260726
+                if (DevAuthAccessPolicy.IsAllowed(context, environment)) // Change 20260726
+                { // Change 20260726
+                    return DevAuthenticationDefaults.AuthenticationScheme; // Change 20260726
+                } // Change 20260726
+
+                if (context.Request.Headers.ContainsKey(DevAuthAccessPolicy.DevUserHeaderName)) // Change 20260726
+                { // Change 20260726
+                    context.RequestServices.GetRequiredService<ILogger<Program>>().LogWarning( // Change 20260726
+                        "Rejected {Header} impersonation attempt from non-private address {ClientAddress}.", // Change 20260726
+                        DevAuthAccessPolicy.DevUserHeaderName, // Change 20260726
+                        DevAuthAccessPolicy.ResolveClientAddress(context)?.ToString() ?? "unknown"); // Change 20260726
+                } // Change 20260726
+
+                return NegotiateDefaults.AuthenticationScheme; // Change 20260726
+            }; // Change 20260726
+        }) // Change 20260726
         .AddScheme<DevAuthenticationOptions, DevAuthenticationHandler>(
-            DevAuthenticationDefaults.AuthenticationScheme, _ => { });
+            DevAuthenticationDefaults.AuthenticationScheme, _ => { }) // Change 20260726
+        .AddNegotiate(); // Change 20260726
 }
 
 builder.Services.AddAuthorization(options =>
@@ -208,6 +234,15 @@ builder.Services.AddAuthorization(options =>
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var app = builder.Build();
+
+// Surfaced at boot (visible in the hosting platform's logs) because DevAuth is an impersonation // Change 20260726
+// backdoor: it must never read "yes" without the private-IP restriction outside Development. // Change 20260726
+var devAuthState = app.Environment.IsProduction() // Change 20260726
+    ? "no (Production — Negotiate only)" // Change 20260726
+    : app.Environment.IsDevelopment() // Change 20260726
+        ? "yes (Development — all callers)" // Change 20260726
+        : "yes (private-IP callers only; others get Negotiate)"; // Change 20260726
+app.Logger.LogInformation("DevAuth enabled: {DevAuthState}", devAuthState); // Change 20260726
 
 app.Use(async (context, next) =>
 {
@@ -275,8 +310,9 @@ using (var homePageSeedScope = app.Services.CreateScope())
 }
 
 // DEV/TEST ONLY: provision 5 users per role (40) plus grant devuser every role, so the system can be
-// exercised across all roles. Development environment only + SqlServer-only (never SQLite test fixtures).
-if (app.Environment.IsDevelopment())
+// exercised across all roles. Development environment only + SqlServer-only (never SQLite test fixtures); Change 20260726
+// Staging is included because the cloud test deployment runs as Staging and needs the same roster. // Change 20260726
+if (app.Environment.IsDevelopment() || app.Environment.IsStaging()) // Change 20260726
 {
     using var devUsersScope = app.Services.CreateScope();
     try

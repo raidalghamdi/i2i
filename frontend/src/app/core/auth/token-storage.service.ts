@@ -15,6 +15,7 @@ const EXPIRES_AT_KEY = 'i2i-token-expires-at';
  * session survives closing the tab -- the same "stay signed in" experience DevAuth/Negotiate give
  * for free via the browser's own session, which JWT has to replicate explicitly.
  */
+// Change 20260726 — Kept for future JWT integration; not used with AD/Negotiate path.
 @Injectable({ providedIn: 'root' })
 export class TokenStorageService {
   set(tokens: StoredTokens): void {

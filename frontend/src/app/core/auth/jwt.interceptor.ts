@@ -17,6 +17,7 @@ const refreshed$ = new Subject<string>();
  * proactively when it's about to expire, reactively on a 401 as a fallback. No-op when there's no
  * stored session (Negotiate/DevAuth requests pass through unchanged, same as before this existed).
  */
+// Change 20260726 — Kept for future JWT integration; not used with AD/Negotiate path.
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   if (!req.url.startsWith('/api/') || AUTH_ENDPOINTS.some((p) => req.url.startsWith(p))) {
     return next(req);
