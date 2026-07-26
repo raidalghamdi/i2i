@@ -164,6 +164,20 @@ export const routes: Routes = [
         canActivate: [ideaAuthorGuard],
       },
       {
+        path: 'ideas/mine', // Change 20260726
+        loadComponent: () => // Change 20260726
+          import('./ideas/mine/mine-ideas.component').then((m) => m.MineIdeasComponent), // Change 20260726
+        canActivate: [anyAssignedRoleGuard], // Change 20260726
+      }, // Change 20260726
+      {
+        // `ideas/:id` already resolves to the pre-existing detail page, so the Phase 2b read-only
+        // view is mounted alongside it rather than replacing a shipped screen. // Change 20260726
+        path: 'ideas/:id/view', // Change 20260726
+        loadComponent: () => // Change 20260726
+          import('./ideas/detail/idea-detail.component').then((m) => m.IdeaDetailViewComponent), // Change 20260726
+        canActivate: [anyAssignedRoleGuard], // Change 20260726
+      }, // Change 20260726
+      {
         path: 'my-ideas',
         loadComponent: () =>
           import('./ideas/my-ideas/my-ideas.component').then((m) => m.MyIdeasComponent),
