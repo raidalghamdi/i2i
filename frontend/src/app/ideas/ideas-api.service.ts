@@ -98,7 +98,11 @@ export class IdeasApiService {
     return firstValueFrom(this.http.get<MyIdeaItem[]>('/api/ideas/mine', { params }));
   }
 
-  withdraw(id: string): Promise<void> {
-    return firstValueFrom(this.http.post<void>(`/api/ideas/${id}/withdraw`, null));
-  }
+  withdraw(id: string, reason?: string): Promise<void> { // Change 20260726
+    return firstValueFrom(this.http.post<void>(`/api/ideas/${id}/withdraw`, { reason: reason ?? null })); // Change 20260726
+  } // Change 20260726
+
+  deleteAttachment(ideaId: string, attachmentId: string): Promise<void> { // Change 20260726
+    return firstValueFrom(this.http.delete<void>(`/api/ideas/${ideaId}/attachments/${attachmentId}`)); // Change 20260726
+  } // Change 20260726
 }
