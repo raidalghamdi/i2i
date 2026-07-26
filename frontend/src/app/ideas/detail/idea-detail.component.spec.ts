@@ -68,6 +68,8 @@ describe('IdeaDetailViewComponent', () => { // Change 20260726
     fixture = TestBed.createComponent(IdeaDetailViewComponent); // Change 20260726
     fixture.detectChanges(); // Change 20260726
     await fixture.whenStable(); // Change 20260726
+    // The theme name resolves on a second promise chain after the idea itself. // Change 20260726
+    await fixture.whenStable(); // Change 20260726
     fixture.detectChanges(); // Change 20260726
   } // Change 20260726
 
