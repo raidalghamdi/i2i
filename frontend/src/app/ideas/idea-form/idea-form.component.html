@@ -115,10 +115,34 @@
   <!-- Attachments -->
   <div class="flex flex-col gap-1.5">
     <label class="field-label" i18n="@@ideaFormAttachments">Attachments</label>
+    <!-- Change 20260726 -->
+    @if (attachmentError(); as msg) {
+      <div class="field-error" role="alert" data-testid="attachment-error">{{ msg }}</div>
+    }
     @if (existingAttachments().length > 0) {
       <ul class="flex flex-col gap-1 text-sm text-muted-foreground">
         @for (attachment of existingAttachments(); track attachment.id) {
-          <li class="truncate">{{ attachment.fileName }}</li>
+          <!-- Change 20260726 -->
+          <li class="flex items-center justify-between gap-2">
+            <span class="truncate">{{ attachment.fileName }}</span>
+            @if (sectionEditable('attachments')) {
+              <button
+                type="button"
+                class="btn-ghost btn-sm"
+                data-testid="delete-attachment"
+                [disabled]="deletingAttachmentId() !== null"
+                (click)="removeExistingAttachment(attachment)"
+                aria-label="Delete attachment"
+                i18n-aria-label="@@ideaFormDeleteAttachmentAria"
+              >
+                @if (deletingAttachmentId() === attachment.id) {
+                  <span i18n="@@ideaFormDeletingAttachment">Deleting…</span>
+                } @else {
+                  <span aria-hidden="true">&times;</span>
+                }
+              </button>
+            }
+          </li>
         }
       </ul>
     }
