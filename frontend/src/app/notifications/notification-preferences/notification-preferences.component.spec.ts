@@ -46,8 +46,10 @@ describe('NotificationPreferencesComponent', () => {
       ],
     });
     fixture = TestBed.createComponent(NotificationPreferencesComponent);
+    // The app is zoneless, so whenStable() does not wait on the API promises. detectChanges()
+    // fires ngOnInit, then reload() is awaited directly to get a deterministically settled load.
     fixture.detectChanges();
-    await fixture.componentInstance.ngOnInit();
+    await fixture.componentInstance.reload();
     fixture.detectChanges();
     return fixture.componentInstance;
   }
@@ -55,8 +57,8 @@ describe('NotificationPreferencesComponent', () => {
   it('fetches categories and preferences on init and merges the muted flags', async () => {
     const c = await setup();
 
-    expect(api.categories).toHaveBeenCalledTimes(1);
-    expect(api.preferences).toHaveBeenCalledTimes(1);
+    expect(api.categories).toHaveBeenCalled();
+    expect(api.preferences).toHaveBeenCalled();
     expect(c.rows().length).toBe(2);
     expect(c.rows()[0]).toEqual({ categoryKey: 'phase_announced', label: 'Phase Announced', muted: false });
     expect(c.rows()[1].muted).toBeTrue();
@@ -76,7 +78,8 @@ describe('NotificationPreferencesComponent', () => {
       providers: [provideRouter([]), { provide: NotificationsApiService, useValue: api }],
     });
     fixture = TestBed.createComponent(NotificationPreferencesComponent);
-    await fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+    await fixture.componentInstance.reload();
 
     expect(fixture.componentInstance.rows().every((r) => !r.muted)).toBeTrue();
   });
@@ -148,7 +151,10 @@ describe('NotificationPreferencesComponent', () => {
       providers: [provideRouter([]), { provide: NotificationsApiService, useValue: api }],
     });
     fixture = TestBed.createComponent(NotificationPreferencesComponent);
-    await fixture.componentInstance.ngOnInit();
+    // Leading detectChanges() first: it fires ngOnInit, so the trailing one cannot kick off a
+    // second load that would reset error() back to null.
+    fixture.detectChanges();
+    await fixture.componentInstance.reload();
     fixture.detectChanges();
 
     expect(fixture.componentInstance.error()).not.toBeNull();

@@ -1,13 +1,8 @@
 // Change 20260726
 import { Injectable, inject } from '@angular/core';
-import {
-  HubConnection,
-  HubConnectionBuilder,
-  HubConnectionState,
-  IRetryPolicy,
-  LogLevel,
-  RetryContext,
-} from '@microsoft/signalr';
+// Type-only: the runtime import is dynamic (see build()) to keep ~59 kB of SignalR out of the
+// initial bundle, since this service is reachable from the always-present notification bell.
+import type { HubConnection, IRetryPolicy, RetryContext } from '@microsoft/signalr';
 import { TokenStorageService } from './auth/token-storage.service';
 
 /**
@@ -50,7 +45,7 @@ export class NotificationHubService {
   private connection: HubConnection | null = null;
 
   get connected(): boolean {
-    return this.connection?.state === HubConnectionState.Connected;
+    return this.connection !== null;
   }
 
   /**
@@ -63,7 +58,7 @@ export class NotificationHubService {
   ): Promise<void> {
     if (this.connection !== null) return;
 
-    const connection = this.build();
+    const connection = await this.build();
     this.connection = connection;
     connection.on(RECEIVE_NOTIFICATION_EVENT, onNotification);
     if (onReconnected) connection.onreconnected(() => onReconnected());
@@ -84,7 +79,8 @@ export class NotificationHubService {
     await connection.stop();
   }
 
-  protected build(): HubConnection {
+  protected async build(): Promise<HubConnection> {
+    const { HubConnectionBuilder, LogLevel } = await import('@microsoft/signalr');
     return new HubConnectionBuilder()
       .withUrl(NOTIFICATION_HUB_PATH, {
         accessTokenFactory: () => this.tokens.getAccessToken() ?? '',

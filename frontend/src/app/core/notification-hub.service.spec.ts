@@ -1,5 +1,5 @@
 // Change 20260726
-import { RetryContext } from '@microsoft/signalr';
+import type { RetryContext } from '@microsoft/signalr';
 import { ExponentialBackoffRetryPolicy, NOTIFICATION_HUB_PATH } from './notification-hub.service';
 
 function context(previousRetryCount: number): RetryContext {
