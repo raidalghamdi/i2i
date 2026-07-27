@@ -24,6 +24,10 @@ public class EvaluationService : IEvaluationService
         var idea = await _db.Ideas.Include(i => i.IdeaStatus).SingleOrDefaultAsync(i => i.Id == ideaId, cancellationToken);
         if (idea is null) return new EvaluationCommandResult(EvaluationCommandStatus.NotFound);
 
+        // Change 20260726 — checked ahead of the assignment gate so that a submitter who was wrongly
+        // assigned to their own idea is still refused rather than admitted by the assignment.
+        if (idea.SubmitterId == evaluatorId) return new EvaluationCommandResult(EvaluationCommandStatus.SelfAuthorship);
+
         // Per-idea assignment gate (replaces track membership).
         var assignment = await _db.Set<Assignment>()
             .Include(a => a.AssignmentStatus)

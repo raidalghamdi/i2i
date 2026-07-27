@@ -2038,6 +2038,7 @@ app.MapPost("/api/ideas/{id:guid}/evaluations", async (Guid id, EvaluationInput 
         EvaluationCommandStatus.AlreadyEvaluated => Results.BadRequest(new { error = "You have already evaluated this idea." }),
         EvaluationCommandStatus.InvalidScore => Results.BadRequest(new { error = "Scores must be between 0 and 10." }),
         EvaluationCommandStatus.InvalidCriteria => Results.BadRequest(new { error = "Criteria scores must include exactly the active evaluation criteria." }), // Change 20260726
+        EvaluationCommandStatus.SelfAuthorship => Results.StatusCode(StatusCodes.Status403Forbidden), // Change 20260726
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
 }).RequireAuthorization("EvaluatorAndAbove");
