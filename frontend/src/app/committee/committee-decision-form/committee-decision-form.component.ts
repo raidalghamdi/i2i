@@ -12,6 +12,7 @@ import { Idea } from '../../ideas/idea.model';
 import { EvaluationReviewApiService } from '../../evaluations/evaluation-review-api.service';
 import { EvaluationReviewDetail } from '../../evaluations/evaluation-review.model';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { MeApiService } from '../../core/me-api.service'; // Change 20260726
 
 // Change 20260726 — mirrors the allowlist and per-file cap enforced by idea-submit-wizard and the
 // backend, so an unsupported file is rejected before it costs an upload round-trip.
@@ -40,6 +41,7 @@ export class CommitteeDecisionFormComponent implements OnInit {
   private readonly committeeApi = inject(CommitteeApiService);
   private readonly ideasApi = inject(IdeasApiService);
   private readonly evaluationReviewApi = inject(EvaluationReviewApiService);
+  private readonly meApi = inject(MeApiService); // Change 20260726
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -52,6 +54,13 @@ export class CommitteeDecisionFormComponent implements OnInit {
   readonly queuedFiles = signal<File[]>([]); // Change 20260726
   readonly attachmentError = signal<string | null>(null); // Change 20260726
   readonly isSubmitting = signal(false); // Change 20260726
+  /**
+   * Change 20260726 — a judge may not decide on their own idea. The backend enforces this; the
+   * form blocks it up front so the judge isn't told only after filling the whole thing in.
+   * `submitterId` is withheld from evaluator-only callers, so this stays false for them and the
+   * backend's 403 remains the backstop.
+   */
+  readonly isSelfAuthored = signal(false);
   private readonly ideaId = this.route.snapshot.paramMap.get('id')!;
 
   readonly form = this.fb.group({
@@ -71,11 +80,13 @@ export class CommitteeDecisionFormComponent implements OnInit {
     this.loading.set(true);
     this.loadError.set(null);
     try {
-      const [criteria, idea, detail] = await Promise.all([
+      const [criteria, idea, detail, ownUserId] = await Promise.all([
         this.committeeApi.getCriteria(),
         this.ideasApi.getById(this.ideaId),
         this.evaluationReviewApi.getDetail(this.ideaId),
+        this.loadOwnUserId(), // Change 20260726
       ]);
+      this.isSelfAuthored.set(!!idea.submitterId && idea.submitterId === ownUserId); // Change 20260726
       // `this.form` is statically typed to only know about `decisionTypeCode`/`comments` (the controls
       // declared in the `fb.group({...})` call above), so Angular 22's typed-forms `addControl` overloads
       // reject a dynamic `criterion.code` string. Widen to the untyped `FormGroup<Record<string, AbstractControl>>`
@@ -96,6 +107,16 @@ export class CommitteeDecisionFormComponent implements OnInit {
       this.loadError.set($localize`:@@committeeDecisionFormLoadError:Couldn't load the decision criteria. Please try again.`);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  // Change 20260726 — a failed lookup must not take the whole form down; the backend still
+  // rejects a self-authored decision, so the worst case is losing the up-front warning.
+  private async loadOwnUserId(): Promise<string | null> {
+    try {
+      return (await this.meApi.get()).id;
+    } catch {
+      return null;
     }
   }
 
@@ -128,7 +149,7 @@ export class CommitteeDecisionFormComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.form.invalid || this.isSubmitting()) { // Change 20260726
+    if (this.form.invalid || this.isSubmitting() || this.isSelfAuthored()) { // Change 20260726
       this.form.markAllAsTouched();
       return;
     }

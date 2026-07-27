@@ -8,6 +8,13 @@
 @if (idea(); as idea) {
   <app-idea-context-panel [idea]="idea" viewMode="judge" [evaluationDetail]="detail()" class="mb-6 block max-w-2xl" />
 }
+<!-- Change 20260726 -->
+@if (isSelfAuthored()) {
+  <div class="card-surface card-body max-w-2xl" role="alert">
+    <p class="font-medium" i18n="@@committeeFormSelfAuthored">You cannot decide on your own idea.</p>
+    <p class="mt-1 text-sm text-muted-foreground" i18n="@@committeeFormSelfAuthoredHint">Another committee member must review this idea.</p>
+  </div>
+} @else {
 <form [formGroup]="form" (ngSubmit)="onSubmit()" class="card-surface card-body flex max-w-2xl flex-col gap-5">
   @if (errorMessage(); as msg) {
     <div class="field-error" role="alert">{{ msg }}</div>
@@ -75,4 +82,5 @@
     </button>
   </div>
 </form>
+}
 }

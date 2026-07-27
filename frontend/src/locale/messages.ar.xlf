@@ -12799,6 +12799,22 @@
         <source>You cannot evaluate your own idea</source>
         <target>لا يمكنك تقييم فكرتك الخاصة</target>
       </trans-unit>
+      <trans-unit id="committeeFormSelfAuthored" datatype="html">
+        <source>You cannot decide on your own idea.</source>
+        <target>لا يمكنك اتخاذ قرار بشأن فكرتك الخاصة.</target>
+      </trans-unit>
+      <trans-unit id="committeeFormSelfAuthoredHint" datatype="html">
+        <source>Another committee member must review this idea.</source>
+        <target>يجب أن يراجع هذه الفكرة عضو آخر في اللجنة.</target>
+      </trans-unit>
+      <trans-unit id="evalFormSelfAuthored" datatype="html">
+        <source>You cannot evaluate your own idea.</source>
+        <target>لا يمكنك تقييم فكرتك الخاصة.</target>
+      </trans-unit>
+      <trans-unit id="evalFormSelfAuthoredHint" datatype="html">
+        <source>Another evaluator must score this idea.</source>
+        <target>يجب أن يقيّم هذه الفكرة مُقيّم آخر.</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>

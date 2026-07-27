@@ -2,6 +2,7 @@ import { Component, Inject, LOCALE_ID, OnInit, inject, signal } from '@angular/c
 import { FormArray, FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms'; // Change 20260726
 import { ActivatedRoute, Router } from '@angular/router';
 import { EvaluationsApiService } from '../evaluations-api.service';
+import { MeApiService } from '../../core/me-api.service'; // Change 20260726
 import { EvaluationAction, EvaluationCriterion } from '../evaluation.model'; // Change 20260726
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
 import { IdeaContextPanelComponent } from '../../shared/idea-context-panel/idea-context-panel.component';
@@ -26,6 +27,7 @@ export class EvaluationFormComponent implements OnInit {
   private readonly themesApi = inject(StrategicThemesService);
   private readonly activitiesApi = inject(ActivitiesService);
   private readonly challengesApi = inject(ChallengesService);
+  private readonly meApi = inject(MeApiService); // Change 20260726
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -50,6 +52,12 @@ export class EvaluationFormComponent implements OnInit {
   /** True when this form was populated from a previously saved draft. */
   readonly resumedDraft = signal(false); // Change 20260726
   readonly isSubmitting = signal(false); // Change 20260726
+  /**
+   * Change 20260726 — an evaluator may not evaluate their own idea. The backend enforces this; the
+   * form blocks it up front rather than after the scores are filled in. `submitterId` is withheld
+   * from evaluator-only callers, so this stays false for them and the backend's 403 is the backstop.
+   */
+  readonly isSelfAuthored = signal(false);
 
   private readonly isArabic: boolean; // Change 20260726
 
@@ -149,6 +157,7 @@ export class EvaluationFormComponent implements OnInit {
     try {
       const idea = await this.ideasApi.getById(this.ideaId);
       this.idea.set(idea);
+      this.isSelfAuthored.set(!!idea.submitterId && idea.submitterId === await this.loadOwnUserId()); // Change 20260726
 
       const [themes, activities] = await Promise.all([this.themesApi.list(), this.activitiesApi.list()]);
       const theme = themes.find((t) => t.id === idea.strategicThemeId);
@@ -163,6 +172,16 @@ export class EvaluationFormComponent implements OnInit {
     } catch {
       this.idea.set(null);
       this.ideaInfoUnavailable.set(true);
+    }
+  }
+
+  // Change 20260726 — a failed lookup must not take the form down; the backend still rejects a
+  // self-authored evaluation, so the worst case is losing the up-front warning.
+  private async loadOwnUserId(): Promise<string | null> {
+    try {
+      return (await this.meApi.get()).id;
+    } catch {
+      return null;
     }
   }
 
@@ -203,7 +222,7 @@ export class EvaluationFormComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.criteriaUnavailable() || this.form.invalid || this.isSubmitting()) { // Change 20260726
+    if (this.criteriaUnavailable() || this.form.invalid || this.isSubmitting() || this.isSelfAuthored()) { // Change 20260726
       this.form.markAllAsTouched();
       return;
     }
@@ -213,7 +232,7 @@ export class EvaluationFormComponent implements OnInit {
   /** Saves progress without validating: a draft is allowed to be incomplete. */
   // Change 20260726
   async onSaveDraft(): Promise<void> {
-    if (this.criteriaUnavailable() || this.isSubmitting()) return; // Change 20260726
+    if (this.criteriaUnavailable() || this.isSubmitting() || this.isSelfAuthored()) return; // Change 20260726
     await this.send('draft');
   }
 

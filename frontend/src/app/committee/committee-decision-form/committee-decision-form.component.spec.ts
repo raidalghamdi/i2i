@@ -5,6 +5,7 @@ import { IdeasApiService } from '../../ideas/ideas-api.service';
 import { Idea, IdeaAttachment } from '../../ideas/idea.model';
 import { EvaluationReviewApiService } from '../../evaluations/evaluation-review-api.service';
 import { EvaluationReviewDetail } from '../../evaluations/evaluation-review.model';
+import { MeApiService, MeProfile } from '../../core/me-api.service'; // Change 20260726
 import { CommitteeDecisionFormComponent } from './committee-decision-form.component';
 
 describe('CommitteeDecisionFormComponent', () => {
@@ -13,6 +14,7 @@ describe('CommitteeDecisionFormComponent', () => {
   let ideasApi: jasmine.SpyObj<IdeasApiService>;
   let evaluationReviewApi: jasmine.SpyObj<EvaluationReviewApiService>;
   let router: jasmine.SpyObj<Router>;
+  let meApi: jasmine.SpyObj<MeApiService>; // Change 20260726
 
   const baseIdea: Idea = {
     id: 'idea-1', code: 'IDEA-0001', submitterId: 'owner-1', titleAr: 'عنوان الفكرة', titleEn: 'Idea Title',
@@ -37,6 +39,8 @@ describe('CommitteeDecisionFormComponent', () => {
     ideasApi = jasmine.createSpyObj('IdeasApiService', ['getById']);
     evaluationReviewApi = jasmine.createSpyObj('EvaluationReviewApiService', ['getDetail']);
     router = jasmine.createSpyObj('Router', ['navigate']);
+    meApi = jasmine.createSpyObj('MeApiService', ['get']); // Change 20260726
+    meApi.get.and.returnValue(Promise.resolve({ id: 'me-1' } as MeProfile)); // Change 20260726
     committeeApi.getCriteria.and.returnValue(Promise.resolve([
       { code: 'originality', nameAr: 'أ', nameEn: 'Originality', weight: 0.30 },
       { code: 'feasibility', nameAr: 'ب', nameEn: 'Feasibility', weight: 0.25 },
@@ -50,6 +54,7 @@ describe('CommitteeDecisionFormComponent', () => {
       imports: [CommitteeDecisionFormComponent],
       providers: [
         { provide: CommitteeApiService, useValue: committeeApi },
+        { provide: MeApiService, useValue: meApi }, // Change 20260726
         { provide: IdeasApiService, useValue: ideasApi },
         { provide: EvaluationReviewApiService, useValue: evaluationReviewApi },
         { provide: Router, useValue: router },
@@ -296,6 +301,8 @@ describe('CommitteeDecisionFormComponent', () => {
     ideasApi = jasmine.createSpyObj('IdeasApiService', ['getById']);
     evaluationReviewApi = jasmine.createSpyObj('EvaluationReviewApiService', ['getDetail']);
     router = jasmine.createSpyObj('Router', ['navigate']);
+    meApi = jasmine.createSpyObj('MeApiService', ['get']); // Change 20260726
+    meApi.get.and.returnValue(Promise.resolve({ id: 'me-1' } as MeProfile)); // Change 20260726
     committeeApi.getCriteria.and.returnValue(Promise.reject(new Error('boom')));
     ideasApi.getById.and.returnValue(Promise.resolve(baseIdea));
     evaluationReviewApi.getDetail.and.returnValue(Promise.resolve(baseDetail));
@@ -306,6 +313,7 @@ describe('CommitteeDecisionFormComponent', () => {
         { provide: CommitteeApiService, useValue: committeeApi },
         { provide: IdeasApiService, useValue: ideasApi },
         { provide: EvaluationReviewApiService, useValue: evaluationReviewApi },
+        { provide: MeApiService, useValue: meApi }, // Change 20260726
         { provide: Router, useValue: router },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'idea-1' } } } },
       ],
@@ -328,5 +336,44 @@ describe('CommitteeDecisionFormComponent', () => {
 
     expect(fixture.componentInstance.loadError()).toBeNull();
     expect(fixture.componentInstance.criteria().length).toBe(1);
+  });
+
+  // Change 20260726
+  it('blocks the form with a message when the judge submitted the idea themselves', async () => {
+    setup();
+    meApi.get.and.returnValue(Promise.resolve({ id: 'owner-1' } as MeProfile));
+    fixture.detectChanges();
+    await fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isSelfAuthored()).toBe(true);
+    expect(fixture.nativeElement.querySelector('form')).toBeNull();
+    expect((fixture.nativeElement.textContent as string)).toContain('You cannot decide on your own idea.');
+  });
+
+  // Change 20260726
+  it('does not submit a self-authored decision even if onSubmit is invoked directly', async () => {
+    setup();
+    meApi.get.and.returnValue(Promise.resolve({ id: 'owner-1' } as MeProfile));
+    fixture.detectChanges();
+    await fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+
+    await fixture.componentInstance.onSubmit();
+
+    expect(committeeApi.submitDecision).not.toHaveBeenCalled();
+  });
+
+  // Change 20260726 — a failed /api/me lookup must leave the form usable; the backend still guards it.
+  it('keeps the form usable when the profile lookup fails', async () => {
+    setup();
+    meApi.get.and.returnValue(Promise.reject(new Error('boom')));
+    fixture.detectChanges();
+    await fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isSelfAuthored()).toBe(false);
+    expect(fixture.componentInstance.loadError()).toBeNull();
+    expect(fixture.nativeElement.querySelector('form')).toBeTruthy();
   });
 });

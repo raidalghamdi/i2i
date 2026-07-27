@@ -7,6 +7,7 @@ import { StrategicThemesService } from '../../ideas/strategic-themes.service';
 import { ActivitiesService } from '../../ideas/activities.service';
 import { ChallengesService } from '../../ideas/challenges.service';
 import { Idea, IdeaAttachment } from '../../ideas/idea.model';
+import { MeApiService, MeProfile } from '../../core/me-api.service'; // Change 20260726
 import { EvaluationFormComponent } from './evaluation-form.component';
 
 describe('EvaluationFormComponent', () => {
@@ -17,6 +18,7 @@ describe('EvaluationFormComponent', () => {
   let activitiesApi: jasmine.SpyObj<ActivitiesService>;
   let challengesApi: jasmine.SpyObj<ChallengesService>;
   let router: jasmine.SpyObj<Router>;
+  let meApi: jasmine.SpyObj<MeApiService>; // Change 20260726
 
   // Change 20260726 — deliberately 3 criteria (not the 5 legacy ones) so the form
   // is proven to be driven by the API rather than by hardcoded fields.
@@ -46,6 +48,8 @@ describe('EvaluationFormComponent', () => {
     activitiesApi = jasmine.createSpyObj('ActivitiesService', ['list']);
     challengesApi = jasmine.createSpyObj('ChallengesService', ['listByTheme']);
     router = jasmine.createSpyObj('Router', ['navigate']);
+    meApi = jasmine.createSpyObj('MeApiService', ['get']); // Change 20260726
+    meApi.get.and.returnValue(Promise.resolve({ id: 'me-1' } as MeProfile)); // Change 20260726
 
     evaluationsApi.getCriteria.and.returnValue(Promise.resolve(baseCriteria));
     evaluationsApi.getMine.and.returnValue(Promise.resolve([]));
@@ -58,6 +62,7 @@ describe('EvaluationFormComponent', () => {
       imports: [EvaluationFormComponent],
       providers: [
         { provide: EvaluationsApiService, useValue: evaluationsApi },
+        { provide: MeApiService, useValue: meApi }, // Change 20260726
         { provide: IdeasApiService, useValue: ideasApi },
         { provide: StrategicThemesService, useValue: themesApi },
         { provide: ActivitiesService, useValue: activitiesApi },
@@ -378,5 +383,39 @@ describe('EvaluationFormComponent', () => {
     expect(fixture.componentInstance.ideaInfoUnavailable()).toBe(true);
     expect(fixture.nativeElement.querySelector('form')).toBeTruthy();
     expect(scoreSelects().length).toBe(3); // Change 20260726
+  });
+
+  // Change 20260726
+  describe('self-authored ideas', () => {
+    it('blocks the form with a message when the evaluator submitted the idea themselves', async () => {
+      configure();
+      meApi.get.and.returnValue(Promise.resolve({ id: 'owner-1' } as MeProfile));
+      await render();
+
+      expect(fixture.componentInstance.isSelfAuthored()).toBe(true);
+      expect(fixture.nativeElement.querySelector('form')).toBeNull();
+      expect(fixture.nativeElement.textContent as string).toContain('You cannot evaluate your own idea.');
+    });
+
+    it('does not submit or draft a self-authored evaluation even if the handlers are invoked directly', async () => {
+      configure();
+      meApi.get.and.returnValue(Promise.resolve({ id: 'owner-1' } as MeProfile));
+      await render();
+
+      await fixture.componentInstance.onSubmit();
+      await fixture.componentInstance.onSaveDraft();
+
+      expect(evaluationsApi.submit).not.toHaveBeenCalled();
+    });
+
+    // The backend still rejects a self-authored evaluation, so a failed lookup must not block the form.
+    it('keeps the form usable when the profile lookup fails', async () => {
+      configure();
+      meApi.get.and.returnValue(Promise.reject(new Error('boom')));
+      await render();
+
+      expect(fixture.componentInstance.isSelfAuthored()).toBe(false);
+      expect(fixture.nativeElement.querySelector('form')).toBeTruthy();
+    });
   });
 });
