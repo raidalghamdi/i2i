@@ -3,6 +3,8 @@ using InnovationToImpact.Domain.Approvals;
 using InnovationToImpact.Domain.Assignments;
 using InnovationToImpact.Domain.Committee;
 using InnovationToImpact.Domain.Entities;
+using InnovationToImpact.Domain.Notifications;
+using InnovationToImpact.Domain.Auth;
 using InnovationToImpact.Domain.Ideas;
 using InnovationToImpact.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -15,11 +17,16 @@ public class CommitteeService : ICommitteeService
     private readonly IApprovalService _approvalService;
     private readonly IEvidenceFileStorage _storage; // Change 20260726
 
-    public CommitteeService(InnovationDbContext db, IApprovalService approvalService, IEvidenceFileStorage storage) // Change 20260726
+    private readonly INotificationService _notificationService; // Change 20260726
+    private readonly IIdeaStatusNotifier _statusNotifier; // Change 20260726
+
+    public CommitteeService(InnovationDbContext db, IApprovalService approvalService, IEvidenceFileStorage storage, IIdeaStatusNotifier statusNotifier, INotificationService notificationService) // Change 20260726
     {
         _db = db;
         _approvalService = approvalService;
         _storage = storage; // Change 20260726
+        _notificationService = notificationService; // Change 20260726
+        _statusNotifier = statusNotifier; // Change 20260726
     }
 
     public async Task<CommitteeCommandResult> SubmitDecisionAsync(Guid ideaId, Guid judgeId, CommitteeDecisionInput input, CancellationToken cancellationToken = default)
@@ -95,6 +102,22 @@ public class CommitteeService : ICommitteeService
         _db.CommitteeDecisions.Add(decision);
         await _db.SaveChangesAsync(cancellationToken);
 
+        // Change 20260726 — fired per judge decision rather than only at quorum, so the submitter and
+        // admins follow the committee's progress instead of seeing just the final aggregate.
+        await _notificationService.CreateAndPublishAsync(
+            idea.SubmitterId, NotificationTypes.CommitteeDecisionMade,
+            "قرار لجنة جديد", "New committee decision",
+            $"تم تسجيل قرار لجنة على الفكرة \"{idea.TitleAr}\".",
+            $"A committee decision was recorded on \"{idea.TitleEn}\".",
+            $"/ideas/{idea.Id}", null, cancellationToken);
+
+        await _notificationService.CreateAndPublishToRolesAsync(
+            new[] { RoleCodes.Admin }, NotificationTypes.CommitteeDecisionMade,
+            "قرار لجنة جديد", "New committee decision",
+            $"تم تسجيل قرار لجنة على الفكرة \"{idea.TitleAr}\".",
+            $"A committee decision was recorded on \"{idea.TitleEn}\".",
+            $"/ideas/{idea.Id}", null, cancellationToken);
+
         // Quorum denominator: the idea's ASSIGNED judges, not every judge-role user in the system.
         // Combined with the assigned-judge gate above (only assigned judges can create a decision),
         // decisionCount is guaranteed to be a subset of assignedJudgeCount.
@@ -119,6 +142,8 @@ public class CommitteeService : ICommitteeService
             // covers "publish this idea's committee outcome" regardless of how many judge decisions
             // fed into it.
             await _approvalService.OpenInstanceAsync("committee-publish", "committee_decision", idea.Id, cancellationToken);
+
+            await _statusNotifier.NotifyStatusChangedAsync(idea, IdeaStatusCodes.PendingFinalRanking, cancellationToken); // Change 20260726
         }
 
         return new CommitteeCommandResult(CommitteeCommandStatus.Success, decision, idea);

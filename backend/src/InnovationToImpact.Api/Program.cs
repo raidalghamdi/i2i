@@ -100,6 +100,8 @@ builder.Services.AddScoped<ISlaClockService, SlaClockService>();
 builder.Services.AddScoped<IEscalationService, EscalationService>();
 builder.Services.AddScoped<IApprovalService, ApprovalService>();
 builder.Services.AddScoped<ISlaScanOrchestrator, SlaScanOrchestrator>();
+// Change 20260726
+builder.Services.AddScoped<ISlaPolicyService, SlaPolicyService>();
 builder.Services.AddHostedService<ReminderSchedulerHostedService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
@@ -113,6 +115,7 @@ builder.Services.Configure<WeeklyBriefingOptions>(builder.Configuration.GetSecti
 builder.Services.AddScoped<IWeeklyBriefingProcessor, WeeklyBriefingProcessor>();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IIdeaStatusNotifier, IdeaStatusNotifier>(); // Change 20260726
 builder.Services.AddSingleton<INotificationPublisher, SignalRNotificationPublisher>();
 builder.Services.Configure<ReportStorageOptions>(builder.Configuration.GetSection("ReportStorage"));
 builder.Services.AddSingleton<IReportFileStorage>(sp =>
@@ -120,6 +123,7 @@ builder.Services.AddSingleton<IReportFileStorage>(sp =>
 builder.Services.AddScoped<IAuditLogReportGenerator, AuditLogReportGenerator>();
 builder.Services.AddScoped<IIdeasReportGenerator, IdeasReportGenerator>();
 builder.Services.AddScoped<IEvaluationsReportGenerator, EvaluationsReportGenerator>();
+builder.Services.AddScoped<IEvaluatorProductivityService, EvaluatorProductivityService>(); // Change 20260726
 builder.Services.AddScoped<IEscalationsReportGenerator, EscalationsReportGenerator>();
 builder.Services.AddScoped<IAnalyticsReportGenerator, AnalyticsReportGenerator>();
 builder.Services.AddScoped<IReportBundleBuilder, ReportBundleBuilder>();
@@ -591,6 +595,92 @@ app.MapPost("/api/notifications/read-all", async (ClaimsPrincipal user, Innovati
     return Results.Ok(new { markedCount = unread.Count });
 }).RequireAuthorization();
 
+// Change 20260726
+app.MapGet("/api/notifications/categories", () => Results.Ok(NotificationCategories.All.Select(c => new
+{
+    key = c.Key,
+    labelAr = c.LabelAr,
+    labelEn = c.LabelEn,
+}))).RequireAuthorization();
+
+// Change 20260726
+app.MapGet("/api/notifications/preferences", async (ClaimsPrincipal user, InnovationDbContext db) =>
+{
+    var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var stored = await db.NotificationPreferences
+        .Where(p => p.UserId == userId)
+        .ToDictionaryAsync(p => p.CategoryKey, p => p.Muted);
+
+    return Results.Ok(NotificationCategories.All.Select(c => new
+    {
+        categoryKey = c.Key,
+        labelAr = c.LabelAr,
+        labelEn = c.LabelEn,
+        muted = stored.TryGetValue(c.Key, out var muted) && muted,
+    }));
+}).RequireAuthorization();
+
+// Change 20260726
+app.MapPut("/api/notifications/preferences", async (
+    NotificationPreferencesUpdateRequest request,
+    ClaimsPrincipal user,
+    InnovationDbContext db) =>
+{
+    var items = request.Preferences ?? new List<NotificationPreferenceItem>();
+
+    var unknown = items.Select(i => i.CategoryKey ?? string.Empty)
+        .Where(key => !NotificationCategories.IsKnown(key))
+        .Distinct()
+        .ToList();
+    if (unknown.Count > 0)
+    {
+        return Results.BadRequest(new { error = "unknown_category", categories = unknown });
+    }
+
+    var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var existing = await db.NotificationPreferences
+        .Where(p => p.UserId == userId)
+        .ToDictionaryAsync(p => p.CategoryKey);
+    var now = DateTime.UtcNow;
+
+    // Last item wins so a duplicated category cannot violate the unique index.
+    foreach (var item in items.GroupBy(i => i.CategoryKey!).Select(g => g.Last()))
+    {
+        if (existing.TryGetValue(item.CategoryKey!, out var preference))
+        {
+            if (preference.Muted == item.Muted) continue;
+            preference.Muted = item.Muted;
+            preference.UpdatedAt = now;
+        }
+        else
+        {
+            db.NotificationPreferences.Add(new NotificationPreference
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                CategoryKey = item.CategoryKey!,
+                Muted = item.Muted,
+                CreatedAt = now,
+                UpdatedAt = now,
+            });
+        }
+    }
+
+    await db.SaveChangesAsync();
+
+    var stored = await db.NotificationPreferences
+        .Where(p => p.UserId == userId)
+        .ToDictionaryAsync(p => p.CategoryKey, p => p.Muted);
+
+    return Results.Ok(NotificationCategories.All.Select(c => new
+    {
+        categoryKey = c.Key,
+        labelAr = c.LabelAr,
+        labelEn = c.LabelEn,
+        muted = stored.TryGetValue(c.Key, out var muted) && muted,
+    }));
+}).RequireAuthorization();
+
 app.MapGet("/api/admin/ping", (ClaimsPrincipal user) => Results.Ok(new { samAccountName = user.Identity?.Name }))
     .RequireAuthorization("AdminOnly");
 
@@ -739,6 +829,59 @@ app.MapPost("/api/admin/sla/scan", async (ISlaScanOrchestrator orchestrator) =>
 {
     var result = await orchestrator.ScanAndEscalateAsync();
     return Results.Ok(new { scanned = result.Scanned, newlyBreached = result.NewlyBreached, approachingBreach = result.ApproachingBreach, escalationsOpened = result.EscalationsOpened });
+}).RequireAuthorization("AdminOnly");
+
+// Change 20260726
+// SLA policies were seed-only until now; these let an admin retune target hours without a migration.
+app.MapGet("/api/admin/sla-policies", async (ISlaPolicyService service) =>
+{
+    var policies = await service.ListAllAsync();
+    return Results.Ok(policies.Select(ToSlaPolicyDto));
+}).RequireAuthorization("AdminOnly");
+
+app.MapGet("/api/admin/sla-policies/{id:guid}", async (Guid id, ISlaPolicyService service) =>
+{
+    var policy = await service.GetAsync(id);
+    return policy is null ? Results.NotFound() : Results.Ok(ToSlaPolicyDto(policy));
+}).RequireAuthorization("AdminOnly");
+
+app.MapPost("/api/admin/sla-policies", async (SlaPolicyInput input, ClaimsPrincipal user, ISlaPolicyService service) =>
+{
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.CreateAsync(input, actorId);
+    return result.Status switch
+    {
+        SlaPolicyCommandStatus.Success => Results.Ok(ToSlaPolicyDto(result.Entity!)),
+        SlaPolicyCommandStatus.DuplicateTransition => Results.BadRequest(new { error = "An SLA policy for this entity type and transition already exists." }),
+        SlaPolicyCommandStatus.Invalid => Results.BadRequest(new { error = "Entity type, from state and to state are required; target hours must be positive and warn-at percent between 1 and 100." }),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("AdminOnly");
+
+app.MapPut("/api/admin/sla-policies/{id:guid}", async (Guid id, SlaPolicyInput input, ClaimsPrincipal user, ISlaPolicyService service) =>
+{
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.UpdateAsync(id, input, actorId);
+    return result.Status switch
+    {
+        SlaPolicyCommandStatus.Success => Results.Ok(ToSlaPolicyDto(result.Entity!)),
+        SlaPolicyCommandStatus.NotFound => Results.NotFound(),
+        SlaPolicyCommandStatus.DuplicateTransition => Results.BadRequest(new { error = "An SLA policy for this entity type and transition already exists." }),
+        SlaPolicyCommandStatus.Invalid => Results.BadRequest(new { error = "Entity type, from state and to state are required; target hours must be positive and warn-at percent between 1 and 100." }),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("AdminOnly");
+
+app.MapDelete("/api/admin/sla-policies/{id:guid}", async (Guid id, ClaimsPrincipal user, ISlaPolicyService service) =>
+{
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.DeleteAsync(id, actorId);
+    return result.Status switch
+    {
+        SlaPolicyCommandStatus.Success => Results.NoContent(),
+        SlaPolicyCommandStatus.NotFound => Results.NotFound(),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
 }).RequireAuthorization("AdminOnly");
 
 app.MapGet("/api/admin/escalations", async (string? status, string? tier, string? entityType, IEscalationService service) =>
@@ -957,6 +1100,17 @@ static object ToEscalationDto(Escalation e) => new
     openedAt = e.OpenedAt,
 };
 
+// Change 20260726
+static object ToSlaPolicyDto(SlaPolicy p) => new
+{
+    id = p.Id,
+    entityType = p.EntityType,
+    fromState = p.FromState,
+    toState = p.ToState,
+    targetHours = p.TargetHours,
+    warnAtPct = p.WarnAtPct,
+};
+
 app.MapPost("/api/admin/invitations/remind", async (IInvitationReminderProcessor processor) =>
 {
     var result = await processor.ProcessAsync();
@@ -1140,6 +1294,23 @@ app.MapPost("/api/admin/reports/evaluations/generate", async (ClaimsPrincipal us
     var result = await service.GenerateEvaluationsReportAsync(userId);
     return Results.Ok(new { reportGenerationId = result.ReportGenerationId, status = result.Status, fileUrl = result.FileUrl });
 }).RequireAuthorization("SupervisorOrAdmin");
+
+// Change 20260726
+app.MapGet("/api/reports/evaluator-productivity", async (IEvaluatorProductivityService service) =>
+{
+    var rows = await service.GetAsync();
+    return Results.Ok(rows.Select(r => new
+    {
+        userId = r.UserId,
+        displayName = r.DisplayName,
+        assignedCount = r.AssignedCount,
+        completedCount = r.CompletedCount,
+        draftCount = r.DraftCount,
+        avgScore = r.AvgScore,
+        avgTurnaroundHours = r.AvgTurnaroundHours,
+        coiCount = r.CoiCount,
+    }));
+}).RequireAuthorization("AdminOnly");
 
 app.MapPost("/api/admin/reports/escalations/generate", async (ClaimsPrincipal user, IReportGenerationService service) =>
 {

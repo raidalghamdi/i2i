@@ -12,9 +12,12 @@ public class CommitteeReferralService : ICommitteeReferralService
 {
     private readonly InnovationDbContext _db;
 
-    public CommitteeReferralService(InnovationDbContext db)
+    private readonly IIdeaStatusNotifier _statusNotifier; // Change 20260726
+
+    public CommitteeReferralService(InnovationDbContext db, IIdeaStatusNotifier statusNotifier)
     {
         _db = db;
+        _statusNotifier = statusNotifier; // Change 20260726
     }
 
     public async Task<CommitteeReferralCommandResult> SubmitToCommitteeAsync(Guid ideaId, Guid supervisorId, SubmitToCommitteeInput input, CancellationToken cancellationToken = default)
@@ -51,6 +54,8 @@ public class CommitteeReferralService : ICommitteeReferralService
         idea.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(cancellationToken);
+
+        await _statusNotifier.NotifyStatusChangedAsync(idea, committeeStatus.Code, cancellationToken); // Change 20260726
 
         return new CommitteeReferralCommandResult(CommitteeReferralCommandStatus.Success, idea);
     }

@@ -17,9 +17,12 @@ public class ScreeningService : IScreeningService
 
     private readonly InnovationDbContext _db;
 
-    public ScreeningService(InnovationDbContext db)
+    private readonly IIdeaStatusNotifier _statusNotifier; // Change 20260726
+
+    public ScreeningService(InnovationDbContext db, IIdeaStatusNotifier statusNotifier)
     {
         _db = db;
+        _statusNotifier = statusNotifier; // Change 20260726
     }
 
     public async Task<ScreeningCommandResult> SubmitDecisionAsync(Guid ideaId, Guid supervisorId, ScreeningDecisionInput input, CancellationToken cancellationToken = default)
@@ -92,6 +95,8 @@ public class ScreeningService : IScreeningService
         }
 
         await _db.SaveChangesAsync(cancellationToken);
+
+        await _statusNotifier.NotifyStatusChangedAsync(idea, nextStatus.Code, cancellationToken); // Change 20260726
 
         return new ScreeningCommandResult(ScreeningCommandStatus.Success, idea);
     }

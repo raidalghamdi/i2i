@@ -2,6 +2,8 @@ using System.Text.Json;
 using InnovationToImpact.Domain.Assignments;
 using InnovationToImpact.Domain.Entities;
 using InnovationToImpact.Domain.Evaluations;
+using InnovationToImpact.Domain.Notifications;
+using InnovationToImpact.Domain.Auth;
 using InnovationToImpact.Domain.Ideas;
 using InnovationToImpact.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -13,10 +15,15 @@ public class EvaluationService : IEvaluationService
     private readonly InnovationDbContext _db;
     private readonly IEvaluationSettingsService _settings;
 
-    public EvaluationService(InnovationDbContext db, IEvaluationSettingsService settings)
+    private readonly INotificationService _notificationService; // Change 20260726
+    private readonly IIdeaStatusNotifier _statusNotifier; // Change 20260726
+
+    public EvaluationService(InnovationDbContext db, IEvaluationSettingsService settings, IIdeaStatusNotifier statusNotifier, INotificationService notificationService)
     {
         _db = db;
         _settings = settings;
+        _notificationService = notificationService; // Change 20260726
+        _statusNotifier = statusNotifier; // Change 20260726
     }
 
     public async Task<EvaluationCommandResult> SubmitAsync(Guid ideaId, Guid evaluatorId, EvaluationInput input, CancellationToken cancellationToken = default)
@@ -127,6 +134,16 @@ public class EvaluationService : IEvaluationService
             idea.IdeaStatus = reviewStatus;
             idea.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync(cancellationToken);
+
+            // Change 20260726 — quorum is reached, so the idea now needs a supervisor to act on it.
+            await _notificationService.CreateAndPublishToRolesAsync(
+                new[] { RoleCodes.Supervisor, RoleCodes.Admin }, NotificationTypes.EvaluationCompleted,
+                "اكتمل تقييم الفكرة", "Idea evaluation completed",
+                $"اكتمل تقييم الفكرة \"{idea.TitleAr}\" وهي جاهزة للمراجعة.",
+                $"Evaluation of \"{idea.TitleEn}\" is complete and ready for review.",
+                $"/ideas/{idea.Id}", null, cancellationToken);
+
+            await _statusNotifier.NotifyStatusChangedAsync(idea, IdeaStatusCodes.EvaluationReview, cancellationToken); // Change 20260726
         }
 
         return new EvaluationCommandResult(EvaluationCommandStatus.Success, evaluation, idea);
