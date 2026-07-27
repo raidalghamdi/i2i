@@ -28,6 +28,10 @@ public class CommitteeService : ICommitteeService
         if (idea is null) return new CommitteeCommandResult(CommitteeCommandStatus.NotFound);
         if (idea.IdeaStatus.Code != IdeaStatusCodes.Committee) return new CommitteeCommandResult(CommitteeCommandStatus.InvalidState);
 
+        // Change 20260726 — checked ahead of the assignment gate so that a submitter who was wrongly
+        // assigned as judge on their own idea is still refused rather than admitted by the assignment.
+        if (idea.SubmitterId == judgeId) return new CommitteeCommandResult(CommitteeCommandStatus.SelfAuthorship);
+
         // Quorum integrity: only a judge with a per-idea judge Assignment may decide on this idea.
         // Without this gate any judge (or, before this fix, any supervisor) could submit a decision,
         // inflating the decision count against the assigned-judge quorum below.
