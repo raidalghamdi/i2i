@@ -12775,6 +12775,14 @@
         <source>Saving...</source>
         <target>جارٍ الحفظ...</target>
       </trans-unit>
+      <trans-unit id="myDecisionsColumnAttachments" datatype="html">
+        <source>Attachments</source>
+        <target>المرفقات</target>
+      </trans-unit>
+      <trans-unit id="myDecisionsAttachmentError" datatype="html">
+        <source>Couldn't download the attachment. Please try again.</source>
+        <target>تعذّر تنزيل المرفق. يرجى المحاولة مرة أخرى.</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>
