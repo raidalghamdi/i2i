@@ -72,8 +72,10 @@ describe('EvaluationFormComponent', () => {
   // Change 20260726
   async function render(): Promise<void> {
     fixture = TestBed.createComponent(EvaluationFormComponent);
+    // detectChanges() kicks off ngOnInit but its chained fetches outlive whenStable(), so the
+    // awaited call below is what settles the component — it must come last to win the writes.
     fixture.detectChanges();
-    await fixture.whenStable();
+    await fixture.componentInstance.ngOnInit();
     fixture.detectChanges();
   }
 
@@ -198,7 +200,7 @@ describe('EvaluationFormComponent', () => {
     await setup();
     expect(fixture.nativeElement.querySelector('[data-testid="coi-notice"]')).toBeNull();
 
-    fixture.componentInstance.form.controls.conflictOfInterest.setValue(true);
+    (fixture.nativeElement.querySelector('input[formControlName="conflictOfInterest"]') as HTMLInputElement).click();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-testid="coi-notice"]')).toBeTruthy();
