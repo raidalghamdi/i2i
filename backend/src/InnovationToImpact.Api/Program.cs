@@ -593,6 +593,92 @@ app.MapPost("/api/notifications/read-all", async (ClaimsPrincipal user, Innovati
     return Results.Ok(new { markedCount = unread.Count });
 }).RequireAuthorization();
 
+// Change 20260726
+app.MapGet("/api/notifications/categories", () => Results.Ok(NotificationCategories.All.Select(c => new
+{
+    key = c.Key,
+    labelAr = c.LabelAr,
+    labelEn = c.LabelEn,
+}))).RequireAuthorization();
+
+// Change 20260726
+app.MapGet("/api/notifications/preferences", async (ClaimsPrincipal user, InnovationDbContext db) =>
+{
+    var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var stored = await db.NotificationPreferences
+        .Where(p => p.UserId == userId)
+        .ToDictionaryAsync(p => p.CategoryKey, p => p.Muted);
+
+    return Results.Ok(NotificationCategories.All.Select(c => new
+    {
+        categoryKey = c.Key,
+        labelAr = c.LabelAr,
+        labelEn = c.LabelEn,
+        muted = stored.TryGetValue(c.Key, out var muted) && muted,
+    }));
+}).RequireAuthorization();
+
+// Change 20260726
+app.MapPut("/api/notifications/preferences", async (
+    NotificationPreferencesUpdateRequest request,
+    ClaimsPrincipal user,
+    InnovationDbContext db) =>
+{
+    var items = request.Preferences ?? new List<NotificationPreferenceItem>();
+
+    var unknown = items.Select(i => i.CategoryKey ?? string.Empty)
+        .Where(key => !NotificationCategories.IsKnown(key))
+        .Distinct()
+        .ToList();
+    if (unknown.Count > 0)
+    {
+        return Results.BadRequest(new { error = "unknown_category", categories = unknown });
+    }
+
+    var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var existing = await db.NotificationPreferences
+        .Where(p => p.UserId == userId)
+        .ToDictionaryAsync(p => p.CategoryKey);
+    var now = DateTime.UtcNow;
+
+    // Last item wins so a duplicated category cannot violate the unique index.
+    foreach (var item in items.GroupBy(i => i.CategoryKey!).Select(g => g.Last()))
+    {
+        if (existing.TryGetValue(item.CategoryKey!, out var preference))
+        {
+            if (preference.Muted == item.Muted) continue;
+            preference.Muted = item.Muted;
+            preference.UpdatedAt = now;
+        }
+        else
+        {
+            db.NotificationPreferences.Add(new NotificationPreference
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                CategoryKey = item.CategoryKey!,
+                Muted = item.Muted,
+                CreatedAt = now,
+                UpdatedAt = now,
+            });
+        }
+    }
+
+    await db.SaveChangesAsync();
+
+    var stored = await db.NotificationPreferences
+        .Where(p => p.UserId == userId)
+        .ToDictionaryAsync(p => p.CategoryKey, p => p.Muted);
+
+    return Results.Ok(NotificationCategories.All.Select(c => new
+    {
+        categoryKey = c.Key,
+        labelAr = c.LabelAr,
+        labelEn = c.LabelEn,
+        muted = stored.TryGetValue(c.Key, out var muted) && muted,
+    }));
+}).RequireAuthorization();
+
 app.MapGet("/api/admin/ping", (ClaimsPrincipal user) => Results.Ok(new { samAccountName = user.Identity?.Name }))
     .RequireAuthorization("AdminOnly");
 
