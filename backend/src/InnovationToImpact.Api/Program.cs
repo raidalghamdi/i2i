@@ -100,6 +100,8 @@ builder.Services.AddScoped<ISlaClockService, SlaClockService>();
 builder.Services.AddScoped<IEscalationService, EscalationService>();
 builder.Services.AddScoped<IApprovalService, ApprovalService>();
 builder.Services.AddScoped<ISlaScanOrchestrator, SlaScanOrchestrator>();
+// Change 20260726
+builder.Services.AddScoped<ISlaPolicyService, SlaPolicyService>();
 builder.Services.AddHostedService<ReminderSchedulerHostedService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
@@ -741,6 +743,59 @@ app.MapPost("/api/admin/sla/scan", async (ISlaScanOrchestrator orchestrator) =>
     return Results.Ok(new { scanned = result.Scanned, newlyBreached = result.NewlyBreached, approachingBreach = result.ApproachingBreach, escalationsOpened = result.EscalationsOpened });
 }).RequireAuthorization("AdminOnly");
 
+// Change 20260726
+// SLA policies were seed-only until now; these let an admin retune target hours without a migration.
+app.MapGet("/api/admin/sla-policies", async (ISlaPolicyService service) =>
+{
+    var policies = await service.ListAllAsync();
+    return Results.Ok(policies.Select(ToSlaPolicyDto));
+}).RequireAuthorization("AdminOnly");
+
+app.MapGet("/api/admin/sla-policies/{id:guid}", async (Guid id, ISlaPolicyService service) =>
+{
+    var policy = await service.GetAsync(id);
+    return policy is null ? Results.NotFound() : Results.Ok(ToSlaPolicyDto(policy));
+}).RequireAuthorization("AdminOnly");
+
+app.MapPost("/api/admin/sla-policies", async (SlaPolicyInput input, ClaimsPrincipal user, ISlaPolicyService service) =>
+{
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.CreateAsync(input, actorId);
+    return result.Status switch
+    {
+        SlaPolicyCommandStatus.Success => Results.Ok(ToSlaPolicyDto(result.Entity!)),
+        SlaPolicyCommandStatus.DuplicateTransition => Results.BadRequest(new { error = "An SLA policy for this entity type and transition already exists." }),
+        SlaPolicyCommandStatus.Invalid => Results.BadRequest(new { error = "Entity type, from state and to state are required; target hours must be positive and warn-at percent between 1 and 100." }),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("AdminOnly");
+
+app.MapPut("/api/admin/sla-policies/{id:guid}", async (Guid id, SlaPolicyInput input, ClaimsPrincipal user, ISlaPolicyService service) =>
+{
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.UpdateAsync(id, input, actorId);
+    return result.Status switch
+    {
+        SlaPolicyCommandStatus.Success => Results.Ok(ToSlaPolicyDto(result.Entity!)),
+        SlaPolicyCommandStatus.NotFound => Results.NotFound(),
+        SlaPolicyCommandStatus.DuplicateTransition => Results.BadRequest(new { error = "An SLA policy for this entity type and transition already exists." }),
+        SlaPolicyCommandStatus.Invalid => Results.BadRequest(new { error = "Entity type, from state and to state are required; target hours must be positive and warn-at percent between 1 and 100." }),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("AdminOnly");
+
+app.MapDelete("/api/admin/sla-policies/{id:guid}", async (Guid id, ClaimsPrincipal user, ISlaPolicyService service) =>
+{
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.DeleteAsync(id, actorId);
+    return result.Status switch
+    {
+        SlaPolicyCommandStatus.Success => Results.NoContent(),
+        SlaPolicyCommandStatus.NotFound => Results.NotFound(),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("AdminOnly");
+
 app.MapGet("/api/admin/escalations", async (string? status, string? tier, string? entityType, IEscalationService service) =>
 {
     var escalations = await service.ListAsync(new EscalationFilter(status, tier, entityType));
@@ -955,6 +1010,17 @@ static object ToEscalationDto(Escalation e) => new
     statusNameEn = e.EscalationStatus.NameAr,
     ownerName = e.Owner != null ? e.Owner.FullNameAr : null,
     openedAt = e.OpenedAt,
+};
+
+// Change 20260726
+static object ToSlaPolicyDto(SlaPolicy p) => new
+{
+    id = p.Id,
+    entityType = p.EntityType,
+    fromState = p.FromState,
+    toState = p.ToState,
+    targetHours = p.TargetHours,
+    warnAtPct = p.WarnAtPct,
 };
 
 app.MapPost("/api/admin/invitations/remind", async (IInvitationReminderProcessor processor) =>
