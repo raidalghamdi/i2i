@@ -1,5 +1,6 @@
 import { LOCALE_ID } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router'; // Change 20260726
 import { NotificationStore } from '../core/notification-store';
 import { NotificationsApiService, NotificationItem } from '../core/notifications-api.service';
 import { NotificationsComponent } from './notifications.component';
@@ -20,7 +21,7 @@ describe('NotificationsComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [NotificationsComponent],
-      providers: [{ provide: NotificationsApiService, useValue: api }],
+      providers: [provideRouter([]), { provide: NotificationsApiService, useValue: api }],
     });
     fixture = TestBed.createComponent(NotificationsComponent);
     store = TestBed.inject(NotificationStore);
@@ -83,7 +84,7 @@ describe('NotificationsComponent', () => {
     api.list.and.returnValue(Promise.resolve([]));
     TestBed.configureTestingModule({
       imports: [NotificationsComponent],
-      providers: [{ provide: NotificationsApiService, useValue: api }],
+      providers: [provideRouter([]), { provide: NotificationsApiService, useValue: api }],
     });
     fixture = TestBed.createComponent(NotificationsComponent);
     fixture.detectChanges();
@@ -98,7 +99,7 @@ describe('NotificationsComponent', () => {
     api.list.and.returnValue(Promise.reject(new Error('boom')));
     TestBed.configureTestingModule({
       imports: [NotificationsComponent],
-      providers: [{ provide: NotificationsApiService, useValue: api }],
+      providers: [provideRouter([]), { provide: NotificationsApiService, useValue: api }],
     });
     fixture = TestBed.createComponent(NotificationsComponent);
     store = TestBed.inject(NotificationStore);
@@ -125,6 +126,7 @@ describe('NotificationsComponent', () => {
       TestBed.configureTestingModule({
         imports: [NotificationsComponent],
         providers: [
+          provideRouter([]),
           { provide: NotificationsApiService, useValue: api },
           { provide: LOCALE_ID, useValue: locale },
         ],

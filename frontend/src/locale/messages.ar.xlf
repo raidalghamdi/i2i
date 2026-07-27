@@ -4990,6 +4990,70 @@
           <context context-type="linenumber">13,20</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="notificationsManagePreferences" datatype="html">
+        <source>Preferences</source>
+        <target>تفضيلات الإشعارات</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/notifications/notifications.component.html</context>
+          <context context-type="linenumber">25</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="notificationPreferencesPageTitle" datatype="html">
+        <source>Notification preferences</source>
+        <target>تفضيلات الإشعارات</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/notifications/notification-preferences/notification-preferences.component.html</context>
+          <context context-type="linenumber">2</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="notificationPreferencesLoading" datatype="html">
+        <source>Loading notification preferences…</source>
+        <target>جارٍ تحميل تفضيلات الإشعارات…</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/notifications/notification-preferences/notification-preferences.component.html</context>
+          <context context-type="linenumber">5</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="notificationPreferencesIntro" datatype="html">
+        <source>Choose which notifications you want to receive. Muted categories stay out of your list and your bell.</source>
+        <target>اختر الإشعارات التي ترغب في تلقيها. الفئات المكتومة لن تظهر في قائمتك ولا في جرس الإشعارات.</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/notifications/notification-preferences/notification-preferences.component.html</context>
+          <context context-type="linenumber">10</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="notificationPreferencesSaved" datatype="html">
+        <source>Preferences saved.</source>
+        <target>تم حفظ التفضيلات.</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/notifications/notification-preferences/notification-preferences.component.html</context>
+          <context context-type="linenumber">17</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="notificationPreferencesBackToList" datatype="html">
+        <source>Back to notifications</source>
+        <target>العودة إلى الإشعارات</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/notifications/notification-preferences/notification-preferences.component.html</context>
+          <context context-type="linenumber">36</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="notificationPreferencesLoadError" datatype="html">
+        <source>Couldn't load notification preferences. Please try again.</source>
+        <target>تعذّر تحميل تفضيلات الإشعارات. يُرجى المحاولة مرة أخرى.</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/notifications/notification-preferences/notification-preferences.component.ts</context>
+          <context context-type="linenumber">1</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="notificationPreferencesSaveError" datatype="html">
+        <source>Couldn't save your preferences. Please try again.</source>
+        <target>تعذّر حفظ تفضيلاتك. يُرجى المحاولة مرة أخرى.</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/notifications/notification-preferences/notification-preferences.component.ts</context>
+          <context context-type="linenumber">1</context>
+        </context-group>
+      </trans-unit>
       <trans-unit id="notificationsMarkAllRead" datatype="html">
         <source>Mark all read</source>
         <target>تعليم الكل كمقروء</target>

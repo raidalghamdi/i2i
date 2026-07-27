@@ -14,6 +14,21 @@ export interface NotificationItem {
   createdAt: string;
 }
 
+// Change 20260726
+export interface NotificationCategory {
+  key: string;
+  labelAr: string;
+  labelEn: string;
+}
+
+// Change 20260726
+export interface NotificationPreference {
+  categoryKey: string;
+  labelAr: string;
+  labelEn: string;
+  muted: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class NotificationsApiService {
   private readonly http = inject(HttpClient);
@@ -28,5 +43,25 @@ export class NotificationsApiService {
 
   markAllRead(): Promise<{ markedCount: number }> {
     return firstValueFrom(this.http.post<{ markedCount: number }>('/api/notifications/read-all', null));
+  }
+
+  // Change 20260726
+  categories(): Promise<NotificationCategory[]> {
+    return firstValueFrom(this.http.get<NotificationCategory[]>('/api/notifications/categories'));
+  }
+
+  // Change 20260726
+  preferences(): Promise<NotificationPreference[]> {
+    return firstValueFrom(this.http.get<NotificationPreference[]>('/api/notifications/preferences'));
+  }
+
+  /**
+   * Change 20260726 — sends every category rather than just the toggled one, and returns the
+   * server's re-read of the full set so the UI can't drift from what was actually persisted.
+   */
+  updatePreferences(preferences: { categoryKey: string; muted: boolean }[]): Promise<NotificationPreference[]> {
+    return firstValueFrom(
+      this.http.put<NotificationPreference[]>('/api/notifications/preferences', { preferences }),
+    );
   }
 }

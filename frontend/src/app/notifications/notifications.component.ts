@@ -1,4 +1,5 @@
 import { Component, LOCALE_ID, OnInit, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router'; // Change 20260726
 import { NotificationStore } from '../core/notification-store';
 import { NotificationItem } from '../core/notifications-api.service';
 import { PageHeaderComponent } from '../shared/page-header/page-header.component';
@@ -8,7 +9,7 @@ import { ErrorStateComponent } from '../shared/error-state/error-state.component
 
 @Component({
   selector: 'app-notifications',
-  imports: [PageHeaderComponent, LoadingStateComponent, EmptyStateComponent, ErrorStateComponent],
+  imports: [PageHeaderComponent, LoadingStateComponent, EmptyStateComponent, ErrorStateComponent, RouterLink],
   templateUrl: './notifications.component.html',
 })
 export class NotificationsComponent implements OnInit {

@@ -25,7 +25,11 @@
       i18n="@@notificationsFilterUnread"
     >Unread</button>
   </div>
-  <button class="btn-outline btn-sm" (click)="markAllRead()" i18n="@@notificationsMarkAllRead">Mark all read</button>
+  <div class="flex gap-2">
+    <button class="btn-outline btn-sm" (click)="markAllRead()" i18n="@@notificationsMarkAllRead">Mark all read</button>
+    <!-- Change 20260726 -->
+    <a routerLink="/notifications/preferences" class="btn-outline btn-sm" i18n="@@notificationsManagePreferences">Preferences</a>
+  </div>
 </div>
 
 @if (filtered().length === 0) {
