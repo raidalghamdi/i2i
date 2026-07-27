@@ -24,6 +24,7 @@ public class InnovationDbContext : DbContext
     public DbSet<Assignment> Assignments => Set<Assignment>();
     public DbSet<EvaluatorTrackAssignment> EvaluatorTrackAssignments => Set<EvaluatorTrackAssignment>();
     public DbSet<CommitteeCriterion> CommitteeCriteria => Set<CommitteeCriterion>();
+    public DbSet<EvaluationCriterion> EvaluationCriteria => Set<EvaluationCriterion>(); // Change 20260726
     public DbSet<CommitteeDecision> CommitteeDecisions => Set<CommitteeDecision>();
     public DbSet<AdminSetting> AdminSettings => Set<AdminSetting>();
     public DbSet<RoleInvitation> RoleInvitations => Set<RoleInvitation>();
