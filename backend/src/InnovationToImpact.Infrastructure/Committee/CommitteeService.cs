@@ -13,11 +13,13 @@ public class CommitteeService : ICommitteeService
 {
     private readonly InnovationDbContext _db;
     private readonly IApprovalService _approvalService;
+    private readonly IEvidenceFileStorage _storage; // Change 20260726
 
-    public CommitteeService(InnovationDbContext db, IApprovalService approvalService)
+    public CommitteeService(InnovationDbContext db, IApprovalService approvalService, IEvidenceFileStorage storage) // Change 20260726
     {
         _db = db;
         _approvalService = approvalService;
+        _storage = storage; // Change 20260726
     }
 
     public async Task<CommitteeCommandResult> SubmitDecisionAsync(Guid ideaId, Guid judgeId, CommitteeDecisionInput input, CancellationToken cancellationToken = default)
@@ -48,6 +50,31 @@ public class CommitteeService : ICommitteeService
 
         var totalScore = activeCriteria.Sum(c => input.CriteriaScores[c.Code] * c.Weight);
 
+        // Change 20260726
+        // Validate every upload before writing any of them, so a rejected file cannot leave
+        // orphaned blobs behind. Same allowlist and 10 MB cap as idea evidence attachments.
+        var uploads = input.Attachments ?? Array.Empty<CommitteeDecisionAttachmentUpload>();
+        foreach (var upload in uploads)
+        {
+            if (!IdeaAttachmentRules.AllowedContentTypes.Contains(upload.ContentType)) return new CommitteeCommandResult(CommitteeCommandStatus.InvalidAttachment);
+            if (upload.Content.LongLength == 0 || upload.Content.LongLength > IdeaAttachmentRules.MaxSizeBytes) return new CommitteeCommandResult(CommitteeCommandStatus.InvalidAttachment);
+        }
+
+        var storedAttachments = new List<CommitteeDecisionAttachment>(); // Change 20260726
+        foreach (var upload in uploads) // Change 20260726
+        {
+            var storedPath = await _storage.SaveAsync(upload.FileName, upload.Content, cancellationToken);
+            storedAttachments.Add(new CommitteeDecisionAttachment
+            {
+                Id = Guid.NewGuid(),
+                FileName = upload.FileName,
+                StoredPath = storedPath,
+                ContentType = upload.ContentType,
+                SizeBytes = upload.Content.LongLength,
+                UploadedAt = DateTime.UtcNow,
+            });
+        }
+
         var decision = new CommitteeDecision
         {
             Id = Guid.NewGuid(),
@@ -58,6 +85,7 @@ public class CommitteeService : ICommitteeService
             DecidedAt = DateTime.UtcNow,
             Comments = input.Comments,
             CriteriaScoresJson = JsonSerializer.Serialize(input.CriteriaScores),
+            AttachmentsJson = storedAttachments.Count > 0 ? JsonSerializer.Serialize(storedAttachments) : null, // Change 20260726
             TotalScore = totalScore,
         };
         _db.CommitteeDecisions.Add(decision);
@@ -121,5 +149,18 @@ public class CommitteeService : ICommitteeService
             .Where(d => d.DecidedById == judgeId)
             .OrderByDescending(d => d.DecidedAt)
             .ToListAsync(cancellationToken);
+    }
+
+    // Change 20260726
+    public async Task<CommitteeAttachmentFileResult> GetDecisionAttachmentFileAsync(Guid decisionId, Guid attachmentId, CancellationToken cancellationToken = default)
+    {
+        var decision = await _db.CommitteeDecisions.SingleOrDefaultAsync(d => d.Id == decisionId, cancellationToken);
+        if (decision is null) return new CommitteeAttachmentFileResult(CommitteeCommandStatus.NotFound);
+
+        var attachment = CommitteeDecisionAttachment.Parse(decision.AttachmentsJson).SingleOrDefault(a => a.Id == attachmentId);
+        if (attachment is null) return new CommitteeAttachmentFileResult(CommitteeCommandStatus.NotFound);
+
+        var content = await _storage.ReadAsync(attachment.StoredPath, cancellationToken);
+        return new CommitteeAttachmentFileResult(CommitteeCommandStatus.Success, content, attachment.ContentType, attachment.FileName);
     }
 }

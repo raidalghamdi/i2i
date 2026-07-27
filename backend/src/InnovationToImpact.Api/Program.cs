@@ -2205,6 +2205,13 @@ app.MapPost("/api/ideas/{id:guid}/withdraw", async (Guid id, IdeaWithdrawInput? 
 }).RequireAuthorization("IdeaAuthor");
 
 // Change 20260726
+// Change 20260726
+// StoredPath is deliberately omitted — clients address attachments by id via the download endpoint.
+static object[] CommitteeDecisionAttachmentResponse(CommitteeDecision decision) =>
+    CommitteeDecisionAttachment.Parse(decision.AttachmentsJson)
+        .Select(a => (object)new { id = a.Id, fileName = a.FileName, contentType = a.ContentType, sizeBytes = a.SizeBytes, uploadedAt = a.UploadedAt })
+        .ToArray();
+
 static object EvaluationCriterionResponse(EvaluationCriterion c) => new
 {
     id = c.Id,
@@ -2374,8 +2381,44 @@ app.MapDelete("/api/admin/committee-criteria/{id:guid}", async (Guid id, ClaimsP
     };
 }).RequireAuthorization("SupervisorOrAdmin");
 
-app.MapPost("/api/ideas/{id:guid}/committee-decisions", async (Guid id, CommitteeDecisionInput input, ClaimsPrincipal user, ICommitteeService service, ISlaClockService slaClockService) =>
+// Change 20260726
+// Multipart form-data so a judge can attach supporting files alongside the decision. Scores arrive
+// as the `criteriaScores` JSON field because form fields are flat strings.
+app.MapPost("/api/ideas/{id:guid}/committee-decisions", async (Guid id, HttpRequest request, ClaimsPrincipal user, ICommitteeService service, ISlaClockService slaClockService) =>
 {
+    if (!request.HasFormContentType) return Results.BadRequest(new { error = "Expected multipart form-data." });
+    var form = await request.ReadFormAsync();
+
+    var decisionTypeCode = form["decisionType"].ToString();
+    if (string.IsNullOrWhiteSpace(decisionTypeCode)) return Results.BadRequest(new { error = "Invalid decision type." });
+
+    Dictionary<string, decimal>? criteriaScores;
+    try
+    {
+        criteriaScores = JsonSerializer.Deserialize<Dictionary<string, decimal>>(form["criteriaScores"].ToString());
+    }
+    catch (JsonException)
+    {
+        criteriaScores = null;
+    }
+    if (criteriaScores is null) return Results.BadRequest(new { error = "Criteria scores must include exactly the active criteria, each between 0 and 10." });
+
+    var comments = form["comments"].ToString();
+
+    var uploads = new List<CommitteeDecisionAttachmentUpload>();
+    foreach (var file in form.Files.GetFiles("attachments"))
+    {
+        using var stream = new MemoryStream();
+        await file.CopyToAsync(stream);
+        uploads.Add(new CommitteeDecisionAttachmentUpload(file.FileName, file.ContentType, stream.ToArray()));
+    }
+
+    var input = new CommitteeDecisionInput(
+        decisionTypeCode,
+        criteriaScores,
+        string.IsNullOrWhiteSpace(comments) ? null : comments,
+        uploads);
+
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
     var result = await service.SubmitDecisionAsync(id, userId, input);
     if (result.Status == CommitteeCommandStatus.Success && result.Idea!.IdeaStatus.Code == IdeaStatusCodes.PendingFinalRanking)
@@ -2384,13 +2427,32 @@ app.MapPost("/api/ideas/{id:guid}/committee-decisions", async (Guid id, Committe
     }
     return result.Status switch
     {
-        CommitteeCommandStatus.Success => Results.Ok(new { id = result.Decision!.Id, totalScore = result.Decision.TotalScore, ideaStatus = result.Idea!.IdeaStatus.Code }),
+        CommitteeCommandStatus.Success => Results.Ok(new
+        {
+            id = result.Decision!.Id,
+            totalScore = result.Decision.TotalScore,
+            ideaStatus = result.Idea!.IdeaStatus.Code,
+            attachments = CommitteeDecisionAttachmentResponse(result.Decision), // Change 20260726
+        }),
         CommitteeCommandStatus.NotFound => Results.NotFound(),
         CommitteeCommandStatus.InvalidState => Results.BadRequest(new { error = "Idea is not awaiting committee review." }),
         CommitteeCommandStatus.AlreadyDecided => Results.BadRequest(new { error = "You have already decided on this idea." }),
         CommitteeCommandStatus.InvalidDecisionType => Results.BadRequest(new { error = "Invalid decision type." }),
         CommitteeCommandStatus.InvalidCriteria => Results.BadRequest(new { error = "Criteria scores must include exactly the active criteria, each between 0 and 10." }),
+        CommitteeCommandStatus.InvalidAttachment => Results.BadRequest(new { error = "Unsupported file type or file exceeds the size limit." }), // Change 20260726
         CommitteeCommandStatus.Forbidden => Results.StatusCode(StatusCodes.Status403Forbidden),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("SupervisorOrCommittee").DisableAntiforgery(); // Change 20260726
+
+// Change 20260726
+app.MapGet("/api/committee-decisions/{decisionId:guid}/attachments/{attachmentId:guid}", async (Guid decisionId, Guid attachmentId, ICommitteeService service) =>
+{
+    var result = await service.GetDecisionAttachmentFileAsync(decisionId, attachmentId);
+    return result.Status switch
+    {
+        CommitteeCommandStatus.Success => Results.File(result.Content!, result.ContentType, result.FileName),
+        CommitteeCommandStatus.NotFound => Results.NotFound(),
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
 }).RequireAuthorization("SupervisorOrCommittee");
@@ -2425,6 +2487,7 @@ app.MapGet("/api/committee/mine", async (ClaimsPrincipal user, ICommitteeService
         ideaTitleEn = d.Idea.TitleAr,
         totalScore = d.TotalScore,
         decidedAt = d.DecidedAt,
+        attachments = CommitteeDecisionAttachmentResponse(d), // Change 20260726
     }));
 }).RequireAuthorization("SupervisorOrCommittee");
 
