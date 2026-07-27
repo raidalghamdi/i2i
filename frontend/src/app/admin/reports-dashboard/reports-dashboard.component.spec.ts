@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
 import { ReportsApiService } from '../reports-api.service';
 import { REPORT_CATALOG } from './report-catalog';
 import { ReportsDashboardComponent } from './reports-dashboard.component';
@@ -13,7 +14,7 @@ describe('ReportsDashboardComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [ReportsDashboardComponent],
-      providers: [{ provide: ReportsApiService, useValue: reportsApi }],
+      providers: [provideRouter([]), { provide: ReportsApiService, useValue: reportsApi }],
     });
     fixture = TestBed.createComponent(ReportsDashboardComponent);
   }

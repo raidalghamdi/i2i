@@ -13039,6 +13039,126 @@
           <context context-type="linenumber">194</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="evaluatorProductivityTitle" datatype="html">
+        <source>Evaluator productivity</source>
+        <target>إنتاجية المُقيّمين</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">2</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityLoading" datatype="html">
+        <source>Loading evaluator productivity…</source>
+        <target>جارٍ تحميل إنتاجية المُقيّمين…</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">5</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityEmpty" datatype="html">
+        <source>No evaluator activity yet.</source>
+        <target>لا يوجد نشاط للمُقيّمين بعد.</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">9</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnName" datatype="html">
+        <source> Evaluator </source>
+        <target> المُقيّم </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">16</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnAssigned" datatype="html">
+        <source> Assigned </source>
+        <target> المُسندة </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">21</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnCompleted" datatype="html">
+        <source> Completed </source>
+        <target> المكتملة </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">26</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnDraft" datatype="html">
+        <source> Draft </source>
+        <target> المسودات </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">31</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnAvgScore" datatype="html">
+        <source> Avg score </source>
+        <target> متوسط الدرجة </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">36</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnAvgTurnaround" datatype="html">
+        <source> Avg turnaround (h) </source>
+        <target> متوسط زمن الإنجاز (ساعة) </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">41</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnCoi" datatype="html">
+        <source> Conflicts </source>
+        <target> تعارضات المصالح </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">46</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityNoValue" datatype="html">
+        <source>—</source>
+        <target>—</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">60</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="navAdminEvaluatorProductivity" datatype="html">
+        <source>Evaluator productivity</source>
+        <target>إنتاجية المُقيّمين</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/shell/app-shell/app-shell.component.ts</context>
+          <context context-type="linenumber">210</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="reportsEvaluatorProductivity" datatype="html">
+        <source>Evaluator productivity</source>
+        <target>إنتاجية المُقيّمين</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/reports-dashboard/reports-dashboard.component.html</context>
+          <context context-type="linenumber">64</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="reportsEvaluatorProductivityDesc" datatype="html">
+        <source>Per-evaluator assignment, completion and turnaround metrics.</source>
+        <target>مؤشرات الإسناد والإنجاز وزمن الاستجابة لكل مُقيّم.</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/reports-dashboard/reports-dashboard.component.html</context>
+          <context context-type="linenumber">66</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="reportsEvaluatorProductivityOpen" datatype="html">
+        <source>Open report</source>
+        <target>عرض التقرير</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/reports-dashboard/reports-dashboard.component.html</context>
+          <context context-type="linenumber">69</context>
+        </context-group>
+      </trans-unit>
     </body>
   </file>
 </xliff>

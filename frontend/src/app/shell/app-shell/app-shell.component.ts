@@ -210,6 +210,8 @@ export class AppShellComponent implements OnDestroy {
           { label: $localize`:@@navAdminPostProgram:Post-program`, href: '/admin/post-program', icon: 'rocket' },
           { label: $localize`:@@navAdminAnalytics:Analytics`, href: '/admin/analytics', icon: 'chart-bar' },
           { label: $localize`:@@navAdminReports:Reports`, href: '/admin/reports', icon: 'document-text' },
+          // Change 20260726
+          { label: $localize`:@@navAdminEvaluatorProductivity:Evaluator productivity`, href: '/admin/reports/evaluator-productivity', icon: 'chart-bar' },
           { label: $localize`:@@navAdminReportTitles:Report titles`, href: '/admin/report-titles', icon: 'document-text' },
           { label: $localize`:@@navAdminInvitationSettings:Invitation settings`, href: '/admin/invitation-settings', icon: 'settings' },
           { label: $localize`:@@navAdminEvaluationSettings:Evaluation settings`, href: '/admin/evaluation-settings', icon: 'settings' },

@@ -9883,6 +9883,111 @@
           <context context-type="linenumber">194</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="evaluatorProductivityTitle" datatype="html">
+        <source>Evaluator productivity</source>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">2</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityLoading" datatype="html">
+        <source>Loading evaluator productivity…</source>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">5</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityEmpty" datatype="html">
+        <source>No evaluator activity yet.</source>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">9</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnName" datatype="html">
+        <source> Evaluator </source>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">16</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnAssigned" datatype="html">
+        <source> Assigned </source>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">21</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnCompleted" datatype="html">
+        <source> Completed </source>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">26</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnDraft" datatype="html">
+        <source> Draft </source>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">31</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnAvgScore" datatype="html">
+        <source> Avg score </source>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">36</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnAvgTurnaround" datatype="html">
+        <source> Avg turnaround (h) </source>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">41</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnCoi" datatype="html">
+        <source> Conflicts </source>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">46</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityNoValue" datatype="html">
+        <source>—</source>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">60</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="navAdminEvaluatorProductivity" datatype="html">
+        <source>Evaluator productivity</source>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/shell/app-shell/app-shell.component.ts</context>
+          <context context-type="linenumber">210</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="reportsEvaluatorProductivity" datatype="html">
+        <source>Evaluator productivity</source>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/reports-dashboard/reports-dashboard.component.html</context>
+          <context context-type="linenumber">64</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="reportsEvaluatorProductivityDesc" datatype="html">
+        <source>Per-evaluator assignment, completion and turnaround metrics.</source>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/reports-dashboard/reports-dashboard.component.html</context>
+          <context context-type="linenumber">66</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="reportsEvaluatorProductivityOpen" datatype="html">
+        <source>Open report</source>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/reports-dashboard/reports-dashboard.component.html</context>
+          <context context-type="linenumber">69</context>
+        </context-group>
+      </trans-unit>
     </body>
   </file>
 </xliff>
