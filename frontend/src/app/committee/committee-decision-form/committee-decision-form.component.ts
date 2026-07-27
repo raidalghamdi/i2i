@@ -11,10 +11,28 @@ import { IdeasApiService } from '../../ideas/ideas-api.service';
 import { Idea } from '../../ideas/idea.model';
 import { EvaluationReviewApiService } from '../../evaluations/evaluation-review-api.service';
 import { EvaluationReviewDetail } from '../../evaluations/evaluation-review.model';
+import { IconComponent } from '../../shared/icon/icon.component';
+
+// Change 20260726 — mirrors the allowlist and per-file cap enforced by idea-submit-wizard and the
+// backend, so an unsupported file is rejected before it costs an upload round-trip.
+const ALLOWED_ATTACHMENT_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.ms-powerpoint',
+  'image/png',
+  'image/jpeg',
+  'video/mp4',
+  'video/quicktime',
+]);
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 
 @Component({
   selector: 'app-committee-decision-form',
-  imports: [ReactiveFormsModule, PageHeaderComponent, LoadingStateComponent, ErrorStateComponent, IdeaContextPanelComponent],
+  imports: [ReactiveFormsModule, PageHeaderComponent, LoadingStateComponent, ErrorStateComponent, IdeaContextPanelComponent, IconComponent],
   templateUrl: './committee-decision-form.component.html',
 })
 export class CommitteeDecisionFormComponent implements OnInit {
@@ -31,6 +49,8 @@ export class CommitteeDecisionFormComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
+  readonly queuedFiles = signal<File[]>([]); // Change 20260726
+  readonly attachmentError = signal<string | null>(null); // Change 20260726
   private readonly ideaId = this.route.snapshot.paramMap.get('id')!;
 
   readonly form = this.fb.group({
@@ -78,6 +98,34 @@ export class CommitteeDecisionFormComponent implements OnInit {
     }
   }
 
+  // Change 20260726
+  onFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files) this.queueFiles(Array.from(input.files));
+    input.value = '';
+  }
+
+  // Change 20260726
+  removeQueuedFile(index: number): void {
+    this.queuedFiles.update((files) => files.filter((_, i) => i !== index));
+  }
+
+  // Change 20260726
+  private queueFiles(files: File[]): void {
+    this.attachmentError.set(null);
+    for (const file of files) {
+      if (!ALLOWED_ATTACHMENT_TYPES.has(file.type)) {
+        this.attachmentError.set($localize`:@@committeeFormAttachmentInvalidType:One or more files have a type that isn't allowed.`);
+        continue;
+      }
+      if (file.size > MAX_ATTACHMENT_BYTES) {
+        this.attachmentError.set($localize`:@@committeeFormAttachmentTooLarge:One or more files are larger than 10MB.`);
+        continue;
+      }
+      this.queuedFiles.update((existing) => [...existing, file]);
+    }
+  }
+
   async onSubmit(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -91,11 +139,15 @@ export class CommitteeDecisionFormComponent implements OnInit {
     }
 
     try {
-      await this.committeeApi.submitDecision(this.ideaId, {
-        decisionTypeCode: this.form.get('decisionTypeCode')!.value as string,
-        criteriaScores,
-        comments: (this.form.get('comments')?.value as string | null) ?? null,
-      });
+      await this.committeeApi.submitDecision(
+        this.ideaId,
+        {
+          decisionTypeCode: this.form.get('decisionTypeCode')!.value as string,
+          criteriaScores,
+          comments: (this.form.get('comments')?.value as string | null) ?? null,
+        },
+        this.queuedFiles(), // Change 20260726
+      );
       await this.router.navigate(['/committee/queue']);
     } catch (error) {
       this.errorMessage.set(this.extractErrorMessage(error));

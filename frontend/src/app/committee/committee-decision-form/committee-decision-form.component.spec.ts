@@ -98,8 +98,96 @@ describe('CommitteeDecisionFormComponent', () => {
       decisionTypeCode: 'approved',
       criteriaScores: { originality: 8, feasibility: 8, impact: 8, alignment: 8 },
       comments: 'Great idea.',
-    });
+    }, []); // Change 20260726
     expect(router.navigate).toHaveBeenCalledWith(['/committee/queue']);
+  });
+
+  // Change 20260726
+  describe('attachments', () => {
+    function pdf(name = 'minutes.pdf', size = 1024): File {
+      const file = new File(['x'], name, { type: 'application/pdf' });
+      Object.defineProperty(file, 'size', { value: size });
+      return file;
+    }
+
+    function selectFiles(files: File[]): void {
+      fixture.componentInstance.onFilesSelected({
+        target: { files, value: 'C:\\fakepath\\x' } as unknown as HTMLInputElement,
+      } as unknown as Event);
+    }
+
+    it('queues files that pass the type and size checks', async () => {
+      setup();
+      fixture.detectChanges();
+      await fixture.componentInstance.ngOnInit();
+
+      selectFiles([pdf('a.pdf'), pdf('b.pdf')]);
+
+      expect(fixture.componentInstance.queuedFiles().map((f) => f.name)).toEqual(['a.pdf', 'b.pdf']);
+      expect(fixture.componentInstance.attachmentError()).toBeNull();
+    });
+
+    it('rejects a file whose MIME type is not on the allowlist', async () => {
+      setup();
+      fixture.detectChanges();
+      await fixture.componentInstance.ngOnInit();
+
+      selectFiles([new File(['x'], 'evil.exe', { type: 'application/x-msdownload' })]);
+
+      expect(fixture.componentInstance.queuedFiles().length).toBe(0);
+      expect(fixture.componentInstance.attachmentError()).toContain("isn't allowed");
+    });
+
+    it('rejects a file larger than 10MB but keeps the acceptable ones', async () => {
+      setup();
+      fixture.detectChanges();
+      await fixture.componentInstance.ngOnInit();
+
+      selectFiles([pdf('huge.pdf', 10 * 1024 * 1024 + 1), pdf('ok.pdf')]);
+
+      expect(fixture.componentInstance.queuedFiles().map((f) => f.name)).toEqual(['ok.pdf']);
+      expect(fixture.componentInstance.attachmentError()).toContain('10MB');
+    });
+
+    it('removes a queued file by index', async () => {
+      setup();
+      fixture.detectChanges();
+      await fixture.componentInstance.ngOnInit();
+      selectFiles([pdf('a.pdf'), pdf('b.pdf')]);
+
+      fixture.componentInstance.removeQueuedFile(0);
+
+      expect(fixture.componentInstance.queuedFiles().map((f) => f.name)).toEqual(['b.pdf']);
+    });
+
+    it('lists the queued file names with a remove button before submit', async () => {
+      setup();
+      fixture.detectChanges();
+      await fixture.componentInstance.ngOnInit();
+      fixture.detectChanges();
+      selectFiles([pdf('minutes.pdf')]);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent as string).toContain('minutes.pdf');
+      expect(fixture.nativeElement.querySelector('[aria-label="Remove attachment"]')).toBeTruthy();
+    });
+
+    it('passes the queued files to the API on submit', async () => {
+      setup();
+      fixture.detectChanges();
+      await fixture.componentInstance.ngOnInit();
+      committeeApi.submitDecision.and.returnValue(Promise.resolve({ id: 'decision-1', totalScore: 8, ideaStatus: 'committee' }));
+      const file = pdf('minutes.pdf');
+      selectFiles([file]);
+
+      setFormValues(fixture.componentInstance.form, {
+        originality: 8, feasibility: 8, impact: 8, alignment: 8,
+        decisionTypeCode: 'approved', comments: null,
+      });
+      await fixture.componentInstance.onSubmit();
+
+      expect(committeeApi.submitDecision).toHaveBeenCalledWith('idea-1', jasmine.any(Object), [file]);
+    });
   });
 
   it('loads and shows the idea and the evaluator rating (via the shared idea-context-panel) above the criteria form', async () => {

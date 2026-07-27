@@ -35,6 +35,35 @@
     <textarea class="field-textarea" formControlName="comments"></textarea>
   </div>
 
+  <!-- Change 20260726 -->
+  <div class="flex flex-col gap-3">
+    <label class="field-label" i18n="@@committeeFormAttachments">Supporting documents (optional)</label>
+    @if (attachmentError(); as msg) {
+      <p class="field-error">{{ msg }}</p>
+    }
+    <div
+      class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-muted/30 p-6 text-center transition hover:border-brand-teal/40"
+      (click)="fileInput.click()"
+    >
+      <app-icon name="upload" size="h-6 w-6" class="text-brand-teal" />
+      <span class="text-sm text-muted-foreground" i18n="@@committeeFormDropzoneHint">Click to choose files</span>
+      <span class="text-xs text-muted-foreground" i18n="@@committeeFormDropzoneTypes">PDF, images, Office files, or video — up to 10MB each</span>
+      <input #fileInput type="file" multiple class="hidden" (change)="onFilesSelected($event)" />
+    </div>
+    @if (queuedFiles().length > 0) {
+      <ul class="flex flex-col gap-1.5">
+        @for (file of queuedFiles(); track file.name; let i = $index) {
+          <li class="flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
+            <span class="truncate">{{ file.name }}</span>
+            <button type="button" class="btn-ghost btn-sm" (click)="removeQueuedFile(i)" i18n-aria-label="@@committeeFormRemoveAttachment" aria-label="Remove attachment">
+              <app-icon name="x" size="h-4 w-4" />
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
   <div class="flex justify-end">
     <button type="submit" class="btn-default" [disabled]="form.invalid" i18n="@@committeeFormSubmit">Submit Decision</button>
   </div>
