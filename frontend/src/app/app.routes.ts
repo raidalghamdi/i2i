@@ -567,6 +567,13 @@ export const routes: Routes = [
       },
       // Change 20260726
       {
+        path: 'admin/sla-policies',
+        loadComponent: () =>
+          import('./admin/sla-policies/sla-policies.component').then((m) => m.SlaPoliciesComponent),
+        canActivate: [adminOnlyGuard],
+      },
+      // Change 20260726
+      {
         path: 'admin/evaluation-criteria',
         loadComponent: () =>
           import('./admin/evaluation-criteria/evaluation-criteria.component').then(

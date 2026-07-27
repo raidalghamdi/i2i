@@ -1,0 +1,75 @@
+<!-- Change 20260726 -->
+<app-page-header title="SLA policies" i18n-title="@@slaPoliciesTitle" />
+
+@if (errorMessage(); as msg) {
+  <p class="field-error mb-4" role="alert">{{ msg }}</p>
+}
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="5" label="Loading SLA policies…" i18n-label="@@slaPoliciesLoading" />
+} @else if (loadError(); as lerr) {
+  <app-error-state [message]="lerr" (retry)="reload()" />
+} @else if (editableRows().length === 0) {
+  <app-empty-state title="No SLA policies yet." i18n-title="@@slaPoliciesEmpty" icon="alert-triangle" />
+} @else {
+  <div class="data-table-wrap mb-4">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th i18n="@@slaPoliciesColumnEntityType">Entity type</th>
+          <th i18n="@@slaPoliciesColumnFromState">From state</th>
+          <th i18n="@@slaPoliciesColumnToState">To state</th>
+          <th i18n="@@slaPoliciesColumnTargetHours">Target hours</th>
+          <th i18n="@@slaPoliciesColumnWarnAtPct">Warn at %</th>
+          <th i18n="@@slaPoliciesColumnActions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of editableRows(); track row.localKey) {
+          <tr>
+            <td>
+              <input class="field-input" [ngModel]="row.entityType" (ngModelChange)="updateRow(row.localKey, { entityType: $event })" />
+            </td>
+            <td>
+              <input class="field-input" [ngModel]="row.fromState" (ngModelChange)="updateRow(row.localKey, { fromState: $event })" />
+            </td>
+            <td>
+              <input class="field-input" [ngModel]="row.toState" (ngModelChange)="updateRow(row.localKey, { toState: $event })" />
+            </td>
+            <td>
+              <input
+                type="number"
+                step="1"
+                min="1"
+                class="field-input w-24"
+                [ngModel]="row.targetHours"
+                (ngModelChange)="updateRow(row.localKey, { targetHours: $event })"
+              />
+            </td>
+            <td>
+              <input
+                type="number"
+                step="1"
+                min="1"
+                max="100"
+                class="field-input w-20"
+                [ngModel]="row.warnAtPct"
+                (ngModelChange)="updateRow(row.localKey, { warnAtPct: $event })"
+              />
+            </td>
+            <td>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" class="btn-default btn-sm" (click)="onSave(row)" i18n="@@slaPoliciesSave">Save</button>
+                @if (row.id) {
+                  <button type="button" class="btn-ghost btn-sm" (click)="onDelete(row.id)" i18n="@@slaPoliciesDelete">Delete</button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<button type="button" class="btn-outline btn-sm" (click)="onAddRow()" i18n="@@slaPoliciesAddRow">Add policy</button>
