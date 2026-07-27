@@ -222,6 +222,15 @@ export const routes: Routes = [
           import('./settings/settings.component').then((m) => m.SettingsComponent),
         canActivate: [anyAssignedRoleGuard],
       },
+      // Change 20260726 — ahead of 'notifications' so the more specific path wins.
+      {
+        path: 'notifications/preferences',
+        loadComponent: () =>
+          import('./notifications/notification-preferences/notification-preferences.component').then(
+            (m) => m.NotificationPreferencesComponent,
+          ),
+        canActivate: [anyAssignedRoleGuard],
+      },
       {
         path: 'notifications',
         loadComponent: () =>
