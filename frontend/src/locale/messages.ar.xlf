@@ -12743,6 +12743,78 @@
         <source>Already queued</source>
         <target>في قائمة الانتظار</target>
       </trans-unit>
+      <trans-unit id="committeeFormAttachments" datatype="html">
+        <source>Supporting documents (optional)</source>
+        <target>المستندات الداعمة (اختياري)</target>
+      </trans-unit>
+      <trans-unit id="committeeFormDropzoneHint" datatype="html">
+        <source>Click to choose files</source>
+        <target>انقر لاختيار الملفات</target>
+      </trans-unit>
+      <trans-unit id="committeeFormDropzoneTypes" datatype="html">
+        <source>PDF, images, Office files, or video — up to 10MB each</source>
+        <target>ملفات PDF أو صور أو ملفات Office أو فيديو — حتى 10 ميجابايت لكل ملف</target>
+      </trans-unit>
+      <trans-unit id="committeeFormRemoveAttachment" datatype="html">
+        <source>Remove attachment</source>
+        <target>إزالة المرفق</target>
+      </trans-unit>
+      <trans-unit id="committeeFormAttachmentInvalidType" datatype="html">
+        <source>One or more files have a type that isn't allowed.</source>
+        <target>نوع ملف واحد أو أكثر غير مسموح به.</target>
+      </trans-unit>
+      <trans-unit id="committeeFormAttachmentTooLarge" datatype="html">
+        <source>One or more files are larger than 10MB.</source>
+        <target>حجم ملف واحد أو أكثر أكبر من 10 ميجابايت.</target>
+      </trans-unit>
+      <trans-unit id="committeeFormSubmitting" datatype="html">
+        <source>Saving...</source>
+        <target>جارٍ الحفظ...</target>
+      </trans-unit>
+      <trans-unit id="evalFormSubmitting" datatype="html">
+        <source>Saving...</source>
+        <target>جارٍ الحفظ...</target>
+      </trans-unit>
+      <trans-unit id="myDecisionsColumnAttachments" datatype="html">
+        <source>Attachments</source>
+        <target>المرفقات</target>
+      </trans-unit>
+      <trans-unit id="myDecisionsAttachmentError" datatype="html">
+        <source>Couldn't download the attachment. Please try again.</source>
+        <target>تعذّر تنزيل المرفق. يرجى المحاولة مرة أخرى.</target>
+      </trans-unit>
+      <trans-unit id="committeeQueueOwnIdea" datatype="html">
+        <source>Your own idea</source>
+        <target>فكرتك الخاصة</target>
+      </trans-unit>
+      <trans-unit id="committeeQueueOwnIdeaTooltip" datatype="html">
+        <source>You cannot decide on your own idea</source>
+        <target>لا يمكنك اتخاذ قرار بشأن فكرتك الخاصة</target>
+      </trans-unit>
+      <trans-unit id="evaluatorQueueOwnIdea" datatype="html">
+        <source>Your own idea</source>
+        <target>فكرتك الخاصة</target>
+      </trans-unit>
+      <trans-unit id="evaluatorQueueOwnIdeaTooltip" datatype="html">
+        <source>You cannot evaluate your own idea</source>
+        <target>لا يمكنك تقييم فكرتك الخاصة</target>
+      </trans-unit>
+      <trans-unit id="committeeFormSelfAuthored" datatype="html">
+        <source>You cannot decide on your own idea.</source>
+        <target>لا يمكنك اتخاذ قرار بشأن فكرتك الخاصة.</target>
+      </trans-unit>
+      <trans-unit id="committeeFormSelfAuthoredHint" datatype="html">
+        <source>Another committee member must review this idea.</source>
+        <target>يجب أن يراجع هذه الفكرة عضو آخر في اللجنة.</target>
+      </trans-unit>
+      <trans-unit id="evalFormSelfAuthored" datatype="html">
+        <source>You cannot evaluate your own idea.</source>
+        <target>لا يمكنك تقييم فكرتك الخاصة.</target>
+      </trans-unit>
+      <trans-unit id="evalFormSelfAuthoredHint" datatype="html">
+        <source>Another evaluator must score this idea.</source>
+        <target>يجب أن يقيّم هذه الفكرة مُقيّم آخر.</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>

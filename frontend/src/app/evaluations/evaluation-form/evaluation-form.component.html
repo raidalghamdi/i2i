@@ -27,6 +27,13 @@
   </div>
 
   <div class="lg:col-span-1">
+    <!-- Change 20260726 -->
+    @if (isSelfAuthored()) {
+      <div class="card-surface card-body" role="alert">
+        <p class="font-medium" i18n="@@evalFormSelfAuthored">You cannot evaluate your own idea.</p>
+        <p class="mt-1 text-sm text-muted-foreground" i18n="@@evalFormSelfAuthoredHint">Another evaluator must score this idea.</p>
+      </div>
+    } @else {
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="card-surface card-body flex flex-col gap-5">
       @if (errorMessage(); as msg) {
         <div class="field-error" role="alert">{{ msg }}</div>
@@ -82,9 +89,16 @@
 
       <!-- Change 20260726 -->
       <div class="flex justify-end gap-2">
-        <button type="button" class="btn-outline" [disabled]="criteriaUnavailable()" (click)="onSaveDraft()" i18n="@@evalFormSaveDraft">Save Draft</button>
-        <button type="submit" class="btn-default" [disabled]="form.invalid || criteriaUnavailable()" i18n="@@evalFormSubmit">Submit Evaluation</button>
+        <button type="button" class="btn-outline" [disabled]="criteriaUnavailable() || isSubmitting()" (click)="onSaveDraft()" i18n="@@evalFormSaveDraft">Save Draft</button>
+        <button type="submit" class="btn-default" [disabled]="form.invalid || criteriaUnavailable() || isSubmitting()">
+          @if (isSubmitting()) {
+            <span i18n="@@evalFormSubmitting">Saving...</span>
+          } @else {
+            <span i18n="@@evalFormSubmit">Submit Evaluation</span>
+          }
+        </button>
       </div>
     </form>
+    }
   </div>
 </div>
