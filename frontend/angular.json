@@ -28,7 +28,8 @@
         "sourceLocale": "en",
         "locales": {
           "ar": {
-            "translation": "src/locale/messages.ar.xlf"
+            "translation": "src/locale/messages.ar.xlf",
+            "subPath": ""
           }
         }
       },
@@ -86,6 +87,22 @@
                   "with": "src/environments/environment.development.ts"
                 }
               ]
+            },
+            "production-ar": {
+              "localize": ["ar"],
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "600kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "all"
             }
           },
           "defaultConfiguration": "production"

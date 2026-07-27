@@ -214,28 +214,9 @@ describe('IdeasApiService', () => {
     const promise = service.withdraw('idea-1');
     const req = httpMock.expectOne('/api/ideas/idea-1/withdraw');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ reason: null }); // Change 20260726
+    expect(req.request.body).toBeNull();
     req.flush(null);
 
     await expectAsync(promise).toBeResolved();
   });
-
-  it('withdraw() sends the reason when one is given', async () => { // Change 20260726
-    const promise = service.withdraw('idea-1', 'No longer relevant'); // Change 20260726
-    const req = httpMock.expectOne('/api/ideas/idea-1/withdraw'); // Change 20260726
-    expect(req.request.method).toBe('POST'); // Change 20260726
-    expect(req.request.body).toEqual({ reason: 'No longer relevant' }); // Change 20260726
-    req.flush(null); // Change 20260726
-
-    await expectAsync(promise).toBeResolved(); // Change 20260726
-  }); // Change 20260726
-
-  it('deleteAttachment() deletes /api/ideas/{id}/attachments/{attachmentId}', async () => { // Change 20260726
-    const promise = service.deleteAttachment('idea-1', 'att-9'); // Change 20260726
-    const req = httpMock.expectOne('/api/ideas/idea-1/attachments/att-9'); // Change 20260726
-    expect(req.request.method).toBe('DELETE'); // Change 20260726
-    req.flush(null); // Change 20260726
-
-    await expectAsync(promise).toBeResolved(); // Change 20260726
-  }); // Change 20260726
 });

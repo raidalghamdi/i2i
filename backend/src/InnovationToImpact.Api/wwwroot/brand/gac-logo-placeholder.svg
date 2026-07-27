@@ -1,0 +1,8 @@
+<!-- Placeholder — replace with the official GAC (General Authority for Competition) logo asset -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 48" role="img" aria-label="General Authority for Competition">
+  <rect x="1" y="1" width="118" height="46" rx="8" fill="#F1F5F4" stroke="#01696F" stroke-width="2"/>
+  <text x="20" y="31" font-family="'Frutiger LT Arabic', Arial, sans-serif" font-size="22" font-weight="700" fill="#01696F">GAC</text>
+  <line x1="74" y1="12" x2="74" y2="36" stroke="#20808D" stroke-width="1.5" opacity="0.5"/>
+  <text x="80" y="21" font-family="'Frutiger LT Arabic', Arial, sans-serif" font-size="9" fill="#20808D">الهيئة</text>
+  <text x="80" y="34" font-family="'Frutiger LT Arabic', Arial, sans-serif" font-size="9" fill="#20808D">للمنافسة</text>
+</svg>

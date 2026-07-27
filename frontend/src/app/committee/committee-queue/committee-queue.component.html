@@ -10,24 +10,13 @@
   <ul class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
     @for (item of queue(); track item.id) {
       <li class="card-surface card-body flex flex-col gap-3">
-        <!-- Change 20260726 -->
-        @if (isOwnIdea(item.id)) {
-          <div class="flex cursor-not-allowed flex-col gap-2 opacity-60" [title]="ownIdeaTooltip">
-            <span class="text-xs font-medium text-brand-gold">{{ item.code }} — {{ item.titleAr }}</span>
-            <span class="text-sm text-muted-foreground">{{ item.submitterName }}</span>
-          </div>
-        } @else {
-          <a [routerLink]="['/committee', item.id]" class="flex flex-col gap-2">
-            <span class="text-xs font-medium text-brand-gold">{{ item.code }} — {{ item.titleAr }}</span>
-            <span class="text-sm text-muted-foreground">{{ item.submitterName }}</span>
-          </a>
-        }
+        <a [routerLink]="['/committee', item.id]" class="flex flex-col gap-2">
+          <span class="text-xs font-medium text-brand-gold">{{ item.code }} — {{ item.titleAr }}</span>
+          <span class="text-sm text-muted-foreground">{{ item.submitterName }}</span>
+        </a>
         <div class="flex items-center justify-between">
           <span class="text-sm font-semibold text-brand-teal">{{ item.decidedCount }}/{{ item.totalJudges }}</span>
-          <!-- Change 20260726 -->
-          @if (isOwnIdea(item.id)) {
-            <span class="inline-flex w-fit items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground" [title]="ownIdeaTooltip" i18n="@@committeeQueueOwnIdea">Your own idea</span>
-          } @else if (item.hasDecided) {
+          @if (item.hasDecided) {
             <span class="inline-flex w-fit items-center rounded-full bg-brand-teal-light px-2 py-0.5 text-xs font-medium text-brand-teal" i18n="@@committeeQueueAlreadyDecided">You have decided</span>
           }
         </div>

@@ -11,20 +11,10 @@ export interface CommitteeDecisionInput {
   comments: string | null;
 }
 
-// Change 20260726
-export interface CommitteeDecisionAttachment {
-  id: string;
-  fileName: string;
-  contentType: string;
-  sizeBytes: number;
-  uploadedAt: string;
-}
-
 export interface CommitteeDecisionResult {
   id: string;
   totalScore: number;
   ideaStatus: string;
-  attachments?: CommitteeDecisionAttachment[]; // Change 20260726
 }
 
 export interface CommitteeQueueItem {
@@ -46,5 +36,4 @@ export interface MyCommitteeDecision {
   ideaTitleEn: string;
   totalScore: number;
   decidedAt: string;
-  attachments?: CommitteeDecisionAttachment[]; // Change 20260726
 }

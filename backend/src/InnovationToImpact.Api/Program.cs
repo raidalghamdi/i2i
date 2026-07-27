@@ -93,15 +93,23 @@ builder.Services.AddScoped<IAuditLogWriter, AuditLogWriter>();
 builder.Services.AddScoped<IAuditChainVerifier, AuditChainVerifier>();
 builder.Services.AddScoped<IAuditBrowseService, AuditBrowseService>();
 builder.Services.Configure<EmailOutboxOptions>(builder.Configuration.GetSection("EmailOutbox"));
-builder.Services.AddSingleton<IEmailSender, LoggingEmailSender>();
+builder.Services.Configure<SmtpEmailOptions>(builder.Configuration.GetSection("Smtp"));
+// Production sends real mail via SMTP; every other environment uses a no-op logging sender so dev/test
+// never delivers actual email. No mock/logging sender is registered in Production.
+if (builder.Environment.IsProduction())
+{
+    builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+}
+else
+{
+    builder.Services.AddSingleton<IEmailSender, LoggingEmailSender>();
+}
 builder.Services.AddScoped<IEmailOutboxProcessor, EmailOutboxProcessor>();
 builder.Services.AddScoped<ISlaScanner, SlaScanner>();
 builder.Services.AddScoped<ISlaClockService, SlaClockService>();
 builder.Services.AddScoped<IEscalationService, EscalationService>();
 builder.Services.AddScoped<IApprovalService, ApprovalService>();
 builder.Services.AddScoped<ISlaScanOrchestrator, SlaScanOrchestrator>();
-// Change 20260726
-builder.Services.AddScoped<ISlaPolicyService, SlaPolicyService>();
 builder.Services.AddHostedService<ReminderSchedulerHostedService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
@@ -115,7 +123,6 @@ builder.Services.Configure<WeeklyBriefingOptions>(builder.Configuration.GetSecti
 builder.Services.AddScoped<IWeeklyBriefingProcessor, WeeklyBriefingProcessor>();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<IIdeaStatusNotifier, IdeaStatusNotifier>(); // Change 20260726
 builder.Services.AddSingleton<INotificationPublisher, SignalRNotificationPublisher>();
 builder.Services.Configure<ReportStorageOptions>(builder.Configuration.GetSection("ReportStorage"));
 builder.Services.AddSingleton<IReportFileStorage>(sp =>
@@ -123,7 +130,6 @@ builder.Services.AddSingleton<IReportFileStorage>(sp =>
 builder.Services.AddScoped<IAuditLogReportGenerator, AuditLogReportGenerator>();
 builder.Services.AddScoped<IIdeasReportGenerator, IdeasReportGenerator>();
 builder.Services.AddScoped<IEvaluationsReportGenerator, EvaluationsReportGenerator>();
-builder.Services.AddScoped<IEvaluatorProductivityService, EvaluatorProductivityService>(); // Change 20260726
 builder.Services.AddScoped<IEscalationsReportGenerator, EscalationsReportGenerator>();
 builder.Services.AddScoped<IAnalyticsReportGenerator, AnalyticsReportGenerator>();
 builder.Services.AddScoped<IReportBundleBuilder, ReportBundleBuilder>();
@@ -147,7 +153,6 @@ builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<IChallengeService, ChallengeService>();
 builder.Services.AddScoped<IEvaluationService, EvaluationService>();
 builder.Services.AddScoped<IEvaluationSettingsService, EvaluationSettingsService>();
-builder.Services.AddScoped<IEvaluationCriteriaService, EvaluationCriteriaService>(); // Change 20260726
 builder.Services.AddScoped<ICommitteeService, CommitteeService>();
 builder.Services.AddScoped<ICommitteeReferralService, CommitteeReferralService>();
 builder.Services.AddScoped<ICommitteeCriteriaService, CommitteeCriteriaService>();
@@ -195,35 +200,9 @@ else
     // semantics.
     builder.Services.AddSingleton<IAdIdentityLookupService>(_ => new FakeAdIdentityLookupService());
     builder.Services.Configure<DevAuthOptions>(builder.Configuration.GetSection("DevAuth"));
-    // DevAuth trusts an unauthenticated X-Dev-User header, so it must never be reachable from the // Change 20260726
-    // public internet (this app also runs as Staging on a public host). The default scheme is a // Change 20260726
-    // selector that only routes to DevAuth in Development or for private-IP callers; every other // Change 20260726
-    // caller falls through to Negotiate and gets a real AD challenge. // Change 20260726
-    builder.Services.AddAuthentication(DevAuthenticationDefaults.SelectorScheme) // Change 20260726
-        .AddPolicyScheme(DevAuthenticationDefaults.SelectorScheme, DevAuthenticationDefaults.SelectorScheme, options => // Change 20260726
-        { // Change 20260726
-            options.ForwardDefaultSelector = context => // Change 20260726
-            { // Change 20260726
-                var environment = context.RequestServices.GetRequiredService<IWebHostEnvironment>(); // Change 20260726
-                if (DevAuthAccessPolicy.IsAllowed(context, environment)) // Change 20260726
-                { // Change 20260726
-                    return DevAuthenticationDefaults.AuthenticationScheme; // Change 20260726
-                } // Change 20260726
-
-                if (context.Request.Headers.ContainsKey(DevAuthAccessPolicy.DevUserHeaderName)) // Change 20260726
-                { // Change 20260726
-                    context.RequestServices.GetRequiredService<ILogger<Program>>().LogWarning( // Change 20260726
-                        "Rejected {Header} impersonation attempt from non-private address {ClientAddress}.", // Change 20260726
-                        DevAuthAccessPolicy.DevUserHeaderName, // Change 20260726
-                        DevAuthAccessPolicy.ResolveClientAddress(context)?.ToString() ?? "unknown"); // Change 20260726
-                } // Change 20260726
-
-                return NegotiateDefaults.AuthenticationScheme; // Change 20260726
-            }; // Change 20260726
-        }) // Change 20260726
+    builder.Services.AddAuthentication(DevAuthenticationDefaults.AuthenticationScheme)
         .AddScheme<DevAuthenticationOptions, DevAuthenticationHandler>(
-            DevAuthenticationDefaults.AuthenticationScheme, _ => { }) // Change 20260726
-        .AddNegotiate(); // Change 20260726
+            DevAuthenticationDefaults.AuthenticationScheme, _ => { });
 }
 
 builder.Services.AddAuthorization(options =>
@@ -240,14 +219,12 @@ QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var app = builder.Build();
 
-// Surfaced at boot (visible in the hosting platform's logs) because DevAuth is an impersonation // Change 20260726
-// backdoor: it must never read "yes" without the private-IP restriction outside Development. // Change 20260726
-var devAuthState = app.Environment.IsProduction() // Change 20260726
-    ? "no (Production — Negotiate only)" // Change 20260726
-    : app.Environment.IsDevelopment() // Change 20260726
-        ? "yes (Development — all callers)" // Change 20260726
-        : "yes (private-IP callers only; others get Negotiate)"; // Change 20260726
-app.Logger.LogInformation("DevAuth enabled: {DevAuthState}", devAuthState); // Change 20260726
+// Serve the same-origin Angular SPA out of wwwroot. These run before the auth middleware so the
+// static assets (index.html, JS/CSS, favicon) load anonymously; MapFallbackToFile at the end of the
+// pipeline returns index.html for client-side routes. Hosting the SPA same-origin is what lets
+// Windows/Negotiate auth complete browser-to-Kestrel with no dev proxy in between.
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.Use(async (context, next) =>
 {
@@ -315,9 +292,8 @@ using (var homePageSeedScope = app.Services.CreateScope())
 }
 
 // DEV/TEST ONLY: provision 5 users per role (40) plus grant devuser every role, so the system can be
-// exercised across all roles. Development environment only + SqlServer-only (never SQLite test fixtures); Change 20260726
-// Staging is included because the cloud test deployment runs as Staging and needs the same roster. // Change 20260726
-if (app.Environment.IsDevelopment() || app.Environment.IsStaging()) // Change 20260726
+// exercised across all roles. Development environment only + SqlServer-only (never SQLite test fixtures).
+if (app.Environment.IsDevelopment())
 {
     using var devUsersScope = app.Services.CreateScope();
     try
@@ -595,92 +571,6 @@ app.MapPost("/api/notifications/read-all", async (ClaimsPrincipal user, Innovati
     return Results.Ok(new { markedCount = unread.Count });
 }).RequireAuthorization();
 
-// Change 20260726
-app.MapGet("/api/notifications/categories", () => Results.Ok(NotificationCategories.All.Select(c => new
-{
-    key = c.Key,
-    labelAr = c.LabelAr,
-    labelEn = c.LabelEn,
-}))).RequireAuthorization();
-
-// Change 20260726
-app.MapGet("/api/notifications/preferences", async (ClaimsPrincipal user, InnovationDbContext db) =>
-{
-    var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    var stored = await db.NotificationPreferences
-        .Where(p => p.UserId == userId)
-        .ToDictionaryAsync(p => p.CategoryKey, p => p.Muted);
-
-    return Results.Ok(NotificationCategories.All.Select(c => new
-    {
-        categoryKey = c.Key,
-        labelAr = c.LabelAr,
-        labelEn = c.LabelEn,
-        muted = stored.TryGetValue(c.Key, out var muted) && muted,
-    }));
-}).RequireAuthorization();
-
-// Change 20260726
-app.MapPut("/api/notifications/preferences", async (
-    NotificationPreferencesUpdateRequest request,
-    ClaimsPrincipal user,
-    InnovationDbContext db) =>
-{
-    var items = request.Preferences ?? new List<NotificationPreferenceItem>();
-
-    var unknown = items.Select(i => i.CategoryKey ?? string.Empty)
-        .Where(key => !NotificationCategories.IsKnown(key))
-        .Distinct()
-        .ToList();
-    if (unknown.Count > 0)
-    {
-        return Results.BadRequest(new { error = "unknown_category", categories = unknown });
-    }
-
-    var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    var existing = await db.NotificationPreferences
-        .Where(p => p.UserId == userId)
-        .ToDictionaryAsync(p => p.CategoryKey);
-    var now = DateTime.UtcNow;
-
-    // Last item wins so a duplicated category cannot violate the unique index.
-    foreach (var item in items.GroupBy(i => i.CategoryKey!).Select(g => g.Last()))
-    {
-        if (existing.TryGetValue(item.CategoryKey!, out var preference))
-        {
-            if (preference.Muted == item.Muted) continue;
-            preference.Muted = item.Muted;
-            preference.UpdatedAt = now;
-        }
-        else
-        {
-            db.NotificationPreferences.Add(new NotificationPreference
-            {
-                Id = Guid.NewGuid(),
-                UserId = userId,
-                CategoryKey = item.CategoryKey!,
-                Muted = item.Muted,
-                CreatedAt = now,
-                UpdatedAt = now,
-            });
-        }
-    }
-
-    await db.SaveChangesAsync();
-
-    var stored = await db.NotificationPreferences
-        .Where(p => p.UserId == userId)
-        .ToDictionaryAsync(p => p.CategoryKey, p => p.Muted);
-
-    return Results.Ok(NotificationCategories.All.Select(c => new
-    {
-        categoryKey = c.Key,
-        labelAr = c.LabelAr,
-        labelEn = c.LabelEn,
-        muted = stored.TryGetValue(c.Key, out var muted) && muted,
-    }));
-}).RequireAuthorization();
-
 app.MapGet("/api/admin/ping", (ClaimsPrincipal user) => Results.Ok(new { samAccountName = user.Identity?.Name }))
     .RequireAuthorization("AdminOnly");
 
@@ -829,59 +719,6 @@ app.MapPost("/api/admin/sla/scan", async (ISlaScanOrchestrator orchestrator) =>
 {
     var result = await orchestrator.ScanAndEscalateAsync();
     return Results.Ok(new { scanned = result.Scanned, newlyBreached = result.NewlyBreached, approachingBreach = result.ApproachingBreach, escalationsOpened = result.EscalationsOpened });
-}).RequireAuthorization("AdminOnly");
-
-// Change 20260726
-// SLA policies were seed-only until now; these let an admin retune target hours without a migration.
-app.MapGet("/api/admin/sla-policies", async (ISlaPolicyService service) =>
-{
-    var policies = await service.ListAllAsync();
-    return Results.Ok(policies.Select(ToSlaPolicyDto));
-}).RequireAuthorization("AdminOnly");
-
-app.MapGet("/api/admin/sla-policies/{id:guid}", async (Guid id, ISlaPolicyService service) =>
-{
-    var policy = await service.GetAsync(id);
-    return policy is null ? Results.NotFound() : Results.Ok(ToSlaPolicyDto(policy));
-}).RequireAuthorization("AdminOnly");
-
-app.MapPost("/api/admin/sla-policies", async (SlaPolicyInput input, ClaimsPrincipal user, ISlaPolicyService service) =>
-{
-    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    var result = await service.CreateAsync(input, actorId);
-    return result.Status switch
-    {
-        SlaPolicyCommandStatus.Success => Results.Ok(ToSlaPolicyDto(result.Entity!)),
-        SlaPolicyCommandStatus.DuplicateTransition => Results.BadRequest(new { error = "An SLA policy for this entity type and transition already exists." }),
-        SlaPolicyCommandStatus.Invalid => Results.BadRequest(new { error = "Entity type, from state and to state are required; target hours must be positive and warn-at percent between 1 and 100." }),
-        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
-    };
-}).RequireAuthorization("AdminOnly");
-
-app.MapPut("/api/admin/sla-policies/{id:guid}", async (Guid id, SlaPolicyInput input, ClaimsPrincipal user, ISlaPolicyService service) =>
-{
-    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    var result = await service.UpdateAsync(id, input, actorId);
-    return result.Status switch
-    {
-        SlaPolicyCommandStatus.Success => Results.Ok(ToSlaPolicyDto(result.Entity!)),
-        SlaPolicyCommandStatus.NotFound => Results.NotFound(),
-        SlaPolicyCommandStatus.DuplicateTransition => Results.BadRequest(new { error = "An SLA policy for this entity type and transition already exists." }),
-        SlaPolicyCommandStatus.Invalid => Results.BadRequest(new { error = "Entity type, from state and to state are required; target hours must be positive and warn-at percent between 1 and 100." }),
-        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
-    };
-}).RequireAuthorization("AdminOnly");
-
-app.MapDelete("/api/admin/sla-policies/{id:guid}", async (Guid id, ClaimsPrincipal user, ISlaPolicyService service) =>
-{
-    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    var result = await service.DeleteAsync(id, actorId);
-    return result.Status switch
-    {
-        SlaPolicyCommandStatus.Success => Results.NoContent(),
-        SlaPolicyCommandStatus.NotFound => Results.NotFound(),
-        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
-    };
 }).RequireAuthorization("AdminOnly");
 
 app.MapGet("/api/admin/escalations", async (string? status, string? tier, string? entityType, IEscalationService service) =>
@@ -1100,17 +937,6 @@ static object ToEscalationDto(Escalation e) => new
     openedAt = e.OpenedAt,
 };
 
-// Change 20260726
-static object ToSlaPolicyDto(SlaPolicy p) => new
-{
-    id = p.Id,
-    entityType = p.EntityType,
-    fromState = p.FromState,
-    toState = p.ToState,
-    targetHours = p.TargetHours,
-    warnAtPct = p.WarnAtPct,
-};
-
 app.MapPost("/api/admin/invitations/remind", async (IInvitationReminderProcessor processor) =>
 {
     var result = await processor.ProcessAsync();
@@ -1295,23 +1121,6 @@ app.MapPost("/api/admin/reports/evaluations/generate", async (ClaimsPrincipal us
     return Results.Ok(new { reportGenerationId = result.ReportGenerationId, status = result.Status, fileUrl = result.FileUrl });
 }).RequireAuthorization("SupervisorOrAdmin");
 
-// Change 20260726
-app.MapGet("/api/reports/evaluator-productivity", async (IEvaluatorProductivityService service) =>
-{
-    var rows = await service.GetAsync();
-    return Results.Ok(rows.Select(r => new
-    {
-        userId = r.UserId,
-        displayName = r.DisplayName,
-        assignedCount = r.AssignedCount,
-        completedCount = r.CompletedCount,
-        draftCount = r.DraftCount,
-        avgScore = r.AvgScore,
-        avgTurnaroundHours = r.AvgTurnaroundHours,
-        coiCount = r.CoiCount,
-    }));
-}).RequireAuthorization("AdminOnly");
-
 app.MapPost("/api/admin/reports/escalations/generate", async (ClaimsPrincipal user, IReportGenerationService service) =>
 {
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -1477,56 +1286,25 @@ app.MapGet("/api/directory/search", async (string? q, int? limit, IAdIdentityLoo
     return Results.Ok(results);
 }).RequireAuthorization("AnyAssignedRole");
 
-app.MapGet("/api/ideas/mine", async (string? statusGroup, string? status, string? sort, int? page, int? size, ClaimsPrincipal user, IIdeaService service) => // Change 20260726
+app.MapGet("/api/ideas/mine", async (string? statusGroup, ClaimsPrincipal user, IIdeaService service) =>
 {
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
     var email = user.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
     var callerSam = CallerIdentity.ResolveSam(user);
     var ideas = await service.GetMineDetailedAsync(userId, statusGroup, email, callerSam);
-    if (!string.IsNullOrWhiteSpace(status)) // Change 20260726
-    { // Change 20260726
-        ideas = ideas.Where(i => string.Equals(i.Status, status, StringComparison.OrdinalIgnoreCase)).ToList(); // Change 20260726
-    } // Change 20260726
-
-    ideas = (sort?.Trim().ToLowerInvariant() switch // Change 20260726
-    { // Change 20260726
-        "createdat asc" => ideas.OrderBy(i => i.CreatedAt), // Change 20260726
-        "createdat desc" => ideas.OrderByDescending(i => i.CreatedAt), // Change 20260726
-        "updatedat asc" => ideas.OrderBy(i => i.UpdatedAt), // Change 20260726
-        "updatedat desc" => ideas.OrderByDescending(i => i.UpdatedAt), // Change 20260726
-        _ => ideas.OrderByDescending(i => i.CreatedAt), // Change 20260726
-    }).ToList(); // Change 20260726
-
-    var total = ideas.Count; // Change 20260726
-    // Pagination is opt-in: callers that pass neither page nor size still get the bare array the
-    // existing clients expect, while paginating callers get the {items,total,page,size} envelope.
-    var paginate = page.HasValue || size.HasValue; // Change 20260726
-    var effectivePage = Math.Max(page ?? 1, 1); // Change 20260726
-    var effectiveSize = Math.Clamp(size ?? 20, 1, 200); // Change 20260726
-    var pageItems = paginate // Change 20260726
-        ? ideas.Skip((effectivePage - 1) * effectiveSize).Take(effectiveSize).ToList() // Change 20260726
-        : ideas; // Change 20260726
-
-    var items = pageItems.Select(i => new // Change 20260726
+    return Results.Ok(ideas.Select(i => new
     {
         id = i.Id,
         code = i.Code,
         titleAr = i.TitleAr,
         titleEn = i.TitleEn,
-        themeId = i.StrategicThemeId, // Change 20260726
-        themeNameAr = i.ThemeNameAr, // Change 20260726
-        themeNameEn = i.ThemeNameEn, // Change 20260726
         status = i.Status,
         currentStage = i.CurrentStage,
         createdAt = i.CreatedAt,
         updatedAt = i.UpdatedAt,
         feedbackCount = i.FeedbackCount,
         isOwner = i.IsOwner,
-    }).ToList(); // Change 20260726
-
-    return paginate // Change 20260726
-        ? Results.Ok(new { items, total, page = effectivePage, size = effectiveSize }) // Change 20260726
-        : Results.Ok(items); // Change 20260726
+    }));
 }).RequireAuthorization("AnyAssignedRole");
 
 app.MapGet("/api/ideas/{id:guid}", async (Guid id, ClaimsPrincipal user, IIdeaService service, InnovationDbContext db) =>
@@ -1549,12 +1327,6 @@ app.MapGet("/api/ideas/{id:guid}", async (Guid id, ClaimsPrincipal user, IIdeaSe
 
     var attachmentsResult = await service.GetAttachmentsAsync(id, userId, isElevatedReviewer, callerSam);
     var idea = result.Idea!;
-    // Status history comes from the hash-chained audit log; actions are namespaced "idea.*".
-    var auditTrail = await db.Set<AuditLog>() // Change 20260726
-        .Where(a => a.EntityType == "idea" && a.EntityId == id) // Change 20260726
-        .OrderBy(a => a.OccurredAt) // Change 20260726
-        .Select(a => new { action = a.Action, actorId = a.ActorId, occurredAt = a.OccurredAt, payload = a.Payload }) // Change 20260726
-        .ToListAsync(); // Change 20260726
     return Results.Ok(new
     {
         id = idea.Id,
@@ -1589,7 +1361,6 @@ app.MapGet("/api/ideas/{id:guid}", async (Guid id, ClaimsPrincipal user, IIdeaSe
         updatedAt = idea.UpdatedAt,
         approvedAt = idea.ApprovedAt,
         attachments = attachmentsResult.Attachments.Select(a => new { id = a.Id, fileName = a.FileName, contentType = a.ContentType, fileSizeBytes = a.FileSizeBytes, uploadedAt = a.UploadedAt }),
-        auditTrail, // Change 20260726
     });
 }).RequireAuthorization("AnyAssignedRole");
 
@@ -1627,20 +1398,6 @@ app.MapGet("/api/ideas/{id:guid}/attachments", async (Guid id, ClaimsPrincipal u
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
 }).RequireAuthorization("AnyAssignedRole");
-
-app.MapDelete("/api/ideas/{id:guid}/attachments/{attachmentId:guid}", async (Guid id, Guid attachmentId, ClaimsPrincipal user, IIdeaService service) => // Change 20260726
-{ // Change 20260726
-    var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!); // Change 20260726
-    var result = await service.DeleteAttachmentAsync(id, attachmentId, userId); // Change 20260726
-    return result.Status switch // Change 20260726
-    { // Change 20260726
-        IdeaCommandStatus.Success => Results.Ok(result.Attachments.Select(a => new { id = a.Id, fileName = a.FileName, contentType = a.ContentType, fileSizeBytes = a.FileSizeBytes, uploadedAt = a.UploadedAt })), // Change 20260726
-        IdeaCommandStatus.NotFound => Results.NotFound(), // Change 20260726
-        IdeaCommandStatus.Forbidden => Results.StatusCode(StatusCodes.Status403Forbidden), // Change 20260726
-        IdeaCommandStatus.InvalidState => Results.Conflict(new { error = "Attachments cannot be removed in the idea's current state." }), // Change 20260726
-        _ => Results.StatusCode(StatusCodes.Status500InternalServerError), // Change 20260726
-    }; // Change 20260726
-}).RequireAuthorization("IdeaAuthor"); // Change 20260726
 
 app.MapGet("/api/ideas/{id:guid}/attachments/{attachmentId:guid}", async (Guid id, Guid attachmentId, ClaimsPrincipal user, IIdeaService service) =>
 {
@@ -2195,21 +1952,18 @@ app.MapPost("/api/ideas/{id:guid}/evaluations", async (Guid id, EvaluationInput 
 {
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
     var result = await service.SubmitAsync(id, userId, input);
-    // Change 20260726 — a saved draft is not a completed evaluation, so its SLA clock keeps running.
-    if (result.Status == EvaluationCommandStatus.Success && result.Evaluation!.SubmittedAt is not null)
+    if (result.Status == EvaluationCommandStatus.Success)
     {
         await slaClockService.CloseAsync("evaluation", id);
     }
     return result.Status switch
     {
-        EvaluationCommandStatus.Success => Results.Ok(new { id = result.Evaluation!.Id, totalScore = result.Evaluation.TotalScore, recommendation = result.Evaluation.Recommendation, conflictOfInterest = result.Evaluation.ConflictOfInterest, submittedAt = result.Evaluation.SubmittedAt, ideaStatus = result.Idea!.IdeaStatus.Code }), // Change 20260726
+        EvaluationCommandStatus.Success => Results.Ok(new { id = result.Evaluation!.Id, totalScore = result.Evaluation.TotalScore, recommendation = result.Evaluation.Recommendation, ideaStatus = result.Idea!.IdeaStatus.Code }),
         EvaluationCommandStatus.NotFound => Results.NotFound(),
         EvaluationCommandStatus.Forbidden => Results.StatusCode(StatusCodes.Status403Forbidden),
         EvaluationCommandStatus.InvalidState => Results.BadRequest(new { error = "Idea is not awaiting evaluation." }),
         EvaluationCommandStatus.AlreadyEvaluated => Results.BadRequest(new { error = "You have already evaluated this idea." }),
         EvaluationCommandStatus.InvalidScore => Results.BadRequest(new { error = "Scores must be between 0 and 10." }),
-        EvaluationCommandStatus.InvalidCriteria => Results.BadRequest(new { error = "Criteria scores must include exactly the active evaluation criteria." }), // Change 20260726
-        EvaluationCommandStatus.SelfAuthorship => Results.StatusCode(StatusCodes.Status403Forbidden), // Change 20260726
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
 }).RequireAuthorization("EvaluatorAndAbove");
@@ -2337,10 +2091,6 @@ app.MapGet("/api/evaluations/mine", async (ClaimsPrincipal user, IEvaluationServ
         recommendation = e.Recommendation,
         submittedAt = e.SubmittedAt,
         ideaEnteredEvaluationAt = e.Idea.EnteredEvaluationAt,
-        // Change 20260726 — the form resumes a draft from this payload, so it carries the saved scores.
-        criteriaScoresJson = e.CriteriaScoresJson,
-        comments = e.Comments,
-        conflictOfInterest = e.ConflictOfInterest,
     }));
 }).RequireAuthorization("EvaluatorAndAbove");
 
@@ -2363,10 +2113,10 @@ app.MapPost("/api/ideas/{id:guid}/submit-to-committee", async (Guid id, SubmitTo
     };
 }).RequireAuthorization("SupervisorOrAdmin");
 
-app.MapPost("/api/ideas/{id:guid}/withdraw", async (Guid id, IdeaWithdrawInput? input, ClaimsPrincipal user, IIdeaService service) => // Change 20260726
+app.MapPost("/api/ideas/{id:guid}/withdraw", async (Guid id, ClaimsPrincipal user, IIdeaService service) =>
 {
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    var result = await service.WithdrawAsync(id, userId, input?.Reason); // Change 20260726
+    var result = await service.WithdrawAsync(id, userId);
     return result.Status switch
     {
         IdeaCommandStatus.Success => Results.Ok(new { id = result.Idea!.Id, status = result.Idea.IdeaStatus.Code }),
@@ -2375,101 +2125,6 @@ app.MapPost("/api/ideas/{id:guid}/withdraw", async (Guid id, IdeaWithdrawInput? 
         _ => Results.Conflict(new { error = "Idea cannot be withdrawn in its current state." }),
     };
 }).RequireAuthorization("IdeaAuthor");
-
-// Change 20260726
-// Change 20260726
-// StoredPath is deliberately omitted — clients address attachments by id via the download endpoint.
-static object[] CommitteeDecisionAttachmentResponse(CommitteeDecision decision) =>
-    CommitteeDecisionAttachment.Parse(decision.AttachmentsJson)
-        .Select(a => (object)new { id = a.Id, fileName = a.FileName, contentType = a.ContentType, sizeBytes = a.SizeBytes, uploadedAt = a.UploadedAt })
-        .ToArray();
-
-static object EvaluationCriterionResponse(EvaluationCriterion c) => new
-{
-    id = c.Id,
-    code = c.Code,
-    nameAr = c.NameAr,
-    nameEn = c.NameEn,
-    descriptionAr = c.DescriptionAr,
-    descriptionEn = c.DescriptionEn,
-    weight = c.Weight,
-    active = c.Active,
-    sortOrder = c.SortOrder,
-};
-
-// Change 20260726
-app.MapGet("/api/evaluation-criteria", async (IEvaluationCriteriaService service) =>
-{
-    var criteria = await service.ListActiveAsync();
-    return Results.Ok(criteria.Select(c => new
-    {
-        code = c.Code,
-        nameAr = c.NameAr,
-        nameEn = c.NameEn,
-        descriptionAr = c.DescriptionAr,
-        descriptionEn = c.DescriptionEn,
-        weight = c.Weight,
-        sortOrder = c.SortOrder,
-    }));
-}).RequireAuthorization("EvaluatorAndAbove");
-
-// Change 20260726
-app.MapGet("/api/admin/evaluation-criteria", async (IEvaluationCriteriaService service) =>
-{
-    var criteria = await service.ListAllAsync();
-    return Results.Ok(criteria.Select(c => new
-    {
-        id = c.Id,
-        code = c.Code,
-        nameAr = c.NameAr,
-        nameEn = c.NameEn,
-        descriptionAr = c.DescriptionAr,
-        descriptionEn = c.DescriptionEn,
-        weight = c.Weight,
-        active = c.Active,
-        sortOrder = c.SortOrder,
-    }));
-}).RequireAuthorization("SupervisorOrAdmin");
-
-// Change 20260726
-app.MapPost("/api/admin/evaluation-criteria", async (EvaluationCriterionInput input, ClaimsPrincipal user, IEvaluationCriteriaService service) =>
-{
-    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    var result = await service.CreateAsync(input, actorId);
-    return result.Status switch
-    {
-        EvaluationCriteriaCommandStatus.Success => Results.Ok(EvaluationCriterionResponse(result.Entity!)),
-        EvaluationCriteriaCommandStatus.DuplicateCode => Results.BadRequest(new { error = "An evaluation criterion with this code already exists." }),
-        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
-    };
-}).RequireAuthorization("SupervisorOrAdmin");
-
-// Change 20260726
-app.MapPut("/api/admin/evaluation-criteria/{id:guid}", async (Guid id, EvaluationCriterionInput input, ClaimsPrincipal user, IEvaluationCriteriaService service) =>
-{
-    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    var result = await service.UpdateAsync(id, input, actorId);
-    return result.Status switch
-    {
-        EvaluationCriteriaCommandStatus.Success => Results.Ok(EvaluationCriterionResponse(result.Entity!)),
-        EvaluationCriteriaCommandStatus.NotFound => Results.NotFound(),
-        EvaluationCriteriaCommandStatus.DuplicateCode => Results.BadRequest(new { error = "An evaluation criterion with this code already exists." }),
-        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
-    };
-}).RequireAuthorization("SupervisorOrAdmin");
-
-// Change 20260726
-app.MapDelete("/api/admin/evaluation-criteria/{id:guid}", async (Guid id, ClaimsPrincipal user, IEvaluationCriteriaService service) =>
-{
-    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    var result = await service.DeleteAsync(id, actorId);
-    return result.Status switch
-    {
-        EvaluationCriteriaCommandStatus.Success => Results.NoContent(),
-        EvaluationCriteriaCommandStatus.NotFound => Results.NotFound(),
-        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
-    };
-}).RequireAuthorization("SupervisorOrAdmin");
 
 app.MapGet("/api/committee-criteria", async (InnovationDbContext db) =>
 {
@@ -2553,44 +2208,8 @@ app.MapDelete("/api/admin/committee-criteria/{id:guid}", async (Guid id, ClaimsP
     };
 }).RequireAuthorization("SupervisorOrAdmin");
 
-// Change 20260726
-// Multipart form-data so a judge can attach supporting files alongside the decision. Scores arrive
-// as the `criteriaScores` JSON field because form fields are flat strings.
-app.MapPost("/api/ideas/{id:guid}/committee-decisions", async (Guid id, HttpRequest request, ClaimsPrincipal user, ICommitteeService service, ISlaClockService slaClockService) =>
+app.MapPost("/api/ideas/{id:guid}/committee-decisions", async (Guid id, CommitteeDecisionInput input, ClaimsPrincipal user, ICommitteeService service, ISlaClockService slaClockService) =>
 {
-    if (!request.HasFormContentType) return Results.BadRequest(new { error = "Expected multipart form-data." });
-    var form = await request.ReadFormAsync();
-
-    var decisionTypeCode = form["decisionType"].ToString();
-    if (string.IsNullOrWhiteSpace(decisionTypeCode)) return Results.BadRequest(new { error = "Invalid decision type." });
-
-    Dictionary<string, decimal>? criteriaScores;
-    try
-    {
-        criteriaScores = JsonSerializer.Deserialize<Dictionary<string, decimal>>(form["criteriaScores"].ToString());
-    }
-    catch (JsonException)
-    {
-        criteriaScores = null;
-    }
-    if (criteriaScores is null) return Results.BadRequest(new { error = "Criteria scores must include exactly the active criteria, each between 0 and 10." });
-
-    var comments = form["comments"].ToString();
-
-    var uploads = new List<CommitteeDecisionAttachmentUpload>();
-    foreach (var file in form.Files.GetFiles("attachments"))
-    {
-        using var stream = new MemoryStream();
-        await file.CopyToAsync(stream);
-        uploads.Add(new CommitteeDecisionAttachmentUpload(file.FileName, file.ContentType, stream.ToArray()));
-    }
-
-    var input = new CommitteeDecisionInput(
-        decisionTypeCode,
-        criteriaScores,
-        string.IsNullOrWhiteSpace(comments) ? null : comments,
-        uploads);
-
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
     var result = await service.SubmitDecisionAsync(id, userId, input);
     if (result.Status == CommitteeCommandStatus.Success && result.Idea!.IdeaStatus.Code == IdeaStatusCodes.PendingFinalRanking)
@@ -2599,33 +2218,13 @@ app.MapPost("/api/ideas/{id:guid}/committee-decisions", async (Guid id, HttpRequ
     }
     return result.Status switch
     {
-        CommitteeCommandStatus.Success => Results.Ok(new
-        {
-            id = result.Decision!.Id,
-            totalScore = result.Decision.TotalScore,
-            ideaStatus = result.Idea!.IdeaStatus.Code,
-            attachments = CommitteeDecisionAttachmentResponse(result.Decision), // Change 20260726
-        }),
+        CommitteeCommandStatus.Success => Results.Ok(new { id = result.Decision!.Id, totalScore = result.Decision.TotalScore, ideaStatus = result.Idea!.IdeaStatus.Code }),
         CommitteeCommandStatus.NotFound => Results.NotFound(),
         CommitteeCommandStatus.InvalidState => Results.BadRequest(new { error = "Idea is not awaiting committee review." }),
         CommitteeCommandStatus.AlreadyDecided => Results.BadRequest(new { error = "You have already decided on this idea." }),
         CommitteeCommandStatus.InvalidDecisionType => Results.BadRequest(new { error = "Invalid decision type." }),
         CommitteeCommandStatus.InvalidCriteria => Results.BadRequest(new { error = "Criteria scores must include exactly the active criteria, each between 0 and 10." }),
-        CommitteeCommandStatus.InvalidAttachment => Results.BadRequest(new { error = "Unsupported file type or file exceeds the size limit." }), // Change 20260726
         CommitteeCommandStatus.Forbidden => Results.StatusCode(StatusCodes.Status403Forbidden),
-        CommitteeCommandStatus.SelfAuthorship => Results.StatusCode(StatusCodes.Status403Forbidden), // Change 20260726
-        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
-    };
-}).RequireAuthorization("SupervisorOrCommittee").DisableAntiforgery(); // Change 20260726
-
-// Change 20260726
-app.MapGet("/api/committee-decisions/{decisionId:guid}/attachments/{attachmentId:guid}", async (Guid decisionId, Guid attachmentId, ICommitteeService service) =>
-{
-    var result = await service.GetDecisionAttachmentFileAsync(decisionId, attachmentId);
-    return result.Status switch
-    {
-        CommitteeCommandStatus.Success => Results.File(result.Content!, result.ContentType, result.FileName),
-        CommitteeCommandStatus.NotFound => Results.NotFound(),
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
 }).RequireAuthorization("SupervisorOrCommittee");
@@ -2660,7 +2259,6 @@ app.MapGet("/api/committee/mine", async (ClaimsPrincipal user, ICommitteeService
         ideaTitleEn = d.Idea.TitleAr,
         totalScore = d.TotalScore,
         decidedAt = d.DecidedAt,
-        attachments = CommitteeDecisionAttachmentResponse(d), // Change 20260726
     }));
 }).RequireAuthorization("SupervisorOrCommittee");
 
@@ -3337,6 +2935,11 @@ app.MapDelete("/api/admin/report-titles/{id:guid}", async (Guid id, ClaimsPrinci
 
     return Results.NoContent();
 }).RequireAuthorization("AdminOnly");
+
+// SPA client-side routing fallback: any request that matched neither a mapped endpoint nor a static
+// file returns index.html so deep links (e.g. /admin/users) load the Angular app. This never shadows
+// /api/* or /hubs/* — MapFallbackToFile only runs when nothing else in the pipeline matched.
+app.MapFallbackToFile("index.html");
 
 app.Run();
 

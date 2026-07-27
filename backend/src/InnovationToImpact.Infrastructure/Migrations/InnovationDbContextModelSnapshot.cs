@@ -97,7 +97,7 @@ namespace InnovationToImpact.Infrastructure.Migrations
                         {
                             Key = "pass_threshold",
                             UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ValueJson = "7.0"
+                            ValueJson = "6.0"
                         });
                 });
 
@@ -2062,105 +2062,6 @@ namespace InnovationToImpact.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Evaluations", (string)null);
-                });
-
-            modelBuilder.Entity("InnovationToImpact.Domain.Entities.EvaluationCriterion", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("Active")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("DescriptionAr")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("DescriptionEn")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("NameAr")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("NameEn")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Weight")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.ToTable("EvaluationCriteria", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("00000000-0000-0000-0031-000000000001"),
-                            Active = true,
-                            Code = "innovation",
-                            NameAr = "الابتكار",
-                            NameEn = "Innovation",
-                            SortOrder = 1,
-                            Weight = 0.20m
-                        },
-                        new
-                        {
-                            Id = new Guid("00000000-0000-0000-0031-000000000002"),
-                            Active = true,
-                            Code = "impact",
-                            NameAr = "الأثر",
-                            NameEn = "Impact",
-                            SortOrder = 2,
-                            Weight = 0.20m
-                        },
-                        new
-                        {
-                            Id = new Guid("00000000-0000-0000-0031-000000000003"),
-                            Active = true,
-                            Code = "execution",
-                            NameAr = "قابلية التنفيذ",
-                            NameEn = "Execution",
-                            SortOrder = 3,
-                            Weight = 0.20m
-                        },
-                        new
-                        {
-                            Id = new Guid("00000000-0000-0000-0031-000000000004"),
-                            Active = true,
-                            Code = "scalability",
-                            NameAr = "قابلية التوسع",
-                            NameEn = "Scalability",
-                            SortOrder = 4,
-                            Weight = 0.20m
-                        },
-                        new
-                        {
-                            Id = new Guid("00000000-0000-0000-0031-000000000005"),
-                            Active = true,
-                            Code = "presentation",
-                            NameAr = "العرض والتقديم",
-                            NameEn = "Presentation",
-                            SortOrder = 5,
-                            Weight = 0.20m
-                        });
                 });
 
             modelBuilder.Entity("InnovationToImpact.Domain.Entities.EvaluatorTrackAssignment", b =>
@@ -5027,41 +4928,6 @@ namespace InnovationToImpact.Infrastructure.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("UserRoles", (string)null);
-                });
-
-            modelBuilder.Entity("InnovationToImpact.Domain.Notifications.NotificationPreference", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("CategoryKey")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("Muted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("UserId", "CategoryKey")
-                        .IsUnique();
-
-                    b.ToTable("NotificationPreferences", (string)null);
                 });
 
             modelBuilder.Entity("InnovationToImpact.Domain.Entities.Activity", b =>

@@ -14,25 +14,14 @@
           <th i18n="@@myEvaluationsColumnIdea">Idea</th>
           <th i18n="@@myEvaluationsColumnScore">Score</th>
           <th i18n="@@myEvaluationsColumnRecommendation">Recommendation</th>
-          <th i18n="@@myEvaluationsColumnStatus"><!-- Change 20260726 -->Status</th>
         </tr>
       </thead>
       <tbody>
         @for (evaluation of evaluations(); track evaluation.id) {
           <tr>
             <td class="font-medium">{{ evaluation.ideaCode }} — {{ evaluation.ideaTitleEn }}</td>
-            <!-- Change 20260726 — a draft has no meaningful score or recommendation yet. -->
-            @if (evaluation.submittedAt === null) {
-              <td class="text-muted-foreground">—</td>
-              <td class="text-muted-foreground">—</td>
-              <td>
-                <a class="text-brand-teal hover:underline" [routerLink]="['/evaluations', evaluation.ideaId]" i18n="@@myEvaluationsResumeDraft">Resume draft</a>
-              </td>
-            } @else {
-              <td>{{ evaluation.totalScore }}</td>
-              <td class="capitalize">{{ evaluation.recommendation }}</td>
-              <td class="text-muted-foreground" i18n="@@myEvaluationsSubmitted">Submitted</td>
-            }
+            <td>{{ evaluation.totalScore }}</td>
+            <td class="capitalize">{{ evaluation.recommendation }}</td>
           </tr>
         }
       </tbody>

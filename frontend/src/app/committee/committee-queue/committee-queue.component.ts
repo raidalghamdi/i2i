@@ -6,7 +6,6 @@ import { EmptyStateComponent } from '../../shared/empty-state/empty-state.compon
 import { ErrorStateComponent } from '../../shared/error-state/error-state.component';
 import { CommitteeApiService } from '../committee-api.service';
 import { CommitteeQueueItem } from '../committee.model';
-import { OwnIdeasService } from '../../core/own-ideas.service'; // Change 20260726
 
 @Component({
   selector: 'app-committee-queue',
@@ -15,20 +14,9 @@ import { OwnIdeasService } from '../../core/own-ideas.service'; // Change 202607
 })
 export class CommitteeQueueComponent implements OnInit {
   private readonly committeeApi = inject(CommitteeApiService);
-  private readonly ownIdeas = inject(OwnIdeasService); // Change 20260726
   readonly queue = signal<CommitteeQueueItem[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
-  private readonly ownIdeaIds = signal<Set<string>>(new Set()); // Change 20260726
-
-  // Change 20260726
-  readonly ownIdeaTooltip = $localize`:@@committeeQueueOwnIdeaTooltip:You cannot decide on your own idea`;
-
-  /** A judge may not decide on an idea they submitted; the backend rejects it too. */
-  // Change 20260726
-  isOwnIdea(ideaId: string): boolean {
-    return this.ownIdeaIds().has(ideaId);
-  }
 
   async ngOnInit(): Promise<void> {
     await this.load();
@@ -42,12 +30,7 @@ export class CommitteeQueueComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const [queue, ownIdeaIds] = await Promise.all([ // Change 20260726
-        this.committeeApi.getQueue(),
-        this.ownIdeas.loadOwnIdeaIds(),
-      ]);
-      this.queue.set(queue);
-      this.ownIdeaIds.set(ownIdeaIds);
+      this.queue.set(await this.committeeApi.getQueue());
     } catch {
       this.error.set($localize`:@@committeeQueueLoadError:Couldn't load the committee queue. Please try again.`);
     } finally {

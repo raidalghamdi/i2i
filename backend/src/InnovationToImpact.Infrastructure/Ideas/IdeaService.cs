@@ -17,16 +17,14 @@ public class IdeaService : IIdeaService
     private readonly IAuditLogWriter _auditLogWriter;
     private readonly INotificationService _notificationService;
     private readonly IAdIdentityLookupService _adIdentityLookupService;
-    private readonly IIdeaStatusNotifier _statusNotifier; // Change 20260726
 
-    public IdeaService(InnovationDbContext db, IEvidenceFileStorage storage, IAuditLogWriter auditLogWriter, INotificationService notificationService, IAdIdentityLookupService adIdentityLookupService, IIdeaStatusNotifier statusNotifier) // Change 20260726
+    public IdeaService(InnovationDbContext db, IEvidenceFileStorage storage, IAuditLogWriter auditLogWriter, INotificationService notificationService, IAdIdentityLookupService adIdentityLookupService)
     {
         _db = db;
         _storage = storage;
         _auditLogWriter = auditLogWriter;
         _notificationService = notificationService;
         _adIdentityLookupService = adIdentityLookupService;
-        _statusNotifier = statusNotifier; // Change 20260726
     }
 
     private async Task<(IdeaCommandStatus? Status, IReadOnlyDictionary<string, AdIdentity> ResolvedMembers)> ValidateNewFieldsAsync(IdeaInput input, string? ownerSam, CancellationToken cancellationToken)
@@ -149,16 +147,12 @@ public class IdeaService : IIdeaService
         return new IdeaQueryResult(IdeaCommandStatus.Success, idea);
     }
 
-    /// <summary>Statuses whose owner may still edit the idea in place.</summary> // Change 20260726
-    private static readonly string[] EditableStatuses = // Change 20260726
-        { IdeaStatusCodes.Draft, IdeaStatusCodes.NeedsCompletion, IdeaStatusCodes.Returned }; // Change 20260726
-
     public async Task<IdeaQueryResult> UpdateAsync(Guid ideaId, Guid submitterId, IdeaInput input, CancellationToken cancellationToken = default)
     {
         var idea = await _db.Ideas.Include(i => i.IdeaStatus).SingleOrDefaultAsync(i => i.Id == ideaId, cancellationToken);
         if (idea is null) return new IdeaQueryResult(IdeaCommandStatus.NotFound);
         if (idea.SubmitterId != submitterId) return new IdeaQueryResult(IdeaCommandStatus.Forbidden);
-        if (!EditableStatuses.Contains(idea.IdeaStatus.Code)) return new IdeaQueryResult(IdeaCommandStatus.InvalidState); // Change 20260726
+        if (idea.IdeaStatus.Code != IdeaStatusCodes.Draft && idea.IdeaStatus.Code != IdeaStatusCodes.Returned) return new IdeaQueryResult(IdeaCommandStatus.InvalidState);
 
         var themeExists = await _db.StrategicThemes.AnyAsync(t => t.Id == input.StrategicThemeId, cancellationToken);
         if (!themeExists) return new IdeaQueryResult(IdeaCommandStatus.InvalidStrategicTheme);
@@ -187,9 +181,6 @@ public class IdeaService : IIdeaService
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        await _auditLogWriter.AppendAsync("idea", idea.Id, "idea.updated", submitterId, // Change 20260726
-            JsonSerializer.Serialize(new { status = idea.IdeaStatus.Code }), cancellationToken); // Change 20260726
-
         return new IdeaQueryResult(IdeaCommandStatus.Success, idea);
     }
 
@@ -213,35 +204,7 @@ public class IdeaService : IIdeaService
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        await NotifyIdeaSubmittedAsync(idea, cancellationToken); // Change 20260726
-        await _statusNotifier.NotifyStatusChangedAsync(idea, IdeaStatusCodes.Submitted, cancellationToken); // Change 20260726
-
         return new IdeaQueryResult(IdeaCommandStatus.Success, idea);
-    }
-
-    // Change 20260726 — an idea entering review has to reach both the admins and the evaluators who
-    // cover its theme, and notifications are per-user, so both audiences are fanned out explicitly.
-    private async Task NotifyIdeaSubmittedAsync(Idea idea, CancellationToken cancellationToken)
-    {
-        await _notificationService.CreateAndPublishToRolesAsync(
-            new[] { RoleCodes.Admin }, NotificationTypes.IdeaSubmitted,
-            "فكرة جديدة مقدَّمة", "New idea submitted",
-            $"تم تقديم الفكرة \"{idea.TitleAr}\" للمراجعة.",
-            $"The idea \"{idea.TitleEn}\" was submitted for review.",
-            $"/ideas/{idea.Id}", null, cancellationToken);
-
-        var themeEvaluatorIds = await _db.Set<EvaluatorTrackAssignment>()
-            .Where(a => a.TrackId == idea.StrategicThemeId)
-            .Select(a => a.EvaluatorId)
-            .Distinct()
-            .ToListAsync(cancellationToken);
-
-        await _notificationService.CreateAndPublishToUsersAsync(
-            themeEvaluatorIds, NotificationTypes.IdeaSubmitted,
-            "فكرة جديدة في مسارك", "New idea in your track",
-            $"تم تقديم الفكرة \"{idea.TitleAr}\" في مسارك.",
-            $"The idea \"{idea.TitleEn}\" was submitted in your track.",
-            $"/ideas/{idea.Id}", null, cancellationToken);
     }
 
     public async Task<IdeaQueryResult> ResubmitAsync(Guid ideaId, Guid submitterId, IdeaResubmitInput input, CancellationToken cancellationToken = default)
@@ -316,17 +279,13 @@ public class IdeaService : IIdeaService
         idea.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(cancellationToken);
-
-        await NotifyIdeaSubmittedAsync(idea, cancellationToken); // Change 20260726
-        await _statusNotifier.NotifyStatusChangedAsync(idea, IdeaStatusCodes.Submitted, cancellationToken); // Change 20260726
-
         return new IdeaQueryResult(IdeaCommandStatus.Success, idea);
     }
 
     private static readonly string[] WithdrawableStatuses =
         { IdeaStatusCodes.Draft, IdeaStatusCodes.Submitted, IdeaStatusCodes.Returned };
 
-    public async Task<IdeaQueryResult> WithdrawAsync(Guid ideaId, Guid submitterId, string? reason = null, CancellationToken cancellationToken = default) // Change 20260726
+    public async Task<IdeaQueryResult> WithdrawAsync(Guid ideaId, Guid submitterId, CancellationToken cancellationToken = default)
     {
         var idea = await _db.Ideas.Include(i => i.IdeaStatus).SingleOrDefaultAsync(i => i.Id == ideaId, cancellationToken);
         if (idea is null) return new IdeaQueryResult(IdeaCommandStatus.NotFound);
@@ -342,15 +301,13 @@ public class IdeaService : IIdeaService
         await _db.SaveChangesAsync(cancellationToken);
 
         await _auditLogWriter.AppendAsync("idea", idea.Id, "idea.withdrawn", submitterId,
-            JsonSerializer.Serialize(new { before = beforeStatus, after = IdeaStatusCodes.Withdrawn, reason }), cancellationToken); // Change 20260726
+            JsonSerializer.Serialize(new { before = beforeStatus, after = IdeaStatusCodes.Withdrawn }), cancellationToken);
 
         var evaluatorIds = await _db.Assignments.Where(a => a.IdeaId == ideaId).Select(a => a.EvaluatorId).Distinct().ToListAsync(cancellationToken);
         foreach (var evaluatorId in evaluatorIds)
             await _notificationService.CreateAndPublishAsync(evaluatorId, "idea_withdrawn",
                 "تم سحب الفكرة", "Idea withdrawn", "قام مقدّم الفكرة بسحبها.", "The submitter withdrew their idea.",
                 $"/ideas/{ideaId}", null, cancellationToken);
-
-        await _statusNotifier.NotifyStatusChangedAsync(idea, IdeaStatusCodes.Withdrawn, cancellationToken); // Change 20260726
 
         return new IdeaQueryResult(IdeaCommandStatus.Success, idea);
     }
@@ -375,7 +332,7 @@ public class IdeaService : IIdeaService
             query = query.Where(i => codes.Contains(i.IdeaStatus.Code));
 
         var ideas = await query.OrderByDescending(i => i.UpdatedAt)
-            .Select(i => new { i.Id, i.Code, i.TitleAr, i.TitleEn, Status = i.IdeaStatus.Code, i.CurrentStage, i.CreatedAt, i.UpdatedAt, i.SubmitterId, i.StrategicThemeId, ThemeNameAr = i.StrategicTheme.NameAr, ThemeNameEn = i.StrategicTheme.NameEn }) // Change 20260726
+            .Select(i => new { i.Id, i.Code, i.TitleAr, i.TitleEn, Status = i.IdeaStatus.Code, i.CurrentStage, i.CreatedAt, i.UpdatedAt, i.SubmitterId })
             .ToListAsync(cancellationToken);
 
         var ideaIds = ideas.Select(x => x.Id).ToList();
@@ -400,7 +357,7 @@ public class IdeaService : IIdeaService
         var feedback = ideaIds.ToDictionary(id => id, id =>
             (evalCounts.TryGetValue(id, out var ec) ? ec : 0) + (decisionCounts.TryGetValue(id, out var dc) ? dc : 0));
 
-        return ideas.Select(i => new MyIdeaItem(i.Id, i.Code, i.TitleAr, i.TitleEn, i.Status, i.CurrentStage, i.CreatedAt, i.UpdatedAt, feedback[i.Id], i.SubmitterId == userId, i.StrategicThemeId, i.ThemeNameAr, i.ThemeNameEn)).ToList(); // Change 20260726
+        return ideas.Select(i => new MyIdeaItem(i.Id, i.Code, i.TitleAr, i.TitleEn, i.Status, i.CurrentStage, i.CreatedAt, i.UpdatedAt, feedback[i.Id], i.SubmitterId == userId)).ToList();
     }
 
     public async Task<IdeaQueryResult> GetByIdAsync(Guid ideaId, Guid submitterId, bool isElevatedReviewer = false, string? callerSam = null, CancellationToken cancellationToken = default)
@@ -469,36 +426,6 @@ public class IdeaService : IIdeaService
 
         return new IdeaAttachmentsResult(IdeaCommandStatus.Success, attachments);
     }
-
-    public async Task<IdeaAttachmentsResult> DeleteAttachmentAsync(Guid ideaId, Guid attachmentId, Guid submitterId, CancellationToken cancellationToken = default) // Change 20260726
-    { // Change 20260726
-        var idea = await _db.Ideas.Include(i => i.IdeaStatus).SingleOrDefaultAsync(i => i.Id == ideaId, cancellationToken); // Change 20260726
-        if (idea is null) return new IdeaAttachmentsResult(IdeaCommandStatus.NotFound, Array.Empty<EvidenceAttachment>()); // Change 20260726
-        if (idea.SubmitterId != submitterId) return new IdeaAttachmentsResult(IdeaCommandStatus.Forbidden, Array.Empty<EvidenceAttachment>()); // Change 20260726
-        if (idea.IdeaStatus.Code != IdeaStatusCodes.Draft // Change 20260726
-            && idea.IdeaStatus.Code != IdeaStatusCodes.PassAwaitingAttachments // Change 20260726
-            && !ReturnedAllowsAttachments(idea)) // Change 20260726
-        { // Change 20260726
-            return new IdeaAttachmentsResult(IdeaCommandStatus.InvalidState, Array.Empty<EvidenceAttachment>()); // Change 20260726
-        } // Change 20260726
-
-        var attachment = await _db.EvidenceAttachments // Change 20260726
-            .SingleOrDefaultAsync(a => a.Id == attachmentId && a.EntityType == EvidenceEntityTypes.Idea && a.EntityId == ideaId && a.DeletedAt == null, cancellationToken); // Change 20260726
-        if (attachment is null) return new IdeaAttachmentsResult(IdeaCommandStatus.NotFound, Array.Empty<EvidenceAttachment>()); // Change 20260726
-
-        attachment.DeletedAt = DateTime.UtcNow; // Change 20260726
-        await _db.SaveChangesAsync(cancellationToken); // Change 20260726
-
-        await _auditLogWriter.AppendAsync("idea", ideaId, "idea.attachment_deleted", submitterId, // Change 20260726
-            JsonSerializer.Serialize(new { attachmentId, fileName = attachment.FileName }), cancellationToken); // Change 20260726
-
-        var remaining = await _db.EvidenceAttachments // Change 20260726
-            .Where(a => a.EntityType == EvidenceEntityTypes.Idea && a.EntityId == ideaId && a.DeletedAt == null) // Change 20260726
-            .OrderBy(a => a.UploadedAt) // Change 20260726
-            .ToListAsync(cancellationToken); // Change 20260726
-
-        return new IdeaAttachmentsResult(IdeaCommandStatus.Success, remaining); // Change 20260726
-    } // Change 20260726
 
     public async Task<IdeaAttachmentFileResult> GetAttachmentFileAsync(Guid ideaId, Guid attachmentId, Guid userId, bool isElevatedReviewer, string? callerSam, CancellationToken ct = default)
     {

@@ -14,13 +14,10 @@ public class FinalRankingService : IFinalRankingService
     private readonly InnovationDbContext _db;
     private readonly IApprovalService _approvalService;
 
-    private readonly IIdeaStatusNotifier _statusNotifier; // Change 20260726
-
-    public FinalRankingService(InnovationDbContext db, IApprovalService approvalService, IIdeaStatusNotifier statusNotifier)
+    public FinalRankingService(InnovationDbContext db, IApprovalService approvalService)
     {
         _db = db;
         _approvalService = approvalService;
-        _statusNotifier = statusNotifier; // Change 20260726
     }
 
     public Task<FinalRankingResult> PreviewAsync(CancellationToken cancellationToken = default)
@@ -90,14 +87,6 @@ public class FinalRankingService : IFinalRankingService
             foreach (var idea in ideas.Where(i => i.IdeaStatusId == approvedStatus!.Id))
             {
                 await _approvalService.OpenInstanceAsync("idea-approve", "idea", idea.Id, cancellationToken);
-            }
-
-            // Change 20260726 — ranking decides both outcomes in one pass, so every ranked idea's
-            // submitter is told which way it went.
-            foreach (var idea in ideas.Where(i => i.IdeaStatusId == approvedStatus!.Id || i.IdeaStatusId == notSelectedStatus!.Id))
-            {
-                var outcome = idea.IdeaStatusId == approvedStatus!.Id ? IdeaStatusCodes.Approved : IdeaStatusCodes.NotSelected;
-                await _statusNotifier.NotifyStatusChangedAsync(idea, outcome, cancellationToken);
             }
         }
 

@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:backend": "ng build --configuration production-ar && node scripts/deploy-to-wwwroot.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -17,7 +18,6 @@
     "@angular/forms": "^22.0.0",
     "@angular/platform-browser": "^22.0.0",
     "@angular/router": "^22.0.0",
-    "@microsoft/signalr": "^10.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

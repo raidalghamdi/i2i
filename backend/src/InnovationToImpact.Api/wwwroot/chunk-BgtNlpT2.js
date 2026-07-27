@@ -1,0 +1,1 @@
+import {y,D as Dg,J as Jg,H}from'./main-3F4J4RGO.js';var a=class t{http=y(Dg);list(){return Jg(this.http.get("/api/activities"))}static \u0275fac=function(c){return new(c||t)};static \u0275prov=H({token:t,factory:t.\u0275fac,providedIn:"root"})};/**i18n:347fa2a3e5ae1fd039a2302cc7a5916b343a2e5d5d40f9d6b98c02deb00a229f*/export{a};

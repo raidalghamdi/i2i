@@ -3,8 +3,6 @@ using InnovationToImpact.Domain.Approvals;
 using InnovationToImpact.Domain.Assignments;
 using InnovationToImpact.Domain.Committee;
 using InnovationToImpact.Domain.Entities;
-using InnovationToImpact.Domain.Notifications;
-using InnovationToImpact.Domain.Auth;
 using InnovationToImpact.Domain.Ideas;
 using InnovationToImpact.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -15,18 +13,11 @@ public class CommitteeService : ICommitteeService
 {
     private readonly InnovationDbContext _db;
     private readonly IApprovalService _approvalService;
-    private readonly IEvidenceFileStorage _storage; // Change 20260726
 
-    private readonly INotificationService _notificationService; // Change 20260726
-    private readonly IIdeaStatusNotifier _statusNotifier; // Change 20260726
-
-    public CommitteeService(InnovationDbContext db, IApprovalService approvalService, IEvidenceFileStorage storage, IIdeaStatusNotifier statusNotifier, INotificationService notificationService) // Change 20260726
+    public CommitteeService(InnovationDbContext db, IApprovalService approvalService)
     {
         _db = db;
         _approvalService = approvalService;
-        _storage = storage; // Change 20260726
-        _notificationService = notificationService; // Change 20260726
-        _statusNotifier = statusNotifier; // Change 20260726
     }
 
     public async Task<CommitteeCommandResult> SubmitDecisionAsync(Guid ideaId, Guid judgeId, CommitteeDecisionInput input, CancellationToken cancellationToken = default)
@@ -34,10 +25,6 @@ public class CommitteeService : ICommitteeService
         var idea = await _db.Ideas.Include(i => i.IdeaStatus).SingleOrDefaultAsync(i => i.Id == ideaId, cancellationToken);
         if (idea is null) return new CommitteeCommandResult(CommitteeCommandStatus.NotFound);
         if (idea.IdeaStatus.Code != IdeaStatusCodes.Committee) return new CommitteeCommandResult(CommitteeCommandStatus.InvalidState);
-
-        // Change 20260726 — checked ahead of the assignment gate so that a submitter who was wrongly
-        // assigned as judge on their own idea is still refused rather than admitted by the assignment.
-        if (idea.SubmitterId == judgeId) return new CommitteeCommandResult(CommitteeCommandStatus.SelfAuthorship);
 
         // Quorum integrity: only a judge with a per-idea judge Assignment may decide on this idea.
         // Without this gate any judge (or, before this fix, any supervisor) could submit a decision,
@@ -61,31 +48,6 @@ public class CommitteeService : ICommitteeService
 
         var totalScore = activeCriteria.Sum(c => input.CriteriaScores[c.Code] * c.Weight);
 
-        // Change 20260726
-        // Validate every upload before writing any of them, so a rejected file cannot leave
-        // orphaned blobs behind. Same allowlist and 10 MB cap as idea evidence attachments.
-        var uploads = input.Attachments ?? Array.Empty<CommitteeDecisionAttachmentUpload>();
-        foreach (var upload in uploads)
-        {
-            if (!IdeaAttachmentRules.AllowedContentTypes.Contains(upload.ContentType)) return new CommitteeCommandResult(CommitteeCommandStatus.InvalidAttachment);
-            if (upload.Content.LongLength == 0 || upload.Content.LongLength > IdeaAttachmentRules.MaxSizeBytes) return new CommitteeCommandResult(CommitteeCommandStatus.InvalidAttachment);
-        }
-
-        var storedAttachments = new List<CommitteeDecisionAttachment>(); // Change 20260726
-        foreach (var upload in uploads) // Change 20260726
-        {
-            var storedPath = await _storage.SaveAsync(upload.FileName, upload.Content, cancellationToken);
-            storedAttachments.Add(new CommitteeDecisionAttachment
-            {
-                Id = Guid.NewGuid(),
-                FileName = upload.FileName,
-                StoredPath = storedPath,
-                ContentType = upload.ContentType,
-                SizeBytes = upload.Content.LongLength,
-                UploadedAt = DateTime.UtcNow,
-            });
-        }
-
         var decision = new CommitteeDecision
         {
             Id = Guid.NewGuid(),
@@ -96,27 +58,10 @@ public class CommitteeService : ICommitteeService
             DecidedAt = DateTime.UtcNow,
             Comments = input.Comments,
             CriteriaScoresJson = JsonSerializer.Serialize(input.CriteriaScores),
-            AttachmentsJson = storedAttachments.Count > 0 ? JsonSerializer.Serialize(storedAttachments) : null, // Change 20260726
             TotalScore = totalScore,
         };
         _db.CommitteeDecisions.Add(decision);
         await _db.SaveChangesAsync(cancellationToken);
-
-        // Change 20260726 — fired per judge decision rather than only at quorum, so the submitter and
-        // admins follow the committee's progress instead of seeing just the final aggregate.
-        await _notificationService.CreateAndPublishAsync(
-            idea.SubmitterId, NotificationTypes.CommitteeDecisionMade,
-            "قرار لجنة جديد", "New committee decision",
-            $"تم تسجيل قرار لجنة على الفكرة \"{idea.TitleAr}\".",
-            $"A committee decision was recorded on \"{idea.TitleEn}\".",
-            $"/ideas/{idea.Id}", null, cancellationToken);
-
-        await _notificationService.CreateAndPublishToRolesAsync(
-            new[] { RoleCodes.Admin }, NotificationTypes.CommitteeDecisionMade,
-            "قرار لجنة جديد", "New committee decision",
-            $"تم تسجيل قرار لجنة على الفكرة \"{idea.TitleAr}\".",
-            $"A committee decision was recorded on \"{idea.TitleEn}\".",
-            $"/ideas/{idea.Id}", null, cancellationToken);
 
         // Quorum denominator: the idea's ASSIGNED judges, not every judge-role user in the system.
         // Combined with the assigned-judge gate above (only assigned judges can create a decision),
@@ -142,8 +87,6 @@ public class CommitteeService : ICommitteeService
             // covers "publish this idea's committee outcome" regardless of how many judge decisions
             // fed into it.
             await _approvalService.OpenInstanceAsync("committee-publish", "committee_decision", idea.Id, cancellationToken);
-
-            await _statusNotifier.NotifyStatusChangedAsync(idea, IdeaStatusCodes.PendingFinalRanking, cancellationToken); // Change 20260726
         }
 
         return new CommitteeCommandResult(CommitteeCommandStatus.Success, decision, idea);
@@ -178,18 +121,5 @@ public class CommitteeService : ICommitteeService
             .Where(d => d.DecidedById == judgeId)
             .OrderByDescending(d => d.DecidedAt)
             .ToListAsync(cancellationToken);
-    }
-
-    // Change 20260726
-    public async Task<CommitteeAttachmentFileResult> GetDecisionAttachmentFileAsync(Guid decisionId, Guid attachmentId, CancellationToken cancellationToken = default)
-    {
-        var decision = await _db.CommitteeDecisions.SingleOrDefaultAsync(d => d.Id == decisionId, cancellationToken);
-        if (decision is null) return new CommitteeAttachmentFileResult(CommitteeCommandStatus.NotFound);
-
-        var attachment = CommitteeDecisionAttachment.Parse(decision.AttachmentsJson).SingleOrDefault(a => a.Id == attachmentId);
-        if (attachment is null) return new CommitteeAttachmentFileResult(CommitteeCommandStatus.NotFound);
-
-        var content = await _storage.ReadAsync(attachment.StoredPath, cancellationToken);
-        return new CommitteeAttachmentFileResult(CommitteeCommandStatus.Success, content, attachment.ContentType, attachment.FileName);
     }
 }

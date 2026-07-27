@@ -27,59 +27,59 @@
   </div>
 
   <div class="lg:col-span-1">
-    <!-- Change 20260726 -->
-    @if (isSelfAuthored()) {
-      <div class="card-surface card-body" role="alert">
-        <p class="font-medium" i18n="@@evalFormSelfAuthored">You cannot evaluate your own idea.</p>
-        <p class="mt-1 text-sm text-muted-foreground" i18n="@@evalFormSelfAuthoredHint">Another evaluator must score this idea.</p>
-      </div>
-    } @else {
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="card-surface card-body flex flex-col gap-5">
       @if (errorMessage(); as msg) {
         <div class="field-error" role="alert">{{ msg }}</div>
       }
 
-      <!-- Change 20260726 — declared up front, because it changes how the scores are used downstream. -->
-      <div class="flex flex-col gap-1.5 border-b border-border pb-4">
-        <label class="flex items-start gap-2 text-sm">
-          <input type="checkbox" class="mt-0.5" formControlName="conflictOfInterest" />
-          <span i18n="@@evalFormConflictOfInterest">I have a conflict of interest — my score won't count toward the decision</span>
-        </label>
-        <p class="text-xs text-muted-foreground" i18n="@@evalFormConflictOfInterestHelp">
-          Declare a conflict if you are connected to this idea or its team. Please still score the idea; your scores are recorded for the audit trail but excluded from the final result.
-        </p>
-        @if (form.controls.conflictOfInterest.value) {
-          <p data-testid="coi-notice" class="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800" role="status" i18n="@@evalFormConflictOfInterestNotice">
-            Conflict of interest declared — this evaluation is excluded from the decision.
-          </p>
-        }
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@evalFormInnovation">Innovation (0-10)</label>
+        <select class="field-select" formControlName="innovation">
+          <option [ngValue]="null" disabled>—</option>
+          @for (n of scoreOptions; track n) {
+            <option [ngValue]="n">{{ n }}</option>
+          }
+        </select>
       </div>
 
-      <!-- Change 20260726 -->
-      @if (resumedDraft()) {
-        <p class="rounded-md bg-muted/60 px-3 py-2 text-sm text-muted-foreground" i18n="@@evalFormDraftResumed">
-          Resumed from your saved draft.
-        </p>
-      }
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@evalFormImpact">Impact (0-10)</label>
+        <select class="field-select" formControlName="impact">
+          <option [ngValue]="null" disabled>—</option>
+          @for (n of scoreOptions; track n) {
+            <option [ngValue]="n">{{ n }}</option>
+          }
+        </select>
+      </div>
 
-      <!-- Change 20260726 — criteria are admin-configurable, so the fields are built from the API. -->
-      <div class="flex flex-col gap-5" formArrayName="scores">
-        @for (criterion of criteria(); track criterion.code; let i = $index) {
-          <div class="flex flex-col gap-1.5">
-            <label class="field-label" [attr.for]="'score-' + criterion.code">
-              {{ criterionName(criterion) }} ({{ weightPercent(criterion) }}%) &mdash; 0-10
-            </label>
-            @if (criterionDescription(criterion); as description) {
-              <p class="text-xs text-muted-foreground">{{ description }}</p>
-            }
-            <select class="field-select" [id]="'score-' + criterion.code" [attr.data-criterion]="criterion.code" [formControlName]="i">
-              <option [ngValue]="null" disabled>—</option>
-              @for (n of scoreOptions; track n) {
-                <option [ngValue]="n">{{ n }}</option>
-              }
-            </select>
-          </div>
-        }
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@evalFormExecution">Execution (0-10)</label>
+        <select class="field-select" formControlName="execution">
+          <option [ngValue]="null" disabled>—</option>
+          @for (n of scoreOptions; track n) {
+            <option [ngValue]="n">{{ n }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@evalFormScalability">Scalability (0-10)</label>
+        <select class="field-select" formControlName="scalability">
+          <option [ngValue]="null" disabled>—</option>
+          @for (n of scoreOptions; track n) {
+            <option [ngValue]="n">{{ n }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label" i18n="@@evalFormPresentation">Presentation (0-10)</label>
+        <select class="field-select" formControlName="presentation">
+          <option [ngValue]="null" disabled>—</option>
+          @for (n of scoreOptions; track n) {
+            <option [ngValue]="n">{{ n }}</option>
+          }
+        </select>
       </div>
 
       <div class="flex flex-col gap-1.5">
@@ -87,18 +87,9 @@
         <textarea class="field-textarea" formControlName="comments"></textarea>
       </div>
 
-      <!-- Change 20260726 -->
-      <div class="flex justify-end gap-2">
-        <button type="button" class="btn-outline" [disabled]="criteriaUnavailable() || isSubmitting()" (click)="onSaveDraft()" i18n="@@evalFormSaveDraft">Save Draft</button>
-        <button type="submit" class="btn-default" [disabled]="form.invalid || criteriaUnavailable() || isSubmitting()">
-          @if (isSubmitting()) {
-            <span i18n="@@evalFormSubmitting">Saving...</span>
-          } @else {
-            <span i18n="@@evalFormSubmit">Submit Evaluation</span>
-          }
-        </button>
+      <div class="flex justify-end">
+        <button type="submit" class="btn-default" [disabled]="form.invalid" i18n="@@evalFormSubmit">Submit Evaluation</button>
       </div>
     </form>
-    }
   </div>
 </div>

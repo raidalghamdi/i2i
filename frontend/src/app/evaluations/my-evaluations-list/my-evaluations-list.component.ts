@@ -1,5 +1,4 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router'; // Change 20260726
 import { EvaluationsApiService } from '../evaluations-api.service';
 import { MyEvaluation } from '../evaluation.model';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
@@ -9,7 +8,7 @@ import { ErrorStateComponent } from '../../shared/error-state/error-state.compon
 
 @Component({
   selector: 'app-my-evaluations-list',
-  imports: [PageHeaderComponent, LoadingStateComponent, EmptyStateComponent, ErrorStateComponent, RouterLink], // Change 20260726
+  imports: [PageHeaderComponent, LoadingStateComponent, EmptyStateComponent, ErrorStateComponent],
   templateUrl: './my-evaluations-list.component.html',
 })
 export class MyEvaluationsListComponent implements OnInit {

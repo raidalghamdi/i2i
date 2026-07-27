@@ -11,13 +11,10 @@ public class SubmitterReviewService : ISubmitterReviewService
     private readonly InnovationDbContext _db;
     private readonly IEvaluationSettingsService _settings;
 
-    private readonly IIdeaStatusNotifier _statusNotifier; // Change 20260726
-
-    public SubmitterReviewService(InnovationDbContext db, IEvaluationSettingsService settings, IIdeaStatusNotifier statusNotifier)
+    public SubmitterReviewService(InnovationDbContext db, IEvaluationSettingsService settings)
     {
         _db = db;
         _settings = settings;
-        _statusNotifier = statusNotifier; // Change 20260726
     }
 
     public async Task<SubmitterReviewCommandResult> ResubmitAsync(Guid ideaId, Guid submitterId, ResubmitEvaluationInput input, CancellationToken cancellationToken = default)
@@ -42,8 +39,6 @@ public class SubmitterReviewService : ISubmitterReviewService
         idea.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(cancellationToken);
-
-        await _statusNotifier.NotifyStatusChangedAsync(idea, nextStatus.Code, cancellationToken); // Change 20260726
 
         return new SubmitterReviewCommandResult(SubmitterReviewCommandStatus.Success, idea);
     }

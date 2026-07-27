@@ -5,17 +5,11 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideRouter, Router } from '@angular/router';
 import { routes } from './app.routes';
-import { ACCESS_PASSWORD_HASH, ACCESS_TOKEN_KEY } from './core/access/access'; // Change 20260726
 import { IdentityService } from './core/auth/identity.service';
 import { PublicShellComponent } from './shell/public-shell/public-shell.component';
 import { AppShellComponent } from './shell/app-shell/app-shell.component';
 
 describe('app.routes (public/app shell reparent)', () => {
-  // Change 20260726 — every top-level route now sits behind the shared testing gate, so
-  // these shell/guard assertions need the access token in place first.
-  beforeEach(() => localStorage.setItem(ACCESS_TOKEN_KEY, ACCESS_PASSWORD_HASH)); // Change 20260726
-  afterEach(() => localStorage.removeItem(ACCESS_TOKEN_KEY)); // Change 20260726
-
   async function setup(identityOverride: unknown) {
     TestBed.configureTestingModule({
       providers: [

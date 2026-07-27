@@ -1,6 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
 import { ReportsApiService } from '../reports-api.service';
@@ -11,7 +10,7 @@ export type ReportFormat = 'xlsx' | 'pdf' | 'pptx';
 
 @Component({
   selector: 'app-reports-dashboard',
-  imports: [FormsModule, RouterLink, IconComponent, PageHeaderComponent],
+  imports: [FormsModule, IconComponent, PageHeaderComponent],
   templateUrl: './reports-dashboard.component.html',
 })
 export class ReportsDashboardComponent {

@@ -2,18 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { EvaluationsApiService } from './evaluations-api.service';
-import { EvaluationCriterion, EvaluationInput } from './evaluation.model'; // Change 20260726
+import { EvaluationInput } from './evaluation.model';
 
 describe('EvaluationsApiService', () => {
   let service: EvaluationsApiService;
   let httpMock: HttpTestingController;
 
-  // Change 20260726
   const sampleInput: EvaluationInput = {
-    criteriaScores: { innovation: 7, impact: 8 },
-    comments: 'Good idea.',
-    action: 'submit',
-    conflictOfInterest: false,
+    innovation: 7, impact: 7, execution: 7, scalability: 7, presentation: 7, comments: 'Good idea.',
   };
 
   beforeEach(() => {
@@ -34,30 +30,6 @@ describe('EvaluationsApiService', () => {
     req.flush({ id: 'eval-1', totalScore: 7, recommendation: 'pass', ideaStatus: 'pass_awaiting_attachments' });
 
     expect(await promise).toEqual({ id: 'eval-1', totalScore: 7, recommendation: 'pass', ideaStatus: 'pass_awaiting_attachments' });
-  });
-
-  // Change 20260726
-  it('submit() sends action "draft" and the criteria-score dictionary unchanged', async () => {
-    const promise = service.submit('idea-1', { ...sampleInput, action: 'draft' });
-    const req = httpMock.expectOne('/api/ideas/idea-1/evaluations');
-    expect(req.request.body.action).toBe('draft');
-    expect(req.request.body.criteriaScores).toEqual({ innovation: 7, impact: 8 });
-    req.flush({ id: 'eval-1', totalScore: 0, recommendation: 'pending', ideaStatus: 'under_evaluation', submittedAt: null });
-
-    expect((await promise).submittedAt).toBeNull();
-  });
-
-  // Change 20260726
-  it('getCriteria() gets /api/evaluation-criteria', async () => {
-    const criteria: EvaluationCriterion[] = [
-      { code: 'innovation', nameAr: 'الابتكار', nameEn: 'Innovation', descriptionAr: null, descriptionEn: null, weight: 0.5, sortOrder: 1 },
-    ];
-    const promise = service.getCriteria();
-    const req = httpMock.expectOne('/api/evaluation-criteria');
-    expect(req.request.method).toBe('GET');
-    req.flush(criteria);
-
-    expect(await promise).toEqual(criteria);
   });
 
   it('getQueue() gets /api/evaluations/queue', async () => {

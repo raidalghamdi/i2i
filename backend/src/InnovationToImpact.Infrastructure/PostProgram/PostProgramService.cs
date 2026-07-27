@@ -29,12 +29,9 @@ public class PostProgramService : IPostProgramService
 
     private readonly InnovationDbContext _db;
 
-    private readonly IIdeaStatusNotifier _statusNotifier; // Change 20260726
-
-    public PostProgramService(InnovationDbContext db, IIdeaStatusNotifier statusNotifier)
+    public PostProgramService(InnovationDbContext db)
     {
         _db = db;
-        _statusNotifier = statusNotifier; // Change 20260726
     }
 
     public async Task<PostProgramAdvanceResult> AdvanceAsync(Guid ideaId, string? targetStage, Guid actorId, string? comment, CancellationToken cancellationToken = default)
@@ -70,8 +67,6 @@ public class PostProgramService : IPostProgramService
         });
 
         await _db.SaveChangesAsync(cancellationToken);
-
-        await _statusNotifier.NotifyStatusChangedAsync(idea, targetStage, cancellationToken); // Change 20260726
 
         return new PostProgramAdvanceResult(PostProgramAdvanceStatus.Success, idea);
     }

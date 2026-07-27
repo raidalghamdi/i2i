@@ -16,7 +16,6 @@ import { PostProgramStepperComponent } from '../post-program-stepper/post-progra
 import { LoadingStateComponent } from '../../shared/loading-state/loading-state.component';
 import { ErrorStateComponent } from '../../shared/error-state/error-state.component';
 import { StatusLabelPipe } from '../../shared/status-label/status-label.pipe';
-import { WithdrawDialogComponent } from '../shared/withdraw-dialog.component'; // Change 20260726
 
 const WITHDRAWABLE_STATUSES = new Set(['draft', 'submitted', 'returned']);
 /** Statuses before the evaluator-review decision has been made — there is no feedback to show yet. */
@@ -39,7 +38,6 @@ const INLINE_VIEWABLE_TYPES = new Set(['application/pdf', 'image/png', 'image/jp
     ErrorStateComponent,
     DatePipe,
     StatusLabelPipe,
-    WithdrawDialogComponent, // Change 20260726
   ],
   templateUrl: './idea-detail.component.html',
 })
@@ -67,8 +65,6 @@ export class IdeaDetailComponent implements OnInit {
   readonly challengeText = signal<string | null>(null);
   readonly currentUserId = signal<string | null>(null);
   readonly resubmitComment = signal('');
-  /** True while the withdraw confirmation dialog is open. */ // Change 20260726
-  readonly withdrawOpen = signal(false); // Change 20260726
 
   readonly isOwner = computed(() => {
     const idea = this.idea();
@@ -248,27 +244,21 @@ export class IdeaDetailComponent implements OnInit {
     }
   }
 
-  onWithdraw(): void { // Change 20260726
-    if (!this.idea()) return; // Change 20260726
-    this.errorMessage.set(null); // Change 20260726
-    this.withdrawOpen.set(true); // Change 20260726
-  } // Change 20260726
-
-  closeWithdraw(): void { // Change 20260726
-    this.withdrawOpen.set(false); // Change 20260726
-  } // Change 20260726
-
-  /** The dialog performs the withdrawal; refresh the idea so the new status renders. */ // Change 20260726
-  async onWithdrawn(): Promise<void> { // Change 20260726
-    this.withdrawOpen.set(false); // Change 20260726
-    const current = this.idea(); // Change 20260726
-    if (!current) return; // Change 20260726
-    try { // Change 20260726
-      this.idea.set(await this.ideasApi.getById(current.id)); // Change 20260726
-    } catch (error) { // Change 20260726
-      this.errorMessage.set(this.extractErrorMessage(error)); // Change 20260726
-    } // Change 20260726
-  } // Change 20260726
+  async onWithdraw(): Promise<void> {
+    const current = this.idea();
+    if (!current) return;
+    const confirmed = window.confirm(
+      $localize`:@@ideaDetailWithdrawConfirm:Are you sure you want to withdraw this idea? This cannot be undone.`,
+    );
+    if (!confirmed) return;
+    this.errorMessage.set(null);
+    try {
+      await this.ideasApi.withdraw(current.id);
+      this.idea.set(await this.ideasApi.getById(current.id));
+    } catch (error) {
+      this.errorMessage.set(this.extractErrorMessage(error));
+    }
+  }
 
   private extractErrorMessage(error: unknown): string {
     if (error && typeof error === 'object' && 'error' in error) {

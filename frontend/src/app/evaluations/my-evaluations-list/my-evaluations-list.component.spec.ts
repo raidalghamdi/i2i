@@ -32,36 +32,6 @@ describe('MyEvaluationsListComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('pass');
   });
 
-  // Change 20260726
-  it('offers a resume link pointing at the idea for an unsubmitted draft', async () => {
-    setup([
-      { id: 'eval-1', ideaId: 'idea-7', ideaCode: 'IDEA-0007', ideaTitleEn: 'Draft one', totalScore: 0, recommendation: 'pending', submittedAt: null, ideaEnteredEvaluationAt: null },
-    ]);
-    fixture.detectChanges();
-    await fixture.componentInstance.ngOnInit();
-    fixture.detectChanges();
-
-    const link = fixture.nativeElement.querySelector('tbody a') as HTMLAnchorElement;
-    expect(link).withContext('expected a resume-draft link').toBeTruthy();
-    expect(link.textContent).toContain('Resume draft');
-    expect(link.getAttribute('href')).toBe('/evaluations/idea-7');
-    // A draft has no score or recommendation to show yet.
-    expect(fixture.nativeElement.textContent).not.toContain('pending');
-  });
-
-  // Change 20260726
-  it('shows a submitted row without a resume link', async () => {
-    setup([
-      { id: 'eval-1', ideaId: 'idea-1', ideaCode: 'IDEA-0001', ideaTitleEn: 'One', totalScore: 7, recommendation: 'pass', submittedAt: '2026-01-01', ideaEnteredEvaluationAt: null },
-    ]);
-    fixture.detectChanges();
-    await fixture.componentInstance.ngOnInit();
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.querySelector('tbody a')).toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('Submitted');
-  });
-
   it('shows an empty-state message when there are no evaluations', async () => {
     setup([]);
     fixture.detectChanges();

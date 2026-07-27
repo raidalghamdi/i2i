@@ -5,7 +5,6 @@ import { IdeasApiService } from '../../ideas/ideas-api.service';
 import { Idea, IdeaAttachment } from '../../ideas/idea.model';
 import { EvaluationReviewApiService } from '../../evaluations/evaluation-review-api.service';
 import { EvaluationReviewDetail } from '../../evaluations/evaluation-review.model';
-import { MeApiService, MeProfile } from '../../core/me-api.service'; // Change 20260726
 import { CommitteeDecisionFormComponent } from './committee-decision-form.component';
 
 describe('CommitteeDecisionFormComponent', () => {
@@ -14,7 +13,6 @@ describe('CommitteeDecisionFormComponent', () => {
   let ideasApi: jasmine.SpyObj<IdeasApiService>;
   let evaluationReviewApi: jasmine.SpyObj<EvaluationReviewApiService>;
   let router: jasmine.SpyObj<Router>;
-  let meApi: jasmine.SpyObj<MeApiService>; // Change 20260726
 
   const baseIdea: Idea = {
     id: 'idea-1', code: 'IDEA-0001', submitterId: 'owner-1', titleAr: 'عنوان الفكرة', titleEn: 'Idea Title',
@@ -39,8 +37,6 @@ describe('CommitteeDecisionFormComponent', () => {
     ideasApi = jasmine.createSpyObj('IdeasApiService', ['getById']);
     evaluationReviewApi = jasmine.createSpyObj('EvaluationReviewApiService', ['getDetail']);
     router = jasmine.createSpyObj('Router', ['navigate']);
-    meApi = jasmine.createSpyObj('MeApiService', ['get']); // Change 20260726
-    meApi.get.and.returnValue(Promise.resolve({ id: 'me-1' } as MeProfile)); // Change 20260726
     committeeApi.getCriteria.and.returnValue(Promise.resolve([
       { code: 'originality', nameAr: 'أ', nameEn: 'Originality', weight: 0.30 },
       { code: 'feasibility', nameAr: 'ب', nameEn: 'Feasibility', weight: 0.25 },
@@ -54,7 +50,6 @@ describe('CommitteeDecisionFormComponent', () => {
       imports: [CommitteeDecisionFormComponent],
       providers: [
         { provide: CommitteeApiService, useValue: committeeApi },
-        { provide: MeApiService, useValue: meApi }, // Change 20260726
         { provide: IdeasApiService, useValue: ideasApi },
         { provide: EvaluationReviewApiService, useValue: evaluationReviewApi },
         { provide: Router, useValue: router },
@@ -103,161 +98,8 @@ describe('CommitteeDecisionFormComponent', () => {
       decisionTypeCode: 'approved',
       criteriaScores: { originality: 8, feasibility: 8, impact: 8, alignment: 8 },
       comments: 'Great idea.',
-    }, []); // Change 20260726
+    });
     expect(router.navigate).toHaveBeenCalledWith(['/committee/queue']);
-  });
-
-  // Change 20260726
-  describe('in-flight submit', () => {
-    it('disables the submit button and shows a saving label while the request is pending', async () => {
-      setup();
-      fixture.detectChanges();
-      await fixture.componentInstance.ngOnInit();
-      fixture.detectChanges();
-
-      let resolve!: (value: { id: string; totalScore: number; ideaStatus: string }) => void;
-      committeeApi.submitDecision.and.returnValue(new Promise((r) => (resolve = r)));
-      setFormValues(fixture.componentInstance.form, {
-        originality: 8, feasibility: 8, impact: 8, alignment: 8,
-        decisionTypeCode: 'approved', comments: null,
-      });
-
-      const pending = fixture.componentInstance.onSubmit();
-      fixture.detectChanges();
-
-      expect(fixture.componentInstance.isSubmitting()).toBeTrue();
-      const button = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
-      expect(button.disabled).toBeTrue();
-      expect(button.textContent).toContain('Saving...');
-
-      resolve({ id: 'decision-1', totalScore: 8, ideaStatus: 'committee' });
-      await pending;
-
-      expect(fixture.componentInstance.isSubmitting()).toBeFalse();
-    });
-
-    it('ignores a second submit while one is already in flight', async () => {
-      setup();
-      fixture.detectChanges();
-      await fixture.componentInstance.ngOnInit();
-
-      let resolve!: (value: { id: string; totalScore: number; ideaStatus: string }) => void;
-      committeeApi.submitDecision.and.returnValue(new Promise((r) => (resolve = r)));
-      setFormValues(fixture.componentInstance.form, {
-        originality: 8, feasibility: 8, impact: 8, alignment: 8,
-        decisionTypeCode: 'approved', comments: null,
-      });
-
-      const first = fixture.componentInstance.onSubmit();
-      await fixture.componentInstance.onSubmit();
-
-      expect(committeeApi.submitDecision).toHaveBeenCalledTimes(1);
-      resolve({ id: 'decision-1', totalScore: 8, ideaStatus: 'committee' });
-      await first;
-    });
-
-    it('clears the in-flight flag when the request fails so the judge can retry', async () => {
-      setup();
-      fixture.detectChanges();
-      await fixture.componentInstance.ngOnInit();
-
-      committeeApi.submitDecision.and.returnValue(Promise.reject({ error: { error: 'boom' } }));
-      setFormValues(fixture.componentInstance.form, {
-        originality: 8, feasibility: 8, impact: 8, alignment: 8,
-        decisionTypeCode: 'approved', comments: null,
-      });
-      await fixture.componentInstance.onSubmit();
-
-      expect(fixture.componentInstance.isSubmitting()).toBeFalse();
-    });
-  });
-
-  // Change 20260726
-  describe('attachments', () => {
-    function pdf(name = 'minutes.pdf', size = 1024): File {
-      const file = new File(['x'], name, { type: 'application/pdf' });
-      Object.defineProperty(file, 'size', { value: size });
-      return file;
-    }
-
-    function selectFiles(files: File[]): void {
-      fixture.componentInstance.onFilesSelected({
-        target: { files, value: 'C:\\fakepath\\x' } as unknown as HTMLInputElement,
-      } as unknown as Event);
-    }
-
-    it('queues files that pass the type and size checks', async () => {
-      setup();
-      fixture.detectChanges();
-      await fixture.componentInstance.ngOnInit();
-
-      selectFiles([pdf('a.pdf'), pdf('b.pdf')]);
-
-      expect(fixture.componentInstance.queuedFiles().map((f) => f.name)).toEqual(['a.pdf', 'b.pdf']);
-      expect(fixture.componentInstance.attachmentError()).toBeNull();
-    });
-
-    it('rejects a file whose MIME type is not on the allowlist', async () => {
-      setup();
-      fixture.detectChanges();
-      await fixture.componentInstance.ngOnInit();
-
-      selectFiles([new File(['x'], 'evil.exe', { type: 'application/x-msdownload' })]);
-
-      expect(fixture.componentInstance.queuedFiles().length).toBe(0);
-      expect(fixture.componentInstance.attachmentError()).toContain("isn't allowed");
-    });
-
-    it('rejects a file larger than 10MB but keeps the acceptable ones', async () => {
-      setup();
-      fixture.detectChanges();
-      await fixture.componentInstance.ngOnInit();
-
-      selectFiles([pdf('huge.pdf', 10 * 1024 * 1024 + 1), pdf('ok.pdf')]);
-
-      expect(fixture.componentInstance.queuedFiles().map((f) => f.name)).toEqual(['ok.pdf']);
-      expect(fixture.componentInstance.attachmentError()).toContain('10MB');
-    });
-
-    it('removes a queued file by index', async () => {
-      setup();
-      fixture.detectChanges();
-      await fixture.componentInstance.ngOnInit();
-      selectFiles([pdf('a.pdf'), pdf('b.pdf')]);
-
-      fixture.componentInstance.removeQueuedFile(0);
-
-      expect(fixture.componentInstance.queuedFiles().map((f) => f.name)).toEqual(['b.pdf']);
-    });
-
-    it('lists the queued file names with a remove button before submit', async () => {
-      setup();
-      fixture.detectChanges();
-      await fixture.componentInstance.ngOnInit();
-      fixture.detectChanges();
-      selectFiles([pdf('minutes.pdf')]);
-      fixture.detectChanges();
-
-      expect(fixture.nativeElement.textContent as string).toContain('minutes.pdf');
-      expect(fixture.nativeElement.querySelector('[aria-label="Remove attachment"]')).toBeTruthy();
-    });
-
-    it('passes the queued files to the API on submit', async () => {
-      setup();
-      fixture.detectChanges();
-      await fixture.componentInstance.ngOnInit();
-      committeeApi.submitDecision.and.returnValue(Promise.resolve({ id: 'decision-1', totalScore: 8, ideaStatus: 'committee' }));
-      const file = pdf('minutes.pdf');
-      selectFiles([file]);
-
-      setFormValues(fixture.componentInstance.form, {
-        originality: 8, feasibility: 8, impact: 8, alignment: 8,
-        decisionTypeCode: 'approved', comments: null,
-      });
-      await fixture.componentInstance.onSubmit();
-
-      expect(committeeApi.submitDecision).toHaveBeenCalledWith('idea-1', jasmine.any(Object), [file]);
-    });
   });
 
   it('loads and shows the idea and the evaluator rating (via the shared idea-context-panel) above the criteria form', async () => {
@@ -301,8 +143,6 @@ describe('CommitteeDecisionFormComponent', () => {
     ideasApi = jasmine.createSpyObj('IdeasApiService', ['getById']);
     evaluationReviewApi = jasmine.createSpyObj('EvaluationReviewApiService', ['getDetail']);
     router = jasmine.createSpyObj('Router', ['navigate']);
-    meApi = jasmine.createSpyObj('MeApiService', ['get']); // Change 20260726
-    meApi.get.and.returnValue(Promise.resolve({ id: 'me-1' } as MeProfile)); // Change 20260726
     committeeApi.getCriteria.and.returnValue(Promise.reject(new Error('boom')));
     ideasApi.getById.and.returnValue(Promise.resolve(baseIdea));
     evaluationReviewApi.getDetail.and.returnValue(Promise.resolve(baseDetail));
@@ -313,7 +153,6 @@ describe('CommitteeDecisionFormComponent', () => {
         { provide: CommitteeApiService, useValue: committeeApi },
         { provide: IdeasApiService, useValue: ideasApi },
         { provide: EvaluationReviewApiService, useValue: evaluationReviewApi },
-        { provide: MeApiService, useValue: meApi }, // Change 20260726
         { provide: Router, useValue: router },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'idea-1' } } } },
       ],
@@ -336,44 +175,5 @@ describe('CommitteeDecisionFormComponent', () => {
 
     expect(fixture.componentInstance.loadError()).toBeNull();
     expect(fixture.componentInstance.criteria().length).toBe(1);
-  });
-
-  // Change 20260726
-  it('blocks the form with a message when the judge submitted the idea themselves', async () => {
-    setup();
-    meApi.get.and.returnValue(Promise.resolve({ id: 'owner-1' } as MeProfile));
-    fixture.detectChanges();
-    await fixture.componentInstance.ngOnInit();
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.isSelfAuthored()).toBe(true);
-    expect(fixture.nativeElement.querySelector('form')).toBeNull();
-    expect((fixture.nativeElement.textContent as string)).toContain('You cannot decide on your own idea.');
-  });
-
-  // Change 20260726
-  it('does not submit a self-authored decision even if onSubmit is invoked directly', async () => {
-    setup();
-    meApi.get.and.returnValue(Promise.resolve({ id: 'owner-1' } as MeProfile));
-    fixture.detectChanges();
-    await fixture.componentInstance.ngOnInit();
-    fixture.detectChanges();
-
-    await fixture.componentInstance.onSubmit();
-
-    expect(committeeApi.submitDecision).not.toHaveBeenCalled();
-  });
-
-  // Change 20260726 — a failed /api/me lookup must leave the form usable; the backend still guards it.
-  it('keeps the form usable when the profile lookup fails', async () => {
-    setup();
-    meApi.get.and.returnValue(Promise.reject(new Error('boom')));
-    fixture.detectChanges();
-    await fixture.componentInstance.ngOnInit();
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.isSelfAuthored()).toBe(false);
-    expect(fixture.componentInstance.loadError()).toBeNull();
-    expect(fixture.nativeElement.querySelector('form')).toBeTruthy();
   });
 });

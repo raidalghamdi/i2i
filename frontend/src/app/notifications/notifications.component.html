@@ -25,11 +25,7 @@
       i18n="@@notificationsFilterUnread"
     >Unread</button>
   </div>
-  <div class="flex gap-2">
-    <button class="btn-outline btn-sm" (click)="markAllRead()" i18n="@@notificationsMarkAllRead">Mark all read</button>
-    <!-- Change 20260726 -->
-    <a routerLink="/notifications/preferences" class="btn-outline btn-sm" i18n="@@notificationsManagePreferences">Preferences</a>
-  </div>
+  <button class="btn-outline btn-sm" (click)="markAllRead()" i18n="@@notificationsMarkAllRead">Mark all read</button>
 </div>
 
 @if (filtered().length === 0) {
@@ -39,9 +35,8 @@
     @for (n of filtered(); track n.id) {
       <li class="card-surface card-body flex items-start justify-between gap-3" [class.border-brand-teal]="n.readAt === null">
         <div>
-          <!-- Change 20260726 -->
-          <p class="text-sm font-medium text-foreground">{{ title(n) }}</p>
-          <p class="mt-1 text-sm text-muted-foreground">{{ body(n) }}</p>
+          <p class="text-sm font-medium text-foreground">{{ n.titleAr }}</p>
+          <p class="mt-1 text-sm text-muted-foreground">{{ n.bodyAr }}</p>
         </div>
         <button class="btn-ghost btn-sm" (click)="dismiss(n.id)" i18n="@@notificationsDismiss">Dismiss</button>
       </li>

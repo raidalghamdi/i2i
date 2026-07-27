@@ -32,7 +32,7 @@ describe('IdeaFormComponent', () => {
   }
 
   function setup(routeParamId: string | null, idea?: Idea): void {
-    ideasApi = jasmine.createSpyObj('IdeasApiService', ['update', 'resubmit', 'getById', 'uploadAttachment', 'deleteAttachment']); // Change 20260726
+    ideasApi = jasmine.createSpyObj('IdeasApiService', ['update', 'resubmit', 'getById', 'uploadAttachment']);
     themesApi = jasmine.createSpyObj('StrategicThemesService', ['list']);
     activitiesApi = jasmine.createSpyObj('ActivitiesService', ['list']);
     challengesApi = jasmine.createSpyObj('ChallengesService', ['listByTheme']);
@@ -179,59 +179,4 @@ describe('IdeaFormComponent', () => {
 
     expect(fixture.componentInstance.loadError()).toBeNull();
   });
-
-  const attachment = { id: 'att-1', fileName: 'evidence.pdf', contentType: 'application/pdf', fileSizeBytes: 12, uploadedAt: '2026-01-01' }; // Change 20260726
-
-  it('deletes an existing attachment after confirmation and drops it from the list', async () => { // Change 20260726
-    setup('idea-1', makeIdea({ attachments: [attachment] })); // Change 20260726
-    await boot(); // Change 20260726
-    spyOn(window, 'confirm').and.returnValue(true); // Change 20260726
-    ideasApi.deleteAttachment.and.returnValue(Promise.resolve()); // Change 20260726
-
-    const button = fixture.nativeElement.querySelector('[data-testid="delete-attachment"]') as HTMLButtonElement; // Change 20260726
-    expect(button).toBeTruthy(); // Change 20260726
-    button.click(); // Change 20260726
-    await fixture.whenStable(); // Change 20260726
-    fixture.detectChanges(); // Change 20260726
-
-    expect(ideasApi.deleteAttachment).toHaveBeenCalledWith('idea-1', 'att-1'); // Change 20260726
-    expect(fixture.componentInstance.existingAttachments()).toEqual([]); // Change 20260726
-    expect(fixture.nativeElement.textContent).not.toContain('evidence.pdf'); // Change 20260726
-    expect(fixture.componentInstance.deletingAttachmentId()).toBeNull(); // Change 20260726
-  }); // Change 20260726
-
-  it('does not delete when the confirmation is dismissed', async () => { // Change 20260726
-    setup('idea-1', makeIdea({ attachments: [attachment] })); // Change 20260726
-    await boot(); // Change 20260726
-    spyOn(window, 'confirm').and.returnValue(false); // Change 20260726
-
-    (fixture.nativeElement.querySelector('[data-testid="delete-attachment"]') as HTMLButtonElement).click(); // Change 20260726
-    await fixture.whenStable(); // Change 20260726
-
-    expect(ideasApi.deleteAttachment).not.toHaveBeenCalled(); // Change 20260726
-    expect(fixture.componentInstance.existingAttachments().length).toBe(1); // Change 20260726
-  }); // Change 20260726
-
-  it('shows an error banner and keeps the attachment when deletion fails', async () => { // Change 20260726
-    setup('idea-1', makeIdea({ attachments: [attachment] })); // Change 20260726
-    await boot(); // Change 20260726
-    spyOn(window, 'confirm').and.returnValue(true); // Change 20260726
-    ideasApi.deleteAttachment.and.returnValue(Promise.reject({ error: { error: 'Attachment is locked.' } })); // Change 20260726
-
-    (fixture.nativeElement.querySelector('[data-testid="delete-attachment"]') as HTMLButtonElement).click(); // Change 20260726
-    await fixture.whenStable(); // Change 20260726
-    fixture.detectChanges(); // Change 20260726
-
-    const banner = fixture.nativeElement.querySelector('[data-testid="attachment-error"]'); // Change 20260726
-    expect(banner?.textContent).toContain('Attachment is locked.'); // Change 20260726
-    expect(fixture.componentInstance.existingAttachments().length).toBe(1); // Change 20260726
-    expect(fixture.componentInstance.deletingAttachmentId()).toBeNull(); // Change 20260726
-  }); // Change 20260726
-
-  it('hides the delete control when a return locked the attachments section', async () => { // Change 20260726
-    setup('idea-1', makeIdea({ status: 'returned', editableSections: 'title', attachments: [attachment] })); // Change 20260726
-    await boot(); // Change 20260726
-
-    expect(fixture.nativeElement.querySelector('[data-testid="delete-attachment"]')).toBeNull(); // Change 20260726
-  }); // Change 20260726
 });

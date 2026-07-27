@@ -8,6 +8,4 @@ public enum EvaluationCommandStatus
     InvalidState,
     AlreadyEvaluated,
     InvalidScore,
-    InvalidCriteria, // Change 20260726
-    SelfAuthorship, // Change 20260726
 }

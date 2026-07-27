@@ -7,10 +7,6 @@
 } @else if (decisions().length === 0) {
   <app-empty-state title="You haven't submitted any committee decisions yet." i18n-title="@@myDecisionsEmpty" icon="gavel" />
 } @else {
-  <!-- Change 20260726 -->
-  @if (attachmentError(); as msg) {
-    <p class="field-error mb-3" role="alert">{{ msg }}</p>
-  }
   <div class="data-table-wrap">
     <table class="data-table">
       <thead>
@@ -18,8 +14,6 @@
           <th i18n="@@myDecisionsColumnIdea">Idea</th>
           <th i18n="@@myDecisionsColumnScore">Score</th>
           <th i18n="@@myDecisionsColumnDate">Decided On</th>
-          <!-- Change 20260726 -->
-          <th i18n="@@myDecisionsColumnAttachments">Attachments</th>
         </tr>
       </thead>
       <tbody>
@@ -28,22 +22,6 @@
             <td class="font-medium">{{ decision.ideaCode }} — {{ decision.ideaTitleEn }}</td>
             <td>{{ decision.totalScore }}</td>
             <td>{{ decision.decidedAt | date: 'mediumDate' }}</td>
-            <!-- Change 20260726 -->
-            <td>
-              @if (decision.attachments?.length) {
-                <ul class="flex flex-col gap-1">
-                  @for (attachment of decision.attachments; track attachment.id) {
-                    <li>
-                      <button type="button" class="text-sm text-brand-teal hover:underline" (click)="openAttachment(decision.id, attachment)">
-                        {{ attachment.fileName }}
-                      </button>
-                    </li>
-                  }
-                </ul>
-              } @else {
-                <span class="text-muted-foreground" aria-hidden="true">—</span>
-              }
-            </td>
           </tr>
         }
       </tbody>

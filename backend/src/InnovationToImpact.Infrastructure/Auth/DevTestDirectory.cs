@@ -40,37 +40,6 @@ public static class DevTestDirectory
     /// <summary>The 40 dev test users (5 per role).</summary>
     public static readonly IReadOnlyList<DevTestUser> Users = BuildUsers();
 
-    /// <summary> // Change 20260726
-    /// A single AD-style account holding all five workflow roles at once, so a tester can exercise // Change 20260726
-    /// every screen (and the in-app role switcher) without swapping identities. Named as a UPN // Change 20260726
-    /// because that is the form Negotiate supplies and the form DevAuth's X-Dev-User expects here. // Change 20260726
-    /// </summary> // Change 20260726
-    public const string UnifiedAdminSamAccountName = "admin@internal.sa"; // Change 20260726
-    public const string UnifiedAdminEmail = "admin@internal.sa"; // Change 20260726
-    public const string UnifiedAdminFullNameEn = "Test All-Roles Admin"; // Change 20260726
-    public const string UnifiedAdminFullNameAr = "مدير اختبار — جميع الأدوار"; // Change 20260726
-    public const string UnifiedAdminDepartment = "Innovation"; // Change 20260726
-    public const string UnifiedAdminTitle = "Admin"; // Change 20260726
-
-    /// <summary>The five workflow roles granted to <see cref="UnifiedAdminSamAccountName"/>.</summary> // Change 20260726
-    public static readonly IReadOnlyList<string> UnifiedAdminRoleCodes = new[] // Change 20260726
-    { // Change 20260726
-        RoleCodes.Admin, // Change 20260726
-        RoleCodes.Supervisor, // Change 20260726
-        RoleCodes.Judge, // Change 20260726
-        RoleCodes.Evaluator, // Change 20260726
-        RoleCodes.Submitter, // Change 20260726
-    }; // Change 20260726
-
-    /// <summary>The unified account projected as an AD identity for the dev fake directory.</summary> // Change 20260726
-    public static AdIdentity UnifiedAdminAdIdentity() => new( // Change 20260726
-        UnifiedAdminSamAccountName, // Change 20260726
-        UnifiedAdminFullNameEn, // Change 20260726
-        UnifiedAdminEmail, // Change 20260726
-        UnifiedAdminDepartment, // Change 20260726
-        UnifiedAdminTitle, // Change 20260726
-        "devuser@gac-demo.sa"); // Change 20260726
-
     private static IReadOnlyList<DevTestUser> BuildUsers()
     {
         var users = new List<DevTestUser>(Roles.Length * 5);
@@ -100,8 +69,7 @@ public static class DevTestDirectory
             u.Email,
             u.Department,
             u.Title,
-            "devuser@gac-demo.sa")) // Change 20260726
-            .Append(UnifiedAdminAdIdentity()); // Change 20260726
+            "devuser@gac-demo.sa"));
 
     /// <summary>All distinct role codes covered (used to grant devuser every role).</summary>
     public static IReadOnlyList<string> AllRoleCodes => Roles.Select(r => r.Code).ToList();

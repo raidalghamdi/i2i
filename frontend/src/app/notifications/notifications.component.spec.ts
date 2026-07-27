@@ -1,6 +1,4 @@
-import { LOCALE_ID } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router'; // Change 20260726
 import { NotificationStore } from '../core/notification-store';
 import { NotificationsApiService, NotificationItem } from '../core/notifications-api.service';
 import { NotificationsComponent } from './notifications.component';
@@ -21,7 +19,7 @@ describe('NotificationsComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [NotificationsComponent],
-      providers: [provideRouter([]), { provide: NotificationsApiService, useValue: api }],
+      providers: [{ provide: NotificationsApiService, useValue: api }],
     });
     fixture = TestBed.createComponent(NotificationsComponent);
     store = TestBed.inject(NotificationStore);
@@ -84,7 +82,7 @@ describe('NotificationsComponent', () => {
     api.list.and.returnValue(Promise.resolve([]));
     TestBed.configureTestingModule({
       imports: [NotificationsComponent],
-      providers: [provideRouter([]), { provide: NotificationsApiService, useValue: api }],
+      providers: [{ provide: NotificationsApiService, useValue: api }],
     });
     fixture = TestBed.createComponent(NotificationsComponent);
     fixture.detectChanges();
@@ -99,7 +97,7 @@ describe('NotificationsComponent', () => {
     api.list.and.returnValue(Promise.reject(new Error('boom')));
     TestBed.configureTestingModule({
       imports: [NotificationsComponent],
-      providers: [provideRouter([]), { provide: NotificationsApiService, useValue: api }],
+      providers: [{ provide: NotificationsApiService, useValue: api }],
     });
     fixture = TestBed.createComponent(NotificationsComponent);
     store = TestBed.inject(NotificationStore);
@@ -116,53 +114,5 @@ describe('NotificationsComponent', () => {
     fixture.detectChanges();
 
     expect(store.notifications().length).toBe(2);
-  });
-
-  // Change 20260726
-  describe('locale-aware text', () => {
-    async function setupWithLocale(locale: string): Promise<ComponentFixture<NotificationsComponent>> {
-      api = jasmine.createSpyObj('NotificationsApiService', ['list', 'markRead', 'markAllRead']);
-      api.list.and.returnValue(Promise.resolve(items));
-      TestBed.configureTestingModule({
-        imports: [NotificationsComponent],
-        providers: [
-          provideRouter([]),
-          { provide: NotificationsApiService, useValue: api },
-          { provide: LOCALE_ID, useValue: locale },
-        ],
-      });
-      const f = TestBed.createComponent(NotificationsComponent);
-      f.detectChanges();
-      await f.componentInstance.ngOnInit();
-      f.detectChanges();
-      return f;
-    }
-
-    it('renders English title and body under an English locale', async () => {
-      const f = await setupWithLocale('en-US');
-
-      const text = f.nativeElement.textContent as string;
-      expect(text).toContain('T1');
-      expect(text).toContain('B1');
-      expect(text).not.toContain('ت1');
-      expect(text).not.toContain('ب1');
-    });
-
-    it('renders Arabic title and body under an Arabic locale', async () => {
-      const f = await setupWithLocale('ar-SA');
-
-      const text = f.nativeElement.textContent as string;
-      expect(text).toContain('ت1');
-      expect(text).toContain('ب1');
-      expect(text).not.toContain('T1');
-      expect(text).not.toContain('B1');
-    });
-
-    it('selects fields via the title()/body() accessors rather than hard-coding Arabic', async () => {
-      const f = await setupWithLocale('en-US');
-
-      expect(f.componentInstance.title(items[0])).toBe('T1');
-      expect(f.componentInstance.body(items[0])).toBe('B1');
-    });
   });
 });

@@ -1,0 +1,19 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "src\\InnovationToImpact.Domain\\InnovationToImpact.Domain.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\InnovationToImpact.Infrastructure\\InnovationToImpact.Infrastructure.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\InnovationToImpact.Api\\InnovationToImpact.Api.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

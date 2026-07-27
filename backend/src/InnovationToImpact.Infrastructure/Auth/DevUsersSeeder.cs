@@ -8,9 +8,8 @@ namespace InnovationToImpact.Infrastructure.Auth;
 /// <summary>
 /// DEV/TEST ONLY seeder. Provisions the <see cref="DevTestDirectory"/> roster (5 users per role, 40
 /// total) as real users-with-roles, and grants the canonical "devuser" every role so all roles can be
-/// exercised via the in-app role switcher, plus the unified all-roles account // Change 20260726
-/// <see cref="DevTestDirectory.UnifiedAdminSamAccountName"/>. Idempotent — only creates users / role // Change 20260726
-/// assignments that are missing. Must be gated to Development or Staging by the caller; never Production. // Change 20260726
+/// exercised via the in-app role switcher. Idempotent — only creates users / role assignments that are
+/// missing. Must be gated to the Development environment by the caller; never run in Production.
 /// </summary>
 public static class DevUsersSeeder
 {
@@ -25,7 +24,6 @@ public static class DevUsersSeeder
 
         var wantedSams = DevTestDirectory.Users.Select(u => u.SamAccountName)
             .Append("devuser")
-            .Append(DevTestDirectory.UnifiedAdminSamAccountName) // Change 20260726
             .ToList();
 
         var existing = await db.Users
@@ -113,45 +111,6 @@ public static class DevUsersSeeder
                 changed = true;
             }
         }
-
-        // Unified AD-style account carrying all five workflow roles at once. // Change 20260726
-        if (!existing.TryGetValue(DevTestDirectory.UnifiedAdminSamAccountName, out var unifiedAdmin)) // Change 20260726
-        { // Change 20260726
-            unifiedAdmin = new User // Change 20260726
-            { // Change 20260726
-                Id = Guid.NewGuid(), // Change 20260726
-                SamAccountName = DevTestDirectory.UnifiedAdminSamAccountName, // Change 20260726
-                Email = DevTestDirectory.UnifiedAdminEmail, // Change 20260726
-                FullNameAr = DevTestDirectory.UnifiedAdminFullNameAr, // Change 20260726
-                FullNameEn = DevTestDirectory.UnifiedAdminFullNameEn, // Change 20260726
-                Department = DevTestDirectory.UnifiedAdminDepartment, // Change 20260726
-                Title = DevTestDirectory.UnifiedAdminTitle, // Change 20260726
-                ManagerEmail = "devuser@gac-demo.sa", // Change 20260726
-                IsActive = true, // Change 20260726
-            }; // Change 20260726
-            db.Users.Add(unifiedAdmin); // Change 20260726
-            existing[DevTestDirectory.UnifiedAdminSamAccountName] = unifiedAdmin; // Change 20260726
-            changed = true; // Change 20260726
-        } // Change 20260726
-
-        foreach (var code in DevTestDirectory.UnifiedAdminRoleCodes) // Change 20260726
-        { // Change 20260726
-            if (!rolesByCode.TryGetValue(code, out var role)) // Change 20260726
-            { // Change 20260726
-                continue; // Change 20260726
-            } // Change 20260726
-
-            if (unifiedAdmin.UserRoles.All(ur => ur.RoleId != role.Id)) // Change 20260726
-            { // Change 20260726
-                unifiedAdmin.UserRoles.Add(new UserRole // Change 20260726
-                { // Change 20260726
-                    UserId = unifiedAdmin.Id, // Change 20260726
-                    RoleId = role.Id, // Change 20260726
-                    IsPrimary = code == RoleCodes.Admin && unifiedAdmin.UserRoles.All(ur => !ur.IsPrimary), // Change 20260726
-                }); // Change 20260726
-                changed = true; // Change 20260726
-            } // Change 20260726
-        } // Change 20260726
 
         if (changed)
         {

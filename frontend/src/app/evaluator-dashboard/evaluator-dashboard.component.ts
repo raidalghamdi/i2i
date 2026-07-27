@@ -29,7 +29,6 @@ export class EvaluatorDashboardComponent implements OnInit {
   readonly evaluatedThisMonthCount = computed(() => {
     const now = new Date();
     return this.mine().filter((m) => {
-      if (m.submittedAt === null) return false; // Change 20260726 — drafts aren't evaluated yet.
       const d = new Date(m.submittedAt);
       return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
     }).length;
@@ -37,8 +36,8 @@ export class EvaluatorDashboardComponent implements OnInit {
 
   readonly avgDays = computed<number | null>(() => {
     const durations = this.mine()
-      .filter((m) => m.ideaEnteredEvaluationAt !== null && m.submittedAt !== null) // Change 20260726 — a draft has no turnaround time yet.
-      .map((m) => (new Date(m.submittedAt!).getTime() - new Date(m.ideaEnteredEvaluationAt!).getTime()) / 86_400_000)
+      .filter((m) => m.ideaEnteredEvaluationAt !== null)
+      .map((m) => (new Date(m.submittedAt).getTime() - new Date(m.ideaEnteredEvaluationAt!).getTime()) / 86_400_000)
       .filter((d) => d >= 0);
     if (durations.length === 0) return null;
     return Math.max(1, Math.round(durations.reduce((a, b) => a + b, 0) / durations.length));

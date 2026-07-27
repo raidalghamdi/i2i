@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { accessGateGuard, accessLogoutGuard } from './core/access/access-gate.guard'; // Change 20260726
 import {
   adminOnlyGuard,
   anyAssignedRoleGuard,
@@ -13,29 +12,11 @@ import { PublicShellComponent } from './shell/public-shell/public-shell.componen
 import { AppShellComponent } from './shell/app-shell/app-shell.component';
 
 export const routes: Routes = [
-  // Change 20260726 — the testing gate itself must stay reachable, so it is declared
-  // before (and without) accessGateGuard.
-  {
-    path: 'gate', // Change 20260726
-    loadComponent: () => // Change 20260726
-      import('./core/access/access-gate.component').then((m) => m.AccessGateComponent), // Change 20260726
-  }, // Change 20260726
-  {
-    path: 'access-logout', // Change 20260726
-    canActivate: [accessLogoutGuard], // Change 20260726
-    loadComponent: () => // Change 20260726
-      import('./core/access/access-gate.component').then((m) => m.AccessGateComponent), // Change 20260726
-  }, // Change 20260726
   {
     path: '',
     component: PublicShellComponent,
-    canActivate: [accessGateGuard], // Change 20260726
     children: [
       { path: '', component: LandingComponent },
-      {
-        path: 'login',
-        loadComponent: () => import('./public/login/login.component').then((m) => m.LoginComponent),
-      },
       // Phase 3.1/3.2 public pages get added here as children.
       {
         path: 'privacy',
@@ -153,7 +134,6 @@ export const routes: Routes = [
   {
     path: '',
     component: AppShellComponent,
-    canActivate: [accessGateGuard], // Change 20260726
     children: [
       {
         path: 'ideas/new',
@@ -163,20 +143,6 @@ export const routes: Routes = [
           ),
         canActivate: [ideaAuthorGuard],
       },
-      {
-        path: 'ideas/mine', // Change 20260726
-        loadComponent: () => // Change 20260726
-          import('./ideas/mine/mine-ideas.component').then((m) => m.MineIdeasComponent), // Change 20260726
-        canActivate: [anyAssignedRoleGuard], // Change 20260726
-      }, // Change 20260726
-      {
-        // `ideas/:id` already resolves to the pre-existing detail page, so the Phase 2b read-only
-        // view is mounted alongside it rather than replacing a shipped screen. // Change 20260726
-        path: 'ideas/:id/view', // Change 20260726
-        loadComponent: () => // Change 20260726
-          import('./ideas/detail/idea-detail.component').then((m) => m.IdeaDetailViewComponent), // Change 20260726
-        canActivate: [anyAssignedRoleGuard], // Change 20260726
-      }, // Change 20260726
       {
         path: 'my-ideas',
         loadComponent: () =>
@@ -220,15 +186,6 @@ export const routes: Routes = [
         path: 'settings',
         loadComponent: () =>
           import('./settings/settings.component').then((m) => m.SettingsComponent),
-        canActivate: [anyAssignedRoleGuard],
-      },
-      // Change 20260726 — ahead of 'notifications' so the more specific path wins.
-      {
-        path: 'notifications/preferences',
-        loadComponent: () =>
-          import('./notifications/notification-preferences/notification-preferences.component').then(
-            (m) => m.NotificationPreferencesComponent,
-          ),
         canActivate: [anyAssignedRoleGuard],
       },
       {
@@ -574,31 +531,6 @@ export const routes: Routes = [
           import('./admin/compliance/compliance.component').then((m) => m.ComplianceComponent),
         canActivate: [adminOnlyGuard],
       },
-      // Change 20260726
-      {
-        path: 'admin/reports/evaluator-productivity',
-        loadComponent: () =>
-          import('./reports/evaluator-productivity/evaluator-productivity.component').then(
-            (m) => m.EvaluatorProductivityComponent,
-          ),
-        canActivate: [adminOnlyGuard],
-      },
-      // Change 20260726
-      {
-        path: 'admin/sla-policies',
-        loadComponent: () =>
-          import('./admin/sla-policies/sla-policies.component').then((m) => m.SlaPoliciesComponent),
-        canActivate: [adminOnlyGuard],
-      },
-      // Change 20260726
-      {
-        path: 'admin/evaluation-criteria',
-        loadComponent: () =>
-          import('./admin/evaluation-criteria/evaluation-criteria.component').then(
-            (m) => m.EvaluationCriteriaComponent,
-          ),
-        canActivate: [supervisorOrAdminGuard],
-      },
       {
         path: 'admin/committee-criteria',
         loadComponent: () =>
@@ -746,5 +678,4 @@ export const routes: Routes = [
       },
     ],
   },
-  { path: '**', redirectTo: '' },
 ];
