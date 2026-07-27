@@ -37,24 +37,31 @@ public class EvaluationService : IEvaluationService
             cancellationToken);
         if (alreadyEvaluated) return new EvaluationCommandResult(EvaluationCommandStatus.AlreadyEvaluated);
 
-        var scores = new[] { input.Innovation, input.Impact, input.Execution, input.Scalability, input.Presentation };
-        if (scores.Any(s => s < EvaluationScoreRules.MinScore || s > EvaluationScoreRules.MaxScore))
+        var scores = input.CriteriaScores ?? new Dictionary<string, decimal>();
+        var activeCodes = await _db.EvaluationCriteria // Change 20260726
+            .Where(c => c.Active)
+            .Select(c => c.Code)
+            .ToListAsync(cancellationToken);
+
+        // A submission must cover exactly the active criteria; a partial or stale set would make the
+        // average silently incomparable between evaluators of the same idea.
+        if (scores.Count != activeCodes.Count || activeCodes.Any(code => !scores.ContainsKey(code))) // Change 20260726
+        {
+            return new EvaluationCommandResult(EvaluationCommandStatus.InvalidCriteria);
+        }
+
+        if (scores.Values.Any(s => s < EvaluationScoreRules.MinScore || s > EvaluationScoreRules.MaxScore)) // Change 20260726
         {
             return new EvaluationCommandResult(EvaluationCommandStatus.InvalidScore);
         }
 
-        var average = scores.Average();
+        var average = scores.Values.Average(); // Change 20260726
         var passThreshold = await _settings.GetPassThresholdAsync(cancellationToken);
-        var recommendation = average >= passThreshold ? EvaluationRecommendationCodes.Pass : EvaluationRecommendationCodes.Fail;
+        var recommendation = input.Recommendation is EvaluationRecommendationCodes.Pass or EvaluationRecommendationCodes.Fail // Change 20260726
+            ? input.Recommendation
+            : average >= passThreshold ? EvaluationRecommendationCodes.Pass : EvaluationRecommendationCodes.Fail;
 
-        var criteriaScoresJson = JsonSerializer.Serialize(new Dictionary<string, decimal>
-        {
-            [EvaluationCriteriaCodes.Innovation] = input.Innovation,
-            [EvaluationCriteriaCodes.Impact] = input.Impact,
-            [EvaluationCriteriaCodes.Execution] = input.Execution,
-            [EvaluationCriteriaCodes.Scalability] = input.Scalability,
-            [EvaluationCriteriaCodes.Presentation] = input.Presentation,
-        });
+        var criteriaScoresJson = JsonSerializer.Serialize(scores); // Change 20260726
 
         var evaluation = new Evaluation
         {
@@ -97,23 +104,18 @@ public class EvaluationService : IEvaluationService
         return new EvaluationCommandResult(EvaluationCommandStatus.Success, evaluation, idea);
     }
 
+    // Change 20260726 — criteria are now dynamic, so the code list comes from what was actually
+    // scored rather than a fixed set. Historical rows keep resolving because seeded codes are unchanged.
     private static string BuildAggregateJson(IReadOnlyCollection<Evaluation> evaluations)
     {
-        var codes = new[]
-        {
-            EvaluationCriteriaCodes.Innovation, EvaluationCriteriaCodes.Impact,
-            EvaluationCriteriaCodes.Execution, EvaluationCriteriaCodes.Scalability,
-            EvaluationCriteriaCodes.Presentation,
-        };
+        var parsedScores = evaluations
+            .Select(e => JsonSerializer.Deserialize<Dictionary<string, decimal>>(e.CriteriaScoresJson) ?? new())
+            .ToList();
+
         var means = new Dictionary<string, decimal>();
-        foreach (var code in codes)
+        foreach (var code in parsedScores.SelectMany(p => p.Keys).Distinct())
         {
-            var vals = new List<decimal>();
-            foreach (var e in evaluations)
-            {
-                var parsed = JsonSerializer.Deserialize<Dictionary<string, decimal>>(e.CriteriaScoresJson) ?? new();
-                if (parsed.TryGetValue(code, out var v)) vals.Add(v);
-            }
+            var vals = parsedScores.Where(p => p.ContainsKey(code)).Select(p => p[code]).ToList();
             means[code] = vals.Count > 0 ? vals.Average() : 0m;
         }
         return JsonSerializer.Serialize(means);

@@ -20,7 +20,7 @@ public class AdminSettingConfiguration : IEntityTypeConfiguration<AdminSetting>
 
         builder.HasData(
             new AdminSetting { Key = "top_n", ValueJson = "5", UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new AdminSetting { Key = "pass_threshold", ValueJson = "6.0", UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            new AdminSetting { Key = "pass_threshold", ValueJson = "7.0", UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) } // Change 20260726
         );
     }
 }

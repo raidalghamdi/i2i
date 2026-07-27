@@ -1,9 +1,7 @@
 namespace InnovationToImpact.Domain.Evaluations;
 
+// Change 20260726
 public sealed record EvaluationInput(
-    decimal Innovation,
-    decimal Impact,
-    decimal Execution,
-    decimal Scalability,
-    decimal Presentation,
-    string? Comments);
+    Dictionary<string, decimal> CriteriaScores,
+    string? Comments,
+    string? Recommendation = null);
