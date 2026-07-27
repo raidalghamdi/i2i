@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EvaluationsApiService } from '../evaluations-api.service';
-import { EvaluationCriterion, MyEvaluation } from '../evaluation.model'; // Change 20260726
+import { EvaluationCriterion, EvaluationSubmitResult, MyEvaluation } from '../evaluation.model'; // Change 20260726
 import { IdeasApiService } from '../../ideas/ideas-api.service';
 import { StrategicThemesService } from '../../ideas/strategic-themes.service';
 import { ActivitiesService } from '../../ideas/activities.service';
@@ -124,6 +124,43 @@ describe('EvaluationFormComponent', () => {
     fixture.componentInstance.scores.at(0).setValue(null);
 
     expect(fixture.componentInstance.form.invalid).toBe(true);
+  });
+
+  // Change 20260726
+  it('disables both buttons and shows a saving label while a submit is in flight', async () => {
+    await setup();
+    let resolve!: (value: EvaluationSubmitResult) => void;
+    evaluationsApi.submit.and.returnValue(new Promise<EvaluationSubmitResult>((r) => (resolve = r)));
+    fillAllScores();
+
+    const pending = fixture.componentInstance.onSubmit();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isSubmitting()).toBeTrue();
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
+    const submit = buttons.find((b) => b.type === 'submit')!;
+    expect(submit.disabled).toBeTrue();
+    expect(submit.textContent).toContain('Saving...');
+
+    resolve({ id: 'eval-1', totalScore: 7, recommendation: 'pass', ideaStatus: 'pass_awaiting_attachments' });
+    await pending;
+
+    expect(fixture.componentInstance.isSubmitting()).toBeFalse();
+  });
+
+  // Change 20260726
+  it('ignores a second submit while one is already in flight', async () => {
+    await setup();
+    let resolve!: (value: EvaluationSubmitResult) => void;
+    evaluationsApi.submit.and.returnValue(new Promise<EvaluationSubmitResult>((r) => (resolve = r)));
+    fillAllScores();
+
+    const first = fixture.componentInstance.onSubmit();
+    await fixture.componentInstance.onSubmit();
+
+    expect(evaluationsApi.submit).toHaveBeenCalledTimes(1);
+    resolve({ id: 'eval-1', totalScore: 7, recommendation: 'pass', ideaStatus: 'pass_awaiting_attachments' });
+    await first;
   });
 
   // Change 20260726

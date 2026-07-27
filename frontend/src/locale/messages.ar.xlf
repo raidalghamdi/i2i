@@ -12767,6 +12767,14 @@
         <source>One or more files are larger than 10MB.</source>
         <target>حجم ملف واحد أو أكثر أكبر من 10 ميجابايت.</target>
       </trans-unit>
+      <trans-unit id="committeeFormSubmitting" datatype="html">
+        <source>Saving...</source>
+        <target>جارٍ الحفظ...</target>
+      </trans-unit>
+      <trans-unit id="evalFormSubmitting" datatype="html">
+        <source>Saving...</source>
+        <target>جارٍ الحفظ...</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>

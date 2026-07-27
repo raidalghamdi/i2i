@@ -103,6 +103,71 @@ describe('CommitteeDecisionFormComponent', () => {
   });
 
   // Change 20260726
+  describe('in-flight submit', () => {
+    it('disables the submit button and shows a saving label while the request is pending', async () => {
+      setup();
+      fixture.detectChanges();
+      await fixture.componentInstance.ngOnInit();
+      fixture.detectChanges();
+
+      let resolve!: (value: { id: string; totalScore: number; ideaStatus: string }) => void;
+      committeeApi.submitDecision.and.returnValue(new Promise((r) => (resolve = r)));
+      setFormValues(fixture.componentInstance.form, {
+        originality: 8, feasibility: 8, impact: 8, alignment: 8,
+        decisionTypeCode: 'approved', comments: null,
+      });
+
+      const pending = fixture.componentInstance.onSubmit();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.isSubmitting()).toBeTrue();
+      const button = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
+      expect(button.disabled).toBeTrue();
+      expect(button.textContent).toContain('Saving...');
+
+      resolve({ id: 'decision-1', totalScore: 8, ideaStatus: 'committee' });
+      await pending;
+
+      expect(fixture.componentInstance.isSubmitting()).toBeFalse();
+    });
+
+    it('ignores a second submit while one is already in flight', async () => {
+      setup();
+      fixture.detectChanges();
+      await fixture.componentInstance.ngOnInit();
+
+      let resolve!: (value: { id: string; totalScore: number; ideaStatus: string }) => void;
+      committeeApi.submitDecision.and.returnValue(new Promise((r) => (resolve = r)));
+      setFormValues(fixture.componentInstance.form, {
+        originality: 8, feasibility: 8, impact: 8, alignment: 8,
+        decisionTypeCode: 'approved', comments: null,
+      });
+
+      const first = fixture.componentInstance.onSubmit();
+      await fixture.componentInstance.onSubmit();
+
+      expect(committeeApi.submitDecision).toHaveBeenCalledTimes(1);
+      resolve({ id: 'decision-1', totalScore: 8, ideaStatus: 'committee' });
+      await first;
+    });
+
+    it('clears the in-flight flag when the request fails so the judge can retry', async () => {
+      setup();
+      fixture.detectChanges();
+      await fixture.componentInstance.ngOnInit();
+
+      committeeApi.submitDecision.and.returnValue(Promise.reject({ error: { error: 'boom' } }));
+      setFormValues(fixture.componentInstance.form, {
+        originality: 8, feasibility: 8, impact: 8, alignment: 8,
+        decisionTypeCode: 'approved', comments: null,
+      });
+      await fixture.componentInstance.onSubmit();
+
+      expect(fixture.componentInstance.isSubmitting()).toBeFalse();
+    });
+  });
+
+  // Change 20260726
   describe('attachments', () => {
     function pdf(name = 'minutes.pdf', size = 1024): File {
       const file = new File(['x'], name, { type: 'application/pdf' });

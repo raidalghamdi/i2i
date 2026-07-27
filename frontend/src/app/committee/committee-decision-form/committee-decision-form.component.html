@@ -65,7 +65,14 @@
   </div>
 
   <div class="flex justify-end">
-    <button type="submit" class="btn-default" [disabled]="form.invalid" i18n="@@committeeFormSubmit">Submit Decision</button>
+    <!-- Change 20260726 -->
+    <button type="submit" class="btn-default" [disabled]="form.invalid || isSubmitting()">
+      @if (isSubmitting()) {
+        <span i18n="@@committeeFormSubmitting">Saving...</span>
+      } @else {
+        <span i18n="@@committeeFormSubmit">Submit Decision</span>
+      }
+    </button>
   </div>
 </form>
 }

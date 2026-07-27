@@ -51,6 +51,7 @@ export class CommitteeDecisionFormComponent implements OnInit {
   readonly loadError = signal<string | null>(null);
   readonly queuedFiles = signal<File[]>([]); // Change 20260726
   readonly attachmentError = signal<string | null>(null); // Change 20260726
+  readonly isSubmitting = signal(false); // Change 20260726
   private readonly ideaId = this.route.snapshot.paramMap.get('id')!;
 
   readonly form = this.fb.group({
@@ -127,7 +128,7 @@ export class CommitteeDecisionFormComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.form.invalid) {
+    if (this.form.invalid || this.isSubmitting()) { // Change 20260726
       this.form.markAllAsTouched();
       return;
     }
@@ -138,6 +139,7 @@ export class CommitteeDecisionFormComponent implements OnInit {
       criteriaScores[criterion.code] = this.form.get(criterion.code)!.value as number;
     }
 
+    this.isSubmitting.set(true); // Change 20260726
     try {
       await this.committeeApi.submitDecision(
         this.ideaId,
@@ -151,6 +153,8 @@ export class CommitteeDecisionFormComponent implements OnInit {
       await this.router.navigate(['/committee/queue']);
     } catch (error) {
       this.errorMessage.set(this.extractErrorMessage(error));
+    } finally {
+      this.isSubmitting.set(false); // Change 20260726
     }
   }
 

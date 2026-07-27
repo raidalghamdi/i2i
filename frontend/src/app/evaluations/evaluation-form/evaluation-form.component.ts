@@ -49,6 +49,7 @@ export class EvaluationFormComponent implements OnInit {
   readonly criteriaUnavailable = signal(false); // Change 20260726
   /** True when this form was populated from a previously saved draft. */
   readonly resumedDraft = signal(false); // Change 20260726
+  readonly isSubmitting = signal(false); // Change 20260726
 
   private readonly isArabic: boolean; // Change 20260726
 
@@ -202,7 +203,7 @@ export class EvaluationFormComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.criteriaUnavailable() || this.form.invalid) { // Change 20260726
+    if (this.criteriaUnavailable() || this.form.invalid || this.isSubmitting()) { // Change 20260726
       this.form.markAllAsTouched();
       return;
     }
@@ -212,13 +213,14 @@ export class EvaluationFormComponent implements OnInit {
   /** Saves progress without validating: a draft is allowed to be incomplete. */
   // Change 20260726
   async onSaveDraft(): Promise<void> {
-    if (this.criteriaUnavailable()) return;
+    if (this.criteriaUnavailable() || this.isSubmitting()) return; // Change 20260726
     await this.send('draft');
   }
 
   // Change 20260726
   private async send(action: EvaluationAction): Promise<void> {
     this.errorMessage.set(null);
+    this.isSubmitting.set(true); // Change 20260726
     const value = this.form.getRawValue();
     try {
       await this.evaluationsApi.submit(this.ideaId, {
@@ -230,6 +232,8 @@ export class EvaluationFormComponent implements OnInit {
       await this.router.navigate([action === 'draft' ? '/evaluations/mine' : '/evaluations/queue']);
     } catch (error) {
       this.errorMessage.set(this.extractErrorMessage(error));
+    } finally {
+      this.isSubmitting.set(false); // Change 20260726
     }
   }
 
