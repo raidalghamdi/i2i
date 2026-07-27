@@ -2038,6 +2038,7 @@ app.MapPost("/api/ideas/{id:guid}/evaluations", async (Guid id, EvaluationInput 
         EvaluationCommandStatus.AlreadyEvaluated => Results.BadRequest(new { error = "You have already evaluated this idea." }),
         EvaluationCommandStatus.InvalidScore => Results.BadRequest(new { error = "Scores must be between 0 and 10." }),
         EvaluationCommandStatus.InvalidCriteria => Results.BadRequest(new { error = "Criteria scores must include exactly the active evaluation criteria." }), // Change 20260726
+        EvaluationCommandStatus.SelfAuthorship => Results.StatusCode(StatusCodes.Status403Forbidden), // Change 20260726
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
 }).RequireAuthorization("EvaluatorAndAbove");
@@ -2441,6 +2442,7 @@ app.MapPost("/api/ideas/{id:guid}/committee-decisions", async (Guid id, HttpRequ
         CommitteeCommandStatus.InvalidCriteria => Results.BadRequest(new { error = "Criteria scores must include exactly the active criteria, each between 0 and 10." }),
         CommitteeCommandStatus.InvalidAttachment => Results.BadRequest(new { error = "Unsupported file type or file exceeds the size limit." }), // Change 20260726
         CommitteeCommandStatus.Forbidden => Results.StatusCode(StatusCodes.Status403Forbidden),
+        CommitteeCommandStatus.SelfAuthorship => Results.StatusCode(StatusCodes.Status403Forbidden), // Change 20260726
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
 }).RequireAuthorization("SupervisorOrCommittee").DisableAntiforgery(); // Change 20260726

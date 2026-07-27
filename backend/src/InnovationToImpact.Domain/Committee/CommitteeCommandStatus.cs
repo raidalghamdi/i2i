@@ -10,4 +10,5 @@ public enum CommitteeCommandStatus
     InvalidCriteria,
     Forbidden,
     InvalidAttachment, // Change 20260726
+    SelfAuthorship, // Change 20260726
 }
