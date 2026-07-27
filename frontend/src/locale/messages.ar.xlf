@@ -594,44 +594,52 @@
           <context context-type="linenumber">9,12</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="evalFormInnovation" datatype="html">
-        <source>Innovation (0-10)</source>
-        <target>الابتكار (0-10)</target>
+      <trans-unit id="evalFormConflictOfInterest" datatype="html">
+        <source>I have a conflict of interest — my score won't count toward the decision</source>
+        <target>لدي تعارض في المصالح — لن يُحتسب تقييمي في القرار</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/evaluations/evaluation-form/evaluation-form.component.html</context>
-          <context context-type="linenumber">6,7</context>
+          <context context-type="linenumber">36</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="evalFormImpact" datatype="html">
-        <source>Impact (0-10)</source>
-        <target>الأثر (0-10)</target>
+      <trans-unit id="evalFormConflictOfInterestHelp" datatype="html">
+        <source> Declare a conflict if you are connected to this idea or its team. Please still score the idea; your scores are recorded for the audit trail but excluded from the final result. </source>
+        <target> أفصح عن التعارض إذا كانت لديك علاقة بهذه الفكرة أو بفريقها. يُرجى تقييم الفكرة على أي حال؛ تُسجَّل درجاتك في سجل التدقيق لكنها تُستثنى من النتيجة النهائية. </target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/evaluations/evaluation-form/evaluation-form.component.html</context>
-          <context context-type="linenumber">9,10</context>
+          <context context-type="linenumber">38,40</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="evalFormExecution" datatype="html">
-        <source>Execution (0-10)</source>
-        <target>التنفيذ (0-10)</target>
+      <trans-unit id="evalFormConflictOfInterestNotice" datatype="html">
+        <source> Conflict of interest declared — this evaluation is excluded from the decision. </source>
+        <target> تم الإفصاح عن تعارض في المصالح — هذا التقييم مُستثنى من القرار. </target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/evaluations/evaluation-form/evaluation-form.component.html</context>
-          <context context-type="linenumber">12,13</context>
+          <context context-type="linenumber">43,45</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="evalFormScalability" datatype="html">
-        <source>Scalability (0-10)</source>
-        <target>قابلية التوسع (0-10)</target>
+      <trans-unit id="evalFormDraftResumed" datatype="html">
+        <source> Resumed from your saved draft. </source>
+        <target> تم الاستئناف من مسودتك المحفوظة. </target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/evaluations/evaluation-form/evaluation-form.component.html</context>
-          <context context-type="linenumber">15,16</context>
+          <context context-type="linenumber">51,53</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="evalFormPresentation" datatype="html">
-        <source>Presentation (0-10)</source>
-        <target>العرض (0-10)</target>
+      <trans-unit id="evalFormSaveDraft" datatype="html">
+        <source>Save Draft</source>
+        <target>حفظ كمسودة</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/evaluations/evaluation-form/evaluation-form.component.html</context>
-          <context context-type="linenumber">18,19</context>
+          <context context-type="linenumber">83</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evalFormCriteriaLoadError" datatype="html">
+        <source>Couldn't load the scoring criteria. Please reload the page.</source>
+        <target>تعذّر تحميل معايير التقييم. يُرجى إعادة تحميل الصفحة.</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/evaluations/evaluation-form/evaluation-form.component.ts</context>
+          <context context-type="linenumber">1</context>
         </context-group>
       </trans-unit>
       <trans-unit id="evalFormComments" datatype="html">
@@ -2368,6 +2376,30 @@
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/evaluations/my-evaluations-list/my-evaluations-list.component.html</context>
           <context context-type="linenumber">14,17</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="myEvaluationsColumnStatus" datatype="html">
+        <source>Status</source>
+        <target>الحالة</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/evaluations/my-evaluations-list/my-evaluations-list.component.html</context>
+          <context context-type="linenumber">18</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="myEvaluationsResumeDraft" datatype="html">
+        <source>Resume draft</source>
+        <target>استئناف المسودة</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/evaluations/my-evaluations-list/my-evaluations-list.component.html</context>
+          <context context-type="linenumber">30</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="myEvaluationsSubmitted" datatype="html">
+        <source>Submitted</source>
+        <target>تم الإرسال</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/evaluations/my-evaluations-list/my-evaluations-list.component.html</context>
+          <context context-type="linenumber">34</context>
         </context-group>
       </trans-unit>
       <trans-unit id="myEvaluationsColumnScore" datatype="html">
