@@ -12815,6 +12815,126 @@
         <source>Another evaluator must score this idea.</source>
         <target>يجب أن يقيّم هذه الفكرة مُقيّم آخر.</target>
       </trans-unit>
+      <trans-unit id="evaluationCriteriaWeightWarn" datatype="html">
+        <source> Active criteria weights should sum to 1.0 (currently <x id="INTERPOLATION" equiv-text="{{ activeWeightSum() | number: &apos;1.2-2&apos; }}"/>). </source>
+        <target> يجب أن يكون مجموع أوزان المعايير النشطة 1.0 (المجموع الحالي <x id="INTERPOLATION" equiv-text="{{ activeWeightSum() | number: &apos;1.2-2&apos; }}"/>). </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">10</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaLoading" datatype="html">
+        <source>Loading evaluation criteria…</source>
+        <target>جارٍ تحميل معايير التقييم…</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">16</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaEmpty" datatype="html">
+        <source>No evaluation criteria yet.</source>
+        <target>لا توجد معايير تقييم بعد.</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">20</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnCode" datatype="html">
+        <source>Code</source>
+        <target>الرمز</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">25</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnNameAr" datatype="html">
+        <source>Name (Ar)</source>
+        <target>الاسم (عربي)</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">26</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnNameEn" datatype="html">
+        <source>Name (En)</source>
+        <target>الاسم (إنجليزي)</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">27</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnDescriptionAr" datatype="html">
+        <source>Description (Ar)</source>
+        <target>الوصف (عربي)</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">28</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnDescriptionEn" datatype="html">
+        <source>Description (En)</source>
+        <target>الوصف (إنجليزي)</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">29</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnSortOrder" datatype="html">
+        <source>Sort order</source>
+        <target>ترتيب العرض</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">31</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnActive" datatype="html">
+        <source>Active</source>
+        <target>نشط</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">32</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnActions" datatype="html">
+        <source>Actions</source>
+        <target>الإجراءات</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">33</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaSave" datatype="html">
+        <source>Save</source>
+        <target>حفظ</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">86</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaDelete" datatype="html">
+        <source>Delete</source>
+        <target>حذف</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">88</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaAddRow" datatype="html">
+        <source>Add criterion</source>
+        <target>إضافة معيار</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">99</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="navAdminEvaluationCriteria" datatype="html">
+        <source>Evaluation criteria</source>
+        <target>معايير التقييم</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/shell/app-shell/app-shell.component.ts</context>
+          <context context-type="linenumber">193</context>
+        </context-group>
+      </trans-unit>
     </body>
   </file>
 </xliff>

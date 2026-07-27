@@ -565,6 +565,15 @@ export const routes: Routes = [
           import('./admin/compliance/compliance.component').then((m) => m.ComplianceComponent),
         canActivate: [adminOnlyGuard],
       },
+      // Change 20260726
+      {
+        path: 'admin/evaluation-criteria',
+        loadComponent: () =>
+          import('./admin/evaluation-criteria/evaluation-criteria.component').then(
+            (m) => m.EvaluationCriteriaComponent,
+          ),
+        canActivate: [supervisorOrAdminGuard],
+      },
       {
         path: 'admin/committee-criteria',
         loadComponent: () =>
