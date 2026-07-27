@@ -17,8 +17,22 @@ export class CommitteeApiService {
     return firstValueFrom(this.http.get<CommitteeCriterion[]>('/api/committee-criteria'));
   }
 
-  submitDecision(ideaId: string, input: CommitteeDecisionInput): Promise<CommitteeDecisionResult> {
-    return firstValueFrom(this.http.post<CommitteeDecisionResult>(`/api/ideas/${ideaId}/committee-decisions`, input));
+  // Change 20260726 — the endpoint is multipart-only now, so the scores ride along as a JSON part.
+  submitDecision(ideaId: string, input: CommitteeDecisionInput, files: File[] = []): Promise<CommitteeDecisionResult> {
+    const form = new FormData();
+    form.append('decisionType', input.decisionTypeCode);
+    form.append('criteriaScores', JSON.stringify(input.criteriaScores));
+    if (input.comments) form.append('comments', input.comments);
+    for (const file of files) form.append('attachments', file, file.name);
+    return firstValueFrom(this.http.post<CommitteeDecisionResult>(`/api/ideas/${ideaId}/committee-decisions`, form));
+  }
+
+  // Change 20260726 — fetched through HttpClient rather than linked directly, so the auth
+  // interceptors can attach credentials that a plain anchor href would omit.
+  getAttachment(decisionId: string, attachmentId: string): Promise<Blob> {
+    return firstValueFrom(
+      this.http.get(`/api/committee-decisions/${decisionId}/attachments/${attachmentId}`, { responseType: 'blob' }),
+    );
   }
 
   getQueue(): Promise<CommitteeQueueItem[]> {
