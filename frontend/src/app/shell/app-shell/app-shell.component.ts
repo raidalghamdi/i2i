@@ -189,6 +189,10 @@ export class AppShellComponent implements OnDestroy {
           { label: $localize`:@@navAdminDashboard:Dashboard`, href: '/admin', icon: 'dashboard' },
           { label: $localize`:@@navAdminUsers:Users & roles`, href: '/admin/users', icon: 'shield-check' },
           { label: $localize`:@@navAdminCommitteeCriteria:Committee criteria`, href: '/admin/committee-criteria', icon: 'clipboard-check' },
+          // Change 20260726
+          { label: $localize`:@@navAdminEvaluationCriteria:Evaluation criteria`, href: '/admin/evaluation-criteria', icon: 'clipboard-check' },
+          // Change 20260726
+          { label: $localize`:@@navAdminSlaPolicies:SLA policies`, href: '/admin/sla-policies', icon: 'alert-triangle' },
           { label: $localize`:@@navAdminSettings:Platform settings`, href: '/admin/settings', icon: 'settings' },
           { label: $localize`:@@navAdminRoles:Roles`, href: '/admin/roles', icon: 'users' },
           { label: $localize`:@@navAdminTerms:Terms`, href: '/admin/cms/content', icon: 'document-text' },
@@ -206,6 +210,8 @@ export class AppShellComponent implements OnDestroy {
           { label: $localize`:@@navAdminPostProgram:Post-program`, href: '/admin/post-program', icon: 'rocket' },
           { label: $localize`:@@navAdminAnalytics:Analytics`, href: '/admin/analytics', icon: 'chart-bar' },
           { label: $localize`:@@navAdminReports:Reports`, href: '/admin/reports', icon: 'document-text' },
+          // Change 20260726
+          { label: $localize`:@@navAdminEvaluatorProductivity:Evaluator productivity`, href: '/admin/reports/evaluator-productivity', icon: 'chart-bar' },
           { label: $localize`:@@navAdminReportTitles:Report titles`, href: '/admin/report-titles', icon: 'document-text' },
           { label: $localize`:@@navAdminInvitationSettings:Invitation settings`, href: '/admin/invitation-settings', icon: 'settings' },
           { label: $localize`:@@navAdminEvaluationSettings:Evaluation settings`, href: '/admin/evaluation-settings', icon: 'settings' },

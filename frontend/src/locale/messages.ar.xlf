@@ -12815,6 +12815,350 @@
         <source>Another evaluator must score this idea.</source>
         <target>يجب أن يقيّم هذه الفكرة مُقيّم آخر.</target>
       </trans-unit>
+      <trans-unit id="evaluationCriteriaWeightWarn" datatype="html">
+        <source> Active criteria weights should sum to 1.0 (currently <x id="INTERPOLATION" equiv-text="{{ activeWeightSum() | number: &apos;1.2-2&apos; }}"/>). </source>
+        <target> يجب أن يكون مجموع أوزان المعايير النشطة 1.0 (المجموع الحالي <x id="INTERPOLATION" equiv-text="{{ activeWeightSum() | number: &apos;1.2-2&apos; }}"/>). </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">10</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaLoading" datatype="html">
+        <source>Loading evaluation criteria…</source>
+        <target>جارٍ تحميل معايير التقييم…</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">16</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaEmpty" datatype="html">
+        <source>No evaluation criteria yet.</source>
+        <target>لا توجد معايير تقييم بعد.</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">20</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnCode" datatype="html">
+        <source>Code</source>
+        <target>الرمز</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">25</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnNameAr" datatype="html">
+        <source>Name (Ar)</source>
+        <target>الاسم (عربي)</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">26</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnNameEn" datatype="html">
+        <source>Name (En)</source>
+        <target>الاسم (إنجليزي)</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">27</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnDescriptionAr" datatype="html">
+        <source>Description (Ar)</source>
+        <target>الوصف (عربي)</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">28</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnDescriptionEn" datatype="html">
+        <source>Description (En)</source>
+        <target>الوصف (إنجليزي)</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">29</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnSortOrder" datatype="html">
+        <source>Sort order</source>
+        <target>ترتيب العرض</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">31</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnActive" datatype="html">
+        <source>Active</source>
+        <target>نشط</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">32</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaColumnActions" datatype="html">
+        <source>Actions</source>
+        <target>الإجراءات</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">33</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaSave" datatype="html">
+        <source>Save</source>
+        <target>حفظ</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">86</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaDelete" datatype="html">
+        <source>Delete</source>
+        <target>حذف</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">88</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluationCriteriaAddRow" datatype="html">
+        <source>Add criterion</source>
+        <target>إضافة معيار</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/evaluation-criteria/evaluation-criteria.component.html</context>
+          <context context-type="linenumber">99</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="navAdminEvaluationCriteria" datatype="html">
+        <source>Evaluation criteria</source>
+        <target>معايير التقييم</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/shell/app-shell/app-shell.component.ts</context>
+          <context context-type="linenumber">193</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="slaPoliciesTitle" datatype="html">
+        <source>SLA policies</source>
+        <target>سياسات مستوى الخدمة</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/sla-policies/sla-policies.component.html</context>
+          <context context-type="linenumber">2</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="slaPoliciesLoading" datatype="html">
+        <source>Loading SLA policies…</source>
+        <target>جارٍ تحميل سياسات مستوى الخدمة…</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/sla-policies/sla-policies.component.html</context>
+          <context context-type="linenumber">9</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="slaPoliciesEmpty" datatype="html">
+        <source>No SLA policies yet.</source>
+        <target>لا توجد سياسات مستوى خدمة بعد.</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/sla-policies/sla-policies.component.html</context>
+          <context context-type="linenumber">13</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="slaPoliciesColumnEntityType" datatype="html">
+        <source>Entity type</source>
+        <target>نوع الكيان</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/sla-policies/sla-policies.component.html</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="slaPoliciesColumnFromState" datatype="html">
+        <source>From state</source>
+        <target>من حالة</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/sla-policies/sla-policies.component.html</context>
+          <context context-type="linenumber">20</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="slaPoliciesColumnToState" datatype="html">
+        <source>To state</source>
+        <target>إلى حالة</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/sla-policies/sla-policies.component.html</context>
+          <context context-type="linenumber">21</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="slaPoliciesColumnTargetHours" datatype="html">
+        <source>Target hours</source>
+        <target>الساعات المستهدفة</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/sla-policies/sla-policies.component.html</context>
+          <context context-type="linenumber">22</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="slaPoliciesColumnWarnAtPct" datatype="html">
+        <source>Warn at %</source>
+        <target>التحذير عند %</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/sla-policies/sla-policies.component.html</context>
+          <context context-type="linenumber">23</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="slaPoliciesColumnActions" datatype="html">
+        <source>Actions</source>
+        <target>الإجراءات</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/sla-policies/sla-policies.component.html</context>
+          <context context-type="linenumber">24</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="slaPoliciesSave" datatype="html">
+        <source>Save</source>
+        <target>حفظ</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/sla-policies/sla-policies.component.html</context>
+          <context context-type="linenumber">63</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="slaPoliciesDelete" datatype="html">
+        <source>Delete</source>
+        <target>حذف</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/sla-policies/sla-policies.component.html</context>
+          <context context-type="linenumber">65</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="slaPoliciesAddRow" datatype="html">
+        <source>Add policy</source>
+        <target>إضافة سياسة</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/sla-policies/sla-policies.component.html</context>
+          <context context-type="linenumber">76</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="navAdminSlaPolicies" datatype="html">
+        <source>SLA policies</source>
+        <target>سياسات مستوى الخدمة</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/shell/app-shell/app-shell.component.ts</context>
+          <context context-type="linenumber">194</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityTitle" datatype="html">
+        <source>Evaluator productivity</source>
+        <target>إنتاجية المُقيّمين</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">2</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityLoading" datatype="html">
+        <source>Loading evaluator productivity…</source>
+        <target>جارٍ تحميل إنتاجية المُقيّمين…</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">5</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityEmpty" datatype="html">
+        <source>No evaluator activity yet.</source>
+        <target>لا يوجد نشاط للمُقيّمين بعد.</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">9</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnName" datatype="html">
+        <source> Evaluator </source>
+        <target> المُقيّم </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">16</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnAssigned" datatype="html">
+        <source> Assigned </source>
+        <target> المُسندة </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">21</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnCompleted" datatype="html">
+        <source> Completed </source>
+        <target> المكتملة </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">26</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnDraft" datatype="html">
+        <source> Draft </source>
+        <target> المسودات </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">31</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnAvgScore" datatype="html">
+        <source> Avg score </source>
+        <target> متوسط الدرجة </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">36</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnAvgTurnaround" datatype="html">
+        <source> Avg turnaround (h) </source>
+        <target> متوسط زمن الإنجاز (ساعة) </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">41</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityColumnCoi" datatype="html">
+        <source> Conflicts </source>
+        <target> تعارضات المصالح </target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">46</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="evaluatorProductivityNoValue" datatype="html">
+        <source>—</source>
+        <target>—</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/reports/evaluator-productivity/evaluator-productivity.component.html</context>
+          <context context-type="linenumber">60</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="navAdminEvaluatorProductivity" datatype="html">
+        <source>Evaluator productivity</source>
+        <target>إنتاجية المُقيّمين</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/shell/app-shell/app-shell.component.ts</context>
+          <context context-type="linenumber">210</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="reportsEvaluatorProductivity" datatype="html">
+        <source>Evaluator productivity</source>
+        <target>إنتاجية المُقيّمين</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/reports-dashboard/reports-dashboard.component.html</context>
+          <context context-type="linenumber">64</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="reportsEvaluatorProductivityDesc" datatype="html">
+        <source>Per-evaluator assignment, completion and turnaround metrics.</source>
+        <target>مؤشرات الإسناد والإنجاز وزمن الاستجابة لكل مُقيّم.</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/reports-dashboard/reports-dashboard.component.html</context>
+          <context context-type="linenumber">66</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="reportsEvaluatorProductivityOpen" datatype="html">
+        <source>Open report</source>
+        <target>عرض التقرير</target>
+        <context-group purpose="location">
+         <context context-type="sourcefile">src/app/admin/reports-dashboard/reports-dashboard.component.html</context>
+          <context context-type="linenumber">69</context>
+        </context-group>
+      </trans-unit>
     </body>
   </file>
 </xliff>

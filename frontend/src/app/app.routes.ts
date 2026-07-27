@@ -565,6 +565,31 @@ export const routes: Routes = [
           import('./admin/compliance/compliance.component').then((m) => m.ComplianceComponent),
         canActivate: [adminOnlyGuard],
       },
+      // Change 20260726
+      {
+        path: 'admin/reports/evaluator-productivity',
+        loadComponent: () =>
+          import('./reports/evaluator-productivity/evaluator-productivity.component').then(
+            (m) => m.EvaluatorProductivityComponent,
+          ),
+        canActivate: [adminOnlyGuard],
+      },
+      // Change 20260726
+      {
+        path: 'admin/sla-policies',
+        loadComponent: () =>
+          import('./admin/sla-policies/sla-policies.component').then((m) => m.SlaPoliciesComponent),
+        canActivate: [adminOnlyGuard],
+      },
+      // Change 20260726
+      {
+        path: 'admin/evaluation-criteria',
+        loadComponent: () =>
+          import('./admin/evaluation-criteria/evaluation-criteria.component').then(
+            (m) => m.EvaluationCriteriaComponent,
+          ),
+        canActivate: [supervisorOrAdminGuard],
+      },
       {
         path: 'admin/committee-criteria',
         loadComponent: () =>

@@ -1,0 +1,79 @@
+<!-- Change 20260726 -->
+<app-page-header title="Evaluator productivity" i18n-title="@@evaluatorProductivityTitle" />
+
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="6" label="Loading evaluator productivity…" i18n-label="@@evaluatorProductivityLoading" />
+} @else if (loadError(); as lerr) {
+  <app-error-state [message]="lerr" (retry)="reload()" />
+} @else if (rows().length === 0) {
+  <app-empty-state title="No evaluator activity yet." i18n-title="@@evaluatorProductivityEmpty" icon="chart-bar" />
+} @else {
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th [attr.aria-sort]="ariaSort('displayName')">
+            <button type="button" class="btn-ghost btn-sm" data-testid="sort-displayName" (click)="onSort('displayName')" i18n="@@evaluatorProductivityColumnName">
+              Evaluator
+            </button>
+          </th>
+          <th [attr.aria-sort]="ariaSort('assignedCount')">
+            <button type="button" class="btn-ghost btn-sm" data-testid="sort-assignedCount" (click)="onSort('assignedCount')" i18n="@@evaluatorProductivityColumnAssigned">
+              Assigned
+            </button>
+          </th>
+          <th [attr.aria-sort]="ariaSort('completedCount')">
+            <button type="button" class="btn-ghost btn-sm" data-testid="sort-completedCount" (click)="onSort('completedCount')" i18n="@@evaluatorProductivityColumnCompleted">
+              Completed
+            </button>
+          </th>
+          <th [attr.aria-sort]="ariaSort('draftCount')">
+            <button type="button" class="btn-ghost btn-sm" data-testid="sort-draftCount" (click)="onSort('draftCount')" i18n="@@evaluatorProductivityColumnDraft">
+              Draft
+            </button>
+          </th>
+          <th [attr.aria-sort]="ariaSort('avgScore')">
+            <button type="button" class="btn-ghost btn-sm" data-testid="sort-avgScore" (click)="onSort('avgScore')" i18n="@@evaluatorProductivityColumnAvgScore">
+              Avg score
+            </button>
+          </th>
+          <th [attr.aria-sort]="ariaSort('avgTurnaroundHours')">
+            <button type="button" class="btn-ghost btn-sm" data-testid="sort-avgTurnaroundHours" (click)="onSort('avgTurnaroundHours')" i18n="@@evaluatorProductivityColumnAvgTurnaround">
+              Avg turnaround (h)
+            </button>
+          </th>
+          <th [attr.aria-sort]="ariaSort('coiCount')">
+            <button type="button" class="btn-ghost btn-sm" data-testid="sort-coiCount" (click)="onSort('coiCount')" i18n="@@evaluatorProductivityColumnCoi">
+              Conflicts
+            </button>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of sortedRows(); track row.userId) {
+          <tr>
+            <td>{{ row.displayName }}</td>
+            <td>{{ row.assignedCount }}</td>
+            <td>{{ row.completedCount }}</td>
+            <td>{{ row.draftCount }}</td>
+            <td>
+              @if (row.avgScore === null) {
+                <span class="text-muted-foreground" i18n="@@evaluatorProductivityNoValue">—</span>
+              } @else {
+                {{ row.avgScore | number: '1.1-1' }}
+              }
+            </td>
+            <td>
+              @if (row.avgTurnaroundHours === null) {
+                <span class="text-muted-foreground" i18n="@@evaluatorProductivityNoValue">—</span>
+              } @else {
+                {{ row.avgTurnaroundHours | number: '1.1-1' }}
+              }
+            </td>
+            <td>{{ row.coiCount }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
