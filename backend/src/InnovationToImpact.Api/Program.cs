@@ -2024,13 +2024,14 @@ app.MapPost("/api/ideas/{id:guid}/evaluations", async (Guid id, EvaluationInput 
 {
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
     var result = await service.SubmitAsync(id, userId, input);
-    if (result.Status == EvaluationCommandStatus.Success)
+    // Change 20260726 — a saved draft is not a completed evaluation, so its SLA clock keeps running.
+    if (result.Status == EvaluationCommandStatus.Success && result.Evaluation!.SubmittedAt is not null)
     {
         await slaClockService.CloseAsync("evaluation", id);
     }
     return result.Status switch
     {
-        EvaluationCommandStatus.Success => Results.Ok(new { id = result.Evaluation!.Id, totalScore = result.Evaluation.TotalScore, recommendation = result.Evaluation.Recommendation, ideaStatus = result.Idea!.IdeaStatus.Code }),
+        EvaluationCommandStatus.Success => Results.Ok(new { id = result.Evaluation!.Id, totalScore = result.Evaluation.TotalScore, recommendation = result.Evaluation.Recommendation, conflictOfInterest = result.Evaluation.ConflictOfInterest, submittedAt = result.Evaluation.SubmittedAt, ideaStatus = result.Idea!.IdeaStatus.Code }), // Change 20260726
         EvaluationCommandStatus.NotFound => Results.NotFound(),
         EvaluationCommandStatus.Forbidden => Results.StatusCode(StatusCodes.Status403Forbidden),
         EvaluationCommandStatus.InvalidState => Results.BadRequest(new { error = "Idea is not awaiting evaluation." }),
@@ -2164,6 +2165,10 @@ app.MapGet("/api/evaluations/mine", async (ClaimsPrincipal user, IEvaluationServ
         recommendation = e.Recommendation,
         submittedAt = e.SubmittedAt,
         ideaEnteredEvaluationAt = e.Idea.EnteredEvaluationAt,
+        // Change 20260726 — the form resumes a draft from this payload, so it carries the saved scores.
+        criteriaScoresJson = e.CriteriaScoresJson,
+        comments = e.Comments,
+        conflictOfInterest = e.ConflictOfInterest,
     }));
 }).RequireAuthorization("EvaluatorAndAbove");
 
