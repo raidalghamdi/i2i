@@ -10,9 +10,17 @@
   <ul class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
     @for (item of queue(); track item.id) {
       <li class="card-surface card-body flex flex-col gap-2">
-        <a [routerLink]="['/evaluations', item.id]" class="flex flex-col gap-2">
-          <span class="text-xs font-medium text-brand-gold">{{ item.code }} — {{ item.titleAr }}</span>
-        </a>
+        <!-- Change 20260726 -->
+        @if (isOwnIdea(item.id)) {
+          <div class="flex cursor-not-allowed flex-col gap-2 opacity-60" [title]="ownIdeaTooltip">
+            <span class="text-xs font-medium text-brand-gold">{{ item.code }} — {{ item.titleAr }}</span>
+            <span class="text-xs font-medium text-muted-foreground" i18n="@@evaluatorQueueOwnIdea">Your own idea</span>
+          </div>
+        } @else {
+          <a [routerLink]="['/evaluations', item.id]" class="flex flex-col gap-2">
+            <span class="text-xs font-medium text-brand-gold">{{ item.code }} — {{ item.titleAr }}</span>
+          </a>
+        }
       </li>
     }
   </ul>

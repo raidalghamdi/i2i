@@ -12783,6 +12783,22 @@
         <source>Couldn't download the attachment. Please try again.</source>
         <target>تعذّر تنزيل المرفق. يرجى المحاولة مرة أخرى.</target>
       </trans-unit>
+      <trans-unit id="committeeQueueOwnIdea" datatype="html">
+        <source>Your own idea</source>
+        <target>فكرتك الخاصة</target>
+      </trans-unit>
+      <trans-unit id="committeeQueueOwnIdeaTooltip" datatype="html">
+        <source>You cannot decide on your own idea</source>
+        <target>لا يمكنك اتخاذ قرار بشأن فكرتك الخاصة</target>
+      </trans-unit>
+      <trans-unit id="evaluatorQueueOwnIdea" datatype="html">
+        <source>Your own idea</source>
+        <target>فكرتك الخاصة</target>
+      </trans-unit>
+      <trans-unit id="evaluatorQueueOwnIdeaTooltip" datatype="html">
+        <source>You cannot evaluate your own idea</source>
+        <target>لا يمكنك تقييم فكرتك الخاصة</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>
