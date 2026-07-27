@@ -123,6 +123,7 @@ builder.Services.AddSingleton<IReportFileStorage>(sp =>
 builder.Services.AddScoped<IAuditLogReportGenerator, AuditLogReportGenerator>();
 builder.Services.AddScoped<IIdeasReportGenerator, IdeasReportGenerator>();
 builder.Services.AddScoped<IEvaluationsReportGenerator, EvaluationsReportGenerator>();
+builder.Services.AddScoped<IEvaluatorProductivityService, EvaluatorProductivityService>(); // Change 20260726
 builder.Services.AddScoped<IEscalationsReportGenerator, EscalationsReportGenerator>();
 builder.Services.AddScoped<IAnalyticsReportGenerator, AnalyticsReportGenerator>();
 builder.Services.AddScoped<IReportBundleBuilder, ReportBundleBuilder>();
@@ -1293,6 +1294,23 @@ app.MapPost("/api/admin/reports/evaluations/generate", async (ClaimsPrincipal us
     var result = await service.GenerateEvaluationsReportAsync(userId);
     return Results.Ok(new { reportGenerationId = result.ReportGenerationId, status = result.Status, fileUrl = result.FileUrl });
 }).RequireAuthorization("SupervisorOrAdmin");
+
+// Change 20260726
+app.MapGet("/api/reports/evaluator-productivity", async (IEvaluatorProductivityService service) =>
+{
+    var rows = await service.GetAsync();
+    return Results.Ok(rows.Select(r => new
+    {
+        userId = r.UserId,
+        displayName = r.DisplayName,
+        assignedCount = r.AssignedCount,
+        completedCount = r.CompletedCount,
+        draftCount = r.DraftCount,
+        avgScore = r.AvgScore,
+        avgTurnaroundHours = r.AvgTurnaroundHours,
+        coiCount = r.CoiCount,
+    }));
+}).RequireAuthorization("AdminOnly");
 
 app.MapPost("/api/admin/reports/escalations/generate", async (ClaimsPrincipal user, IReportGenerationService service) =>
 {
