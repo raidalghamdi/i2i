@@ -143,6 +143,7 @@ builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<IChallengeService, ChallengeService>();
 builder.Services.AddScoped<IEvaluationService, EvaluationService>();
 builder.Services.AddScoped<IEvaluationSettingsService, EvaluationSettingsService>();
+builder.Services.AddScoped<IEvaluationCriteriaService, EvaluationCriteriaService>(); // Change 20260726
 builder.Services.AddScoped<ICommitteeService, CommitteeService>();
 builder.Services.AddScoped<ICommitteeReferralService, CommitteeReferralService>();
 builder.Services.AddScoped<ICommitteeCriteriaService, CommitteeCriteriaService>();
@@ -2196,6 +2197,94 @@ app.MapPost("/api/ideas/{id:guid}/withdraw", async (Guid id, IdeaWithdrawInput? 
         _ => Results.Conflict(new { error = "Idea cannot be withdrawn in its current state." }),
     };
 }).RequireAuthorization("IdeaAuthor");
+
+// Change 20260726
+static object EvaluationCriterionResponse(EvaluationCriterion c) => new
+{
+    id = c.Id,
+    code = c.Code,
+    nameAr = c.NameAr,
+    nameEn = c.NameEn,
+    descriptionAr = c.DescriptionAr,
+    descriptionEn = c.DescriptionEn,
+    weight = c.Weight,
+    active = c.Active,
+    sortOrder = c.SortOrder,
+};
+
+// Change 20260726
+app.MapGet("/api/evaluation-criteria", async (IEvaluationCriteriaService service) =>
+{
+    var criteria = await service.ListActiveAsync();
+    return Results.Ok(criteria.Select(c => new
+    {
+        code = c.Code,
+        nameAr = c.NameAr,
+        nameEn = c.NameEn,
+        descriptionAr = c.DescriptionAr,
+        descriptionEn = c.DescriptionEn,
+        weight = c.Weight,
+        sortOrder = c.SortOrder,
+    }));
+}).RequireAuthorization("EvaluatorAndAbove");
+
+// Change 20260726
+app.MapGet("/api/admin/evaluation-criteria", async (IEvaluationCriteriaService service) =>
+{
+    var criteria = await service.ListAllAsync();
+    return Results.Ok(criteria.Select(c => new
+    {
+        id = c.Id,
+        code = c.Code,
+        nameAr = c.NameAr,
+        nameEn = c.NameEn,
+        descriptionAr = c.DescriptionAr,
+        descriptionEn = c.DescriptionEn,
+        weight = c.Weight,
+        active = c.Active,
+        sortOrder = c.SortOrder,
+    }));
+}).RequireAuthorization("SupervisorOrAdmin");
+
+// Change 20260726
+app.MapPost("/api/admin/evaluation-criteria", async (EvaluationCriterionInput input, ClaimsPrincipal user, IEvaluationCriteriaService service) =>
+{
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.CreateAsync(input, actorId);
+    return result.Status switch
+    {
+        EvaluationCriteriaCommandStatus.Success => Results.Ok(EvaluationCriterionResponse(result.Entity!)),
+        EvaluationCriteriaCommandStatus.DuplicateCode => Results.BadRequest(new { error = "An evaluation criterion with this code already exists." }),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("SupervisorOrAdmin");
+
+// Change 20260726
+app.MapPut("/api/admin/evaluation-criteria/{id:guid}", async (Guid id, EvaluationCriterionInput input, ClaimsPrincipal user, IEvaluationCriteriaService service) =>
+{
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.UpdateAsync(id, input, actorId);
+    return result.Status switch
+    {
+        EvaluationCriteriaCommandStatus.Success => Results.Ok(EvaluationCriterionResponse(result.Entity!)),
+        EvaluationCriteriaCommandStatus.NotFound => Results.NotFound(),
+        EvaluationCriteriaCommandStatus.DuplicateCode => Results.BadRequest(new { error = "An evaluation criterion with this code already exists." }),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("SupervisorOrAdmin");
+
+// Change 20260726
+app.MapDelete("/api/admin/evaluation-criteria/{id:guid}", async (Guid id, ClaimsPrincipal user, IEvaluationCriteriaService service) =>
+{
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.DeleteAsync(id, actorId);
+    return result.Status switch
+    {
+        EvaluationCriteriaCommandStatus.Success => Results.NoContent(),
+        EvaluationCriteriaCommandStatus.NotFound => Results.NotFound(),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("SupervisorOrAdmin");
 
 app.MapGet("/api/committee-criteria", async (InnovationDbContext db) =>
 {
