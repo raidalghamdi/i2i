@@ -1,4 +1,5 @@
 using InnovationToImpact.Domain.Entities;
+using InnovationToImpact.Domain.Notifications;
 using Microsoft.EntityFrameworkCore;
 
 namespace InnovationToImpact.Infrastructure.Data;
@@ -91,6 +92,9 @@ public class InnovationDbContext : DbContext
     public DbSet<HomePageSection> HomePageSections => Set<HomePageSection>();
     public DbSet<HomeMedia> HomeMedias => Set<HomeMedia>();
     public DbSet<PostProgramHistory> PostProgramHistories => Set<PostProgramHistory>();
+
+    // Change 20260726
+    public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
