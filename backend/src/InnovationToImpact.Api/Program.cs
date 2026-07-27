@@ -83,8 +83,19 @@ using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// TEMP: DevAuth in production for testing. When DevAuth:AlwaysOn is true the app uses the header-driven
+// DevAuth scheme and the fake directory even under ASPNETCORE_ENVIRONMENT=Production, so the Railway
+// deployment is reachable without a domain controller. Set it back to false to restore Negotiate/LDAP.
+var useDevAuth = !builder.Environment.IsProduction()
+    || builder.Configuration.GetValue<bool>("DevAuth:AlwaysOn"); // Change 20260727
+
+// EnableRetryOnFailure: Azure SQL throttles and recycles connections routinely, and a serverless tier
+// takes ~a minute to resume from auto-pause; without a retry strategy the startup migration and the
+// first requests after an idle period fail outright.
 builder.Services.AddDbContext<InnovationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("InnovationDb")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("InnovationDb"),
+        sql => sql.EnableRetryOnFailure())); // Change 20260727
 
 builder.Services.AddMemoryCache();
 builder.Services.Configure<ActiveDirectoryOptions>(builder.Configuration.GetSection("ActiveDirectory"));
@@ -180,7 +191,7 @@ builder.Services.AddScoped<IPublicDataService, PublicDataService>();
 builder.Services.AddScoped<ISupportInboxService, SupportInboxService>();
 builder.Services.AddScoped<IHomePageService, HomePageService>();
 
-if (builder.Environment.IsProduction())
+if (!useDevAuth) // Change 20260727
 {
     builder.Services.AddSingleton<IAdIdentityLookupService, LdapIdentityLookupService>();
     builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
@@ -205,6 +216,25 @@ else
             DevAuthenticationDefaults.AuthenticationScheme, _ => { });
 }
 
+// The SPA is also hosted from wwwroot (same origin), but the Railway deployment is consumed by the
+// Vercel-hosted frontend, so cross-origin calls must be allowed. Credentials are required for the
+// Negotiate/cookie flow and for SignalR, which rules out AllowAnyOrigin.
+const string CrossOriginSpaPolicy = "CrossOriginSpa"; // Change 20260727
+builder.Services.AddCors(options => // Change 20260727
+{ // Change 20260727
+    options.AddPolicy(CrossOriginSpaPolicy, policy => policy // Change 20260727
+        .SetIsOriginAllowed(origin => // Change 20260727
+        { // Change 20260727
+            if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)) return false; // Change 20260727
+            if (uri.IsLoopback) return true; // Change 20260727
+            return uri.Host.Equals("vercel.app", StringComparison.OrdinalIgnoreCase) // Change 20260727
+                || uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase); // Change 20260727
+        }) // Change 20260727
+        .AllowAnyHeader() // Change 20260727
+        .AllowAnyMethod() // Change 20260727
+        .AllowCredentials()); // Change 20260727
+}); // Change 20260727
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole(RoleCodes.Admin));
@@ -218,6 +248,17 @@ builder.Services.AddAuthorization(options =>
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var app = builder.Build();
+
+// Apply pending EF migrations on startup. The container has no shell step to run `dotnet ef`, so the
+// Azure SQL schema (and the role/system-user seed data the migrations carry) is created on first boot.
+using (var migrationScope = app.Services.CreateScope()) // Change 20260727
+{ // Change 20260727
+    var migrationDb = migrationScope.ServiceProvider.GetRequiredService<InnovationDbContext>(); // Change 20260727
+    if (migrationDb.Database.IsSqlServer()) // Change 20260727
+    { // Change 20260727
+        migrationDb.Database.Migrate(); // Change 20260727
+    } // Change 20260727
+} // Change 20260727
 
 // Serve the same-origin Angular SPA out of wwwroot. These run before the auth middleware so the
 // static assets (index.html, JS/CSS, favicon) load anonymously; MapFallbackToFile at the end of the
@@ -239,6 +280,8 @@ app.Use(async (context, next) =>
         context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
     }
 });
+
+app.UseCors(CrossOriginSpaPolicy); // Change 20260727
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -292,8 +335,10 @@ using (var homePageSeedScope = app.Services.CreateScope())
 }
 
 // DEV/TEST ONLY: provision 5 users per role (40) plus grant devuser every role, so the system can be
-// exercised across all roles. Development environment only + SqlServer-only (never SQLite test fixtures).
-if (app.Environment.IsDevelopment())
+// exercised across all roles. Runs wherever DevAuth is active (including the DevAuth:AlwaysOn testing
+// deployment) + SqlServer-only (never SQLite test fixtures) -- the DevAuth default account is only
+// useful if it actually exists in the database with every role attached.
+if (useDevAuth) // Change 20260727
 {
     using var devUsersScope = app.Services.CreateScope();
     try
