@@ -115,6 +115,7 @@ builder.Services.Configure<WeeklyBriefingOptions>(builder.Configuration.GetSecti
 builder.Services.AddScoped<IWeeklyBriefingProcessor, WeeklyBriefingProcessor>();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IIdeaStatusNotifier, IdeaStatusNotifier>(); // Change 20260726
 builder.Services.AddSingleton<INotificationPublisher, SignalRNotificationPublisher>();
 builder.Services.Configure<ReportStorageOptions>(builder.Configuration.GetSection("ReportStorage"));
 builder.Services.AddSingleton<IReportFileStorage>(sp =>

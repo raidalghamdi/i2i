@@ -17,14 +17,16 @@ public class IdeaService : IIdeaService
     private readonly IAuditLogWriter _auditLogWriter;
     private readonly INotificationService _notificationService;
     private readonly IAdIdentityLookupService _adIdentityLookupService;
+    private readonly IIdeaStatusNotifier _statusNotifier; // Change 20260726
 
-    public IdeaService(InnovationDbContext db, IEvidenceFileStorage storage, IAuditLogWriter auditLogWriter, INotificationService notificationService, IAdIdentityLookupService adIdentityLookupService)
+    public IdeaService(InnovationDbContext db, IEvidenceFileStorage storage, IAuditLogWriter auditLogWriter, INotificationService notificationService, IAdIdentityLookupService adIdentityLookupService, IIdeaStatusNotifier statusNotifier) // Change 20260726
     {
         _db = db;
         _storage = storage;
         _auditLogWriter = auditLogWriter;
         _notificationService = notificationService;
         _adIdentityLookupService = adIdentityLookupService;
+        _statusNotifier = statusNotifier; // Change 20260726
     }
 
     private async Task<(IdeaCommandStatus? Status, IReadOnlyDictionary<string, AdIdentity> ResolvedMembers)> ValidateNewFieldsAsync(IdeaInput input, string? ownerSam, CancellationToken cancellationToken)
@@ -211,7 +213,35 @@ public class IdeaService : IIdeaService
 
         await _db.SaveChangesAsync(cancellationToken);
 
+        await NotifyIdeaSubmittedAsync(idea, cancellationToken); // Change 20260726
+        await _statusNotifier.NotifyStatusChangedAsync(idea, IdeaStatusCodes.Submitted, cancellationToken); // Change 20260726
+
         return new IdeaQueryResult(IdeaCommandStatus.Success, idea);
+    }
+
+    // Change 20260726 — an idea entering review has to reach both the admins and the evaluators who
+    // cover its theme, and notifications are per-user, so both audiences are fanned out explicitly.
+    private async Task NotifyIdeaSubmittedAsync(Idea idea, CancellationToken cancellationToken)
+    {
+        await _notificationService.CreateAndPublishToRolesAsync(
+            new[] { RoleCodes.Admin }, NotificationTypes.IdeaSubmitted,
+            "فكرة جديدة مقدَّمة", "New idea submitted",
+            $"تم تقديم الفكرة \"{idea.TitleAr}\" للمراجعة.",
+            $"The idea \"{idea.TitleEn}\" was submitted for review.",
+            $"/ideas/{idea.Id}", null, cancellationToken);
+
+        var themeEvaluatorIds = await _db.Set<EvaluatorTrackAssignment>()
+            .Where(a => a.TrackId == idea.StrategicThemeId)
+            .Select(a => a.EvaluatorId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        await _notificationService.CreateAndPublishToUsersAsync(
+            themeEvaluatorIds, NotificationTypes.IdeaSubmitted,
+            "فكرة جديدة في مسارك", "New idea in your track",
+            $"تم تقديم الفكرة \"{idea.TitleAr}\" في مسارك.",
+            $"The idea \"{idea.TitleEn}\" was submitted in your track.",
+            $"/ideas/{idea.Id}", null, cancellationToken);
     }
 
     public async Task<IdeaQueryResult> ResubmitAsync(Guid ideaId, Guid submitterId, IdeaResubmitInput input, CancellationToken cancellationToken = default)
@@ -286,6 +316,10 @@ public class IdeaService : IIdeaService
         idea.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(cancellationToken);
+
+        await NotifyIdeaSubmittedAsync(idea, cancellationToken); // Change 20260726
+        await _statusNotifier.NotifyStatusChangedAsync(idea, IdeaStatusCodes.Submitted, cancellationToken); // Change 20260726
+
         return new IdeaQueryResult(IdeaCommandStatus.Success, idea);
     }
 
@@ -315,6 +349,8 @@ public class IdeaService : IIdeaService
             await _notificationService.CreateAndPublishAsync(evaluatorId, "idea_withdrawn",
                 "تم سحب الفكرة", "Idea withdrawn", "قام مقدّم الفكرة بسحبها.", "The submitter withdrew their idea.",
                 $"/ideas/{ideaId}", null, cancellationToken);
+
+        await _statusNotifier.NotifyStatusChangedAsync(idea, IdeaStatusCodes.Withdrawn, cancellationToken); // Change 20260726
 
         return new IdeaQueryResult(IdeaCommandStatus.Success, idea);
     }

@@ -12,9 +12,12 @@ public class EvaluationReviewService : IEvaluationReviewService
 
     private readonly InnovationDbContext _db;
 
-    public EvaluationReviewService(InnovationDbContext db)
+    private readonly IIdeaStatusNotifier _statusNotifier; // Change 20260726
+
+    public EvaluationReviewService(InnovationDbContext db, IIdeaStatusNotifier statusNotifier)
     {
         _db = db;
+        _statusNotifier = statusNotifier; // Change 20260726
     }
 
     public async Task<EvaluationReviewCommandResult> SubmitDecisionAsync(Guid ideaId, Guid supervisorId, EvaluationReviewDecisionInput input, CancellationToken cancellationToken = default)
@@ -68,6 +71,8 @@ public class EvaluationReviewService : IEvaluationReviewService
         idea.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(cancellationToken);
+
+        await _statusNotifier.NotifyStatusChangedAsync(idea, nextStatus.Code, cancellationToken); // Change 20260726
 
         return new EvaluationReviewCommandResult(EvaluationReviewCommandStatus.Success, idea);
     }
