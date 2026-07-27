@@ -32,42 +32,66 @@ public class EvaluationService : IEvaluationService
 
         if (idea.IdeaStatus.Code != IdeaStatusCodes.Evaluation) return new EvaluationCommandResult(EvaluationCommandStatus.InvalidState);
 
-        var alreadyEvaluated = await _db.Evaluations.AnyAsync(
+        var isDraft = input.Action == EvaluationActions.Draft; // Change 20260726
+
+        // An unsubmitted row is a resumable draft, so saving over it is expected; only a row that
+        // has actually been submitted is off limits.
+        var existing = await _db.Evaluations.SingleOrDefaultAsync( // Change 20260726
             e => e.IdeaId == ideaId && e.EvaluatorId == evaluatorId,
             cancellationToken);
-        if (alreadyEvaluated) return new EvaluationCommandResult(EvaluationCommandStatus.AlreadyEvaluated);
+        if (existing?.SubmittedAt is not null) return new EvaluationCommandResult(EvaluationCommandStatus.AlreadyEvaluated);
 
-        var scores = new[] { input.Innovation, input.Impact, input.Execution, input.Scalability, input.Presentation };
-        if (scores.Any(s => s < EvaluationScoreRules.MinScore || s > EvaluationScoreRules.MaxScore))
+        var scores = input.CriteriaScores ?? new Dictionary<string, decimal>();
+        var activeCodes = await _db.EvaluationCriteria // Change 20260726
+            .Where(c => c.Active)
+            .Select(c => c.Code)
+            .ToListAsync(cancellationToken);
+
+        // A submission must cover exactly the active criteria; a partial or stale set would make the
+        // average silently incomparable between evaluators of the same idea. A draft is allowed to be
+        // incomplete, but every key it does carry still has to name a live criterion.
+        var criteriaValid = isDraft // Change 20260726
+            ? scores.Keys.All(activeCodes.Contains)
+            : scores.Count == activeCodes.Count && activeCodes.All(scores.ContainsKey);
+        if (!criteriaValid)
+        {
+            return new EvaluationCommandResult(EvaluationCommandStatus.InvalidCriteria);
+        }
+
+        if (scores.Values.Any(s => s < EvaluationScoreRules.MinScore || s > EvaluationScoreRules.MaxScore)) // Change 20260726
         {
             return new EvaluationCommandResult(EvaluationCommandStatus.InvalidScore);
         }
 
-        var average = scores.Average();
+        var average = scores.Count > 0 ? scores.Values.Average() : 0m; // Change 20260726
         var passThreshold = await _settings.GetPassThresholdAsync(cancellationToken);
-        var recommendation = average >= passThreshold ? EvaluationRecommendationCodes.Pass : EvaluationRecommendationCodes.Fail;
+        var recommendation = input.Recommendation is EvaluationRecommendationCodes.Pass or EvaluationRecommendationCodes.Fail // Change 20260726
+            ? input.Recommendation
+            : average >= passThreshold ? EvaluationRecommendationCodes.Pass : EvaluationRecommendationCodes.Fail;
 
-        var criteriaScoresJson = JsonSerializer.Serialize(new Dictionary<string, decimal>
-        {
-            [EvaluationCriteriaCodes.Innovation] = input.Innovation,
-            [EvaluationCriteriaCodes.Impact] = input.Impact,
-            [EvaluationCriteriaCodes.Execution] = input.Execution,
-            [EvaluationCriteriaCodes.Scalability] = input.Scalability,
-            [EvaluationCriteriaCodes.Presentation] = input.Presentation,
-        });
+        var criteriaScoresJson = JsonSerializer.Serialize(scores); // Change 20260726
 
-        var evaluation = new Evaluation
+        // Change 20260726 — upsert so repeated draft saves are idempotent instead of piling up rows.
+        var evaluation = existing ?? new Evaluation
         {
             Id = Guid.NewGuid(),
             IdeaId = ideaId,
             EvaluatorId = evaluatorId,
-            CriteriaScoresJson = criteriaScoresJson,
-            TotalScore = average,
-            Comments = input.Comments,
-            Recommendation = recommendation,
-            SubmittedAt = DateTime.UtcNow,
         };
-        _db.Evaluations.Add(evaluation);
+        evaluation.CriteriaScoresJson = criteriaScoresJson;
+        evaluation.TotalScore = average;
+        evaluation.Comments = input.Comments;
+        evaluation.Recommendation = isDraft ? null : recommendation; // Change 20260726
+        evaluation.ConflictOfInterest = input.ConflictOfInterest; // Change 20260726
+        evaluation.SubmittedAt = isDraft ? null : DateTime.UtcNow; // Change 20260726
+        if (existing is null) _db.Evaluations.Add(evaluation);
+
+        // Change 20260726 — a draft leaves the assignment open and the idea untouched.
+        if (isDraft)
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+            return new EvaluationCommandResult(EvaluationCommandStatus.Success, evaluation, idea);
+        }
 
         // Mark this evaluator's assignment completed.
         var completedStatus = await _db.Set<AssignmentStatus>().SingleAsync(s => s.Code == AssignmentStatusCodes.Completed, cancellationToken);
@@ -76,16 +100,23 @@ public class EvaluationService : IEvaluationService
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        // Quorum: have all assigned evaluators submitted?
+        // Quorum: have all assigned evaluators submitted? Change 20260726 — drafts don't count, and an
+        // evaluator who declared a conflict of interest is removed from both the expected count and
+        // the aggregate, so one recusal can't stall the idea.
         var assignedCount = await _db.Set<Assignment>()
             .CountAsync(a => a.IdeaId == ideaId && a.Kind == AssignmentKinds.Evaluator, cancellationToken);
-        var submittedCount = await _db.Evaluations.CountAsync(e => e.IdeaId == ideaId, cancellationToken);
+        var submittedEvaluations = await _db.Evaluations // Change 20260726
+            .Where(e => e.IdeaId == ideaId && e.SubmittedAt != null)
+            .ToListAsync(cancellationToken);
+        var counted = submittedEvaluations.Where(e => !e.ConflictOfInterest).ToList(); // Change 20260726
+        var expected = assignedCount - submittedEvaluations.Count(e => e.ConflictOfInterest); // Change 20260726
 
-        if (submittedCount >= assignedCount)
+        if (counted.Count >= expected) // Change 20260726
         {
-            var all = await _db.Evaluations.Where(e => e.IdeaId == ideaId).ToListAsync(cancellationToken);
-            idea.EvaluationAggregateScore = all.Average(e => e.TotalScore);
-            idea.EvaluationAggregateJson = BuildAggregateJson(all);
+            // Every assigned evaluator recused themselves; there is no score to aggregate and the
+            // supervisor has to resolve it by hand.
+            idea.EvaluationAggregateScore = counted.Count > 0 ? counted.Average(e => e.TotalScore) : null; // Change 20260726
+            idea.EvaluationAggregateJson = counted.Count > 0 ? BuildAggregateJson(counted) : null; // Change 20260726
 
             var reviewStatus = await _db.IdeaStatuses.SingleAsync(s => s.Code == IdeaStatusCodes.EvaluationReview, cancellationToken);
             idea.IdeaStatusId = reviewStatus.Id;
@@ -97,23 +128,18 @@ public class EvaluationService : IEvaluationService
         return new EvaluationCommandResult(EvaluationCommandStatus.Success, evaluation, idea);
     }
 
+    // Change 20260726 — criteria are now dynamic, so the code list comes from what was actually
+    // scored rather than a fixed set. Historical rows keep resolving because seeded codes are unchanged.
     private static string BuildAggregateJson(IReadOnlyCollection<Evaluation> evaluations)
     {
-        var codes = new[]
-        {
-            EvaluationCriteriaCodes.Innovation, EvaluationCriteriaCodes.Impact,
-            EvaluationCriteriaCodes.Execution, EvaluationCriteriaCodes.Scalability,
-            EvaluationCriteriaCodes.Presentation,
-        };
+        var parsedScores = evaluations
+            .Select(e => JsonSerializer.Deserialize<Dictionary<string, decimal>>(e.CriteriaScoresJson) ?? new())
+            .ToList();
+
         var means = new Dictionary<string, decimal>();
-        foreach (var code in codes)
+        foreach (var code in parsedScores.SelectMany(p => p.Keys).Distinct())
         {
-            var vals = new List<decimal>();
-            foreach (var e in evaluations)
-            {
-                var parsed = JsonSerializer.Deserialize<Dictionary<string, decimal>>(e.CriteriaScoresJson) ?? new();
-                if (parsed.TryGetValue(code, out var v)) vals.Add(v);
-            }
+            var vals = parsedScores.Where(p => p.ContainsKey(code)).Select(p => p[code]).ToList();
             means[code] = vals.Count > 0 ? vals.Average() : 0m;
         }
         return JsonSerializer.Serialize(means);

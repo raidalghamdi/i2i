@@ -143,6 +143,7 @@ builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<IChallengeService, ChallengeService>();
 builder.Services.AddScoped<IEvaluationService, EvaluationService>();
 builder.Services.AddScoped<IEvaluationSettingsService, EvaluationSettingsService>();
+builder.Services.AddScoped<IEvaluationCriteriaService, EvaluationCriteriaService>(); // Change 20260726
 builder.Services.AddScoped<ICommitteeService, CommitteeService>();
 builder.Services.AddScoped<ICommitteeReferralService, CommitteeReferralService>();
 builder.Services.AddScoped<ICommitteeCriteriaService, CommitteeCriteriaService>();
@@ -2023,18 +2024,20 @@ app.MapPost("/api/ideas/{id:guid}/evaluations", async (Guid id, EvaluationInput 
 {
     var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
     var result = await service.SubmitAsync(id, userId, input);
-    if (result.Status == EvaluationCommandStatus.Success)
+    // Change 20260726 — a saved draft is not a completed evaluation, so its SLA clock keeps running.
+    if (result.Status == EvaluationCommandStatus.Success && result.Evaluation!.SubmittedAt is not null)
     {
         await slaClockService.CloseAsync("evaluation", id);
     }
     return result.Status switch
     {
-        EvaluationCommandStatus.Success => Results.Ok(new { id = result.Evaluation!.Id, totalScore = result.Evaluation.TotalScore, recommendation = result.Evaluation.Recommendation, ideaStatus = result.Idea!.IdeaStatus.Code }),
+        EvaluationCommandStatus.Success => Results.Ok(new { id = result.Evaluation!.Id, totalScore = result.Evaluation.TotalScore, recommendation = result.Evaluation.Recommendation, conflictOfInterest = result.Evaluation.ConflictOfInterest, submittedAt = result.Evaluation.SubmittedAt, ideaStatus = result.Idea!.IdeaStatus.Code }), // Change 20260726
         EvaluationCommandStatus.NotFound => Results.NotFound(),
         EvaluationCommandStatus.Forbidden => Results.StatusCode(StatusCodes.Status403Forbidden),
         EvaluationCommandStatus.InvalidState => Results.BadRequest(new { error = "Idea is not awaiting evaluation." }),
         EvaluationCommandStatus.AlreadyEvaluated => Results.BadRequest(new { error = "You have already evaluated this idea." }),
         EvaluationCommandStatus.InvalidScore => Results.BadRequest(new { error = "Scores must be between 0 and 10." }),
+        EvaluationCommandStatus.InvalidCriteria => Results.BadRequest(new { error = "Criteria scores must include exactly the active evaluation criteria." }), // Change 20260726
         _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
     };
 }).RequireAuthorization("EvaluatorAndAbove");
@@ -2162,6 +2165,10 @@ app.MapGet("/api/evaluations/mine", async (ClaimsPrincipal user, IEvaluationServ
         recommendation = e.Recommendation,
         submittedAt = e.SubmittedAt,
         ideaEnteredEvaluationAt = e.Idea.EnteredEvaluationAt,
+        // Change 20260726 — the form resumes a draft from this payload, so it carries the saved scores.
+        criteriaScoresJson = e.CriteriaScoresJson,
+        comments = e.Comments,
+        conflictOfInterest = e.ConflictOfInterest,
     }));
 }).RequireAuthorization("EvaluatorAndAbove");
 
@@ -2196,6 +2203,94 @@ app.MapPost("/api/ideas/{id:guid}/withdraw", async (Guid id, IdeaWithdrawInput? 
         _ => Results.Conflict(new { error = "Idea cannot be withdrawn in its current state." }),
     };
 }).RequireAuthorization("IdeaAuthor");
+
+// Change 20260726
+static object EvaluationCriterionResponse(EvaluationCriterion c) => new
+{
+    id = c.Id,
+    code = c.Code,
+    nameAr = c.NameAr,
+    nameEn = c.NameEn,
+    descriptionAr = c.DescriptionAr,
+    descriptionEn = c.DescriptionEn,
+    weight = c.Weight,
+    active = c.Active,
+    sortOrder = c.SortOrder,
+};
+
+// Change 20260726
+app.MapGet("/api/evaluation-criteria", async (IEvaluationCriteriaService service) =>
+{
+    var criteria = await service.ListActiveAsync();
+    return Results.Ok(criteria.Select(c => new
+    {
+        code = c.Code,
+        nameAr = c.NameAr,
+        nameEn = c.NameEn,
+        descriptionAr = c.DescriptionAr,
+        descriptionEn = c.DescriptionEn,
+        weight = c.Weight,
+        sortOrder = c.SortOrder,
+    }));
+}).RequireAuthorization("EvaluatorAndAbove");
+
+// Change 20260726
+app.MapGet("/api/admin/evaluation-criteria", async (IEvaluationCriteriaService service) =>
+{
+    var criteria = await service.ListAllAsync();
+    return Results.Ok(criteria.Select(c => new
+    {
+        id = c.Id,
+        code = c.Code,
+        nameAr = c.NameAr,
+        nameEn = c.NameEn,
+        descriptionAr = c.DescriptionAr,
+        descriptionEn = c.DescriptionEn,
+        weight = c.Weight,
+        active = c.Active,
+        sortOrder = c.SortOrder,
+    }));
+}).RequireAuthorization("SupervisorOrAdmin");
+
+// Change 20260726
+app.MapPost("/api/admin/evaluation-criteria", async (EvaluationCriterionInput input, ClaimsPrincipal user, IEvaluationCriteriaService service) =>
+{
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.CreateAsync(input, actorId);
+    return result.Status switch
+    {
+        EvaluationCriteriaCommandStatus.Success => Results.Ok(EvaluationCriterionResponse(result.Entity!)),
+        EvaluationCriteriaCommandStatus.DuplicateCode => Results.BadRequest(new { error = "An evaluation criterion with this code already exists." }),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("SupervisorOrAdmin");
+
+// Change 20260726
+app.MapPut("/api/admin/evaluation-criteria/{id:guid}", async (Guid id, EvaluationCriterionInput input, ClaimsPrincipal user, IEvaluationCriteriaService service) =>
+{
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.UpdateAsync(id, input, actorId);
+    return result.Status switch
+    {
+        EvaluationCriteriaCommandStatus.Success => Results.Ok(EvaluationCriterionResponse(result.Entity!)),
+        EvaluationCriteriaCommandStatus.NotFound => Results.NotFound(),
+        EvaluationCriteriaCommandStatus.DuplicateCode => Results.BadRequest(new { error = "An evaluation criterion with this code already exists." }),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("SupervisorOrAdmin");
+
+// Change 20260726
+app.MapDelete("/api/admin/evaluation-criteria/{id:guid}", async (Guid id, ClaimsPrincipal user, IEvaluationCriteriaService service) =>
+{
+    var actorId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await service.DeleteAsync(id, actorId);
+    return result.Status switch
+    {
+        EvaluationCriteriaCommandStatus.Success => Results.NoContent(),
+        EvaluationCriteriaCommandStatus.NotFound => Results.NotFound(),
+        _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
+    };
+}).RequireAuthorization("SupervisorOrAdmin");
 
 app.MapGet("/api/committee-criteria", async (InnovationDbContext db) =>
 {

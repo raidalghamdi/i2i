@@ -4,6 +4,7 @@ using InnovationToImpact.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InnovationToImpact.Infrastructure.Migrations
 {
     [DbContext(typeof(InnovationDbContext))]
-    partial class InnovationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260727002704_AddEvaluationCriteria")]
+    partial class AddEvaluationCriteria
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -97,7 +100,7 @@ namespace InnovationToImpact.Infrastructure.Migrations
                         {
                             Key = "pass_threshold",
                             UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ValueJson = "7.0"
+                            ValueJson = "6.0"
                         });
                 });
 
